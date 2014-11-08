@@ -1,4 +1,3 @@
-var request = require('request');
 var util = require('util');
 var http = require('http');
 var fs = require('fs');
