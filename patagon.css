@@ -1,0 +1,20 @@
+body {
+  background-color: black;
+}
+
+#canvas {
+  cursor: crosshair;
+}
+
+table {
+}
+
+td {
+  padding: 5px;
+}
+
+.invBox{
+  border-style:ridge;
+  border-width:5px;
+}
+

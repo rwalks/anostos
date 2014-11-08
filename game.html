@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Project Patagon</title>
+  
+  <link rel="stylesheet" type="text/css" href="patagon.css" />
+  <script src="Config.js" type="text/javascript"></script>
+  <script src="javascript/jquery-1.11.1.min.js" type="text/javascript"></script>
+  <script src="GameRunner.js" type="text/javascript"></script>
+  <script src="SceneUtils.js" type="text/javascript"></script>
+  <script src="LoadingScene.js" type="text/javascript"></script>
+  <script src="Camera.js" type="text/javascript"></script>
+  <script src="Title.js" type="text/javascript"></script>
+  <script src="GameScene.js" type="text/javascript"></script>
+  <script src="Human.js" type="text/javascript"></script>
+  <script src="Tiles.js" type="text/javascript"></script>
+  <script src="Pathfinder.js" type="text/javascript"></script>
+  <script src="Gui.js" type="text/javascript"></script>
+  <script src="Resources.js" type="text/javascript"></script>
+  <script src="Block.js" type="text/javascript"></script>
+  <script src="Buildings.js" type="text/javascript"></script>
+
+  <script>
+    var config = new Config();
+    var tiles = new Tiles();
+    var pathfinder = new Pathfinder();
+
+    $(document).keydown(function(e) {
+      if(e.keyCode == 32) {
+        return false;
+      }
+    });
+    document.oncontextmenu = function() {return false;};
+    $(function() {
+      $('#canvas').mousedown(function(e) {
+        e.preventDefault();
+        
+        if(e.button === 2) {
+          // right click stuff
+        }
+      });
+      document.GameRunner = new GameRunner();
+      document.GameRunner.Run();
+    });
+  </script>
+</head>
+<body>
+  <canvas id="canvas"></canvas>
+</body>
+</html>
