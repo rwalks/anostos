@@ -1,5 +1,6 @@
 Block = function(type,pos) {
 
+  this.rType = type;
   var fName = '';
   switch(type){
     case 'soil':
@@ -41,6 +42,10 @@ Block = function(type,pos) {
     canvasBufferContext.rect(oX+(xSize*0.2),oY+(ySize*0.2),xSize*0.6,ySize*0.6);
     canvasBufferContext.fill();
     canvasBufferContext.stroke();
+  }
+
+  this.clone = function(pos){
+    return new Block(this.rType,pos);
   }
 
   this.click = function(coords,terrain){

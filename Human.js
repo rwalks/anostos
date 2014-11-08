@@ -19,6 +19,8 @@ Human = function(x,y) {
   this.maxHealth = 100; this.currentHealth = 100;
   this.maxOxygen = 100; this.currentOxygen = 100;
 
+  this.actions = ["build","delete"];
+
   this.name = config.nameGenerator();
 
   //suit color

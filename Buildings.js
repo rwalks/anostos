@@ -56,6 +56,10 @@ StorageBuild = function(type,pos) {
   this.click = function(coords,terrain){
     return;
   }
+  this.rType = type;
+  this.clone = function(pos){
+    return new StorageBuild(this.rType,pos);
+  }
 }
 
 ConveyorBuild = function(type,pos) {
@@ -110,6 +114,10 @@ ConveyorBuild = function(type,pos) {
 
   this.click = function(coords,terrain){
     return;
+  }
+  this.rType = type;
+  this.clone = function(pos){
+    return new ConveyorBuild(this.rType,pos);
   }
 }
 
@@ -172,5 +180,9 @@ GeneratorBuild = function(type,pos) {
 
   this.click = function(coords,terrain){
     return;
+  }
+  this.rType = type;
+  this.clone = function(pos){
+    return new GeneratorBuild(this.rType,pos);
   }
 }

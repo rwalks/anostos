@@ -3,7 +3,8 @@ Gui = function() {
   this.target; this.roster; this.resources;
   this.rosterOffset = 0;
 
-  this.showBuild = true;
+  this.uiMode;
+
   this.buildTarget;
   this.buildTab = "construction";
   this.buildOffset = 0;
@@ -76,14 +77,29 @@ Gui = function() {
       }else{
         this.buildOffset += (this.buildings[this.buildTab].slice(this.buildOffset).length > 6) ? 1 : 0;
       }
+    }else if(target == "target"){
+      if(this.target && this.target.actions){
+        var x = clickPos.x - this.position('target').x;
+        var xSize = this.size('target').x;
+        if(x > xSize - (xSize * 0.21)){
+          var y = clickPos.y - this.position('target').y;
+          var ySize = this.size('target').y;
+          var yBuf = Math.floor(config.xRatio) * 2;
+          var aY = Math.floor(4*((y - (2*yBuf)) / (ySize - (2*yBuf))));
+          if(aY >= 0){
+            return {'action':this.target.actions[aY]};
+          }
+        }
+      }
     }
   }
 
-  this.update = function(target,humans,resources,buildTarget){
+  this.update = function(target,humans,resources,buildTarget,uiMode){
     this.target = target;
     this.roster = humans;
     this.resources = resources;
     this.buildTarget = buildTarget;
+    this.uiMode = uiMode;
   }
 
   this.size = function(type){
@@ -118,7 +134,7 @@ Gui = function() {
         y > this.position('roster').y && y < (this.position('roster').y + this.size('roster').y)){
           return "roster"
         }
-    else if ( this.showBuild &&
+    else if ( this.uiMode == 'build' &&
         x > this.position('build').x && x < (this.position('build').x + this.size('build').x) &&
         y > this.position('build').y && y < (this.position('build').y + this.size('build').y)){
           return "build"
@@ -128,7 +144,7 @@ Gui = function() {
 
 
   this.draw = function(camera,canvasBufferContext){
-    if(this.showBuild){
+    if(this.uiMode == 'build'){
      // this.drawGrid(camera,canvasBufferContext);
       this.drawBuild(this.size("build"),this.position("build"),canvasBufferContext);
     }
@@ -275,8 +291,56 @@ Gui = function() {
     canvasBufferContext.rect(xIndex,yIndex,xSize,ySize);
     canvasBufferContext.fill();
     canvasBufferContext.stroke();
-    if(this.target){
-
+    var aX = xIndex + xBuf;
+    var aY = yIndex + yBuf;
+    var aXSize = xSize - (2*xBuf);
+    var aYSize = ((ySize) / 4) - (2*yBuf);
+    if(this.target && this.target.actions){
+      for(i in this.target.actions){
+        canvasBufferContext.beginPath();
+        canvasBufferContext.lineWidth=Math.floor(config.xRatio)+"";
+        var aRed = (this.target.actions[i] == this.uiMode) ? 200 : 0;
+        canvasBufferContext.fillStyle = "rgba("+aRed+",50,100,0.9)";
+        canvasBufferContext.strokeStyle="rgba("+aRed+",50,175,1.0)";
+        canvasBufferContext.rect(aX,aY,aXSize,aYSize);
+        canvasBufferContext.fill();
+        canvasBufferContext.stroke();
+        switch(this.target.actions[i]){
+          case "build":
+            canvasBufferContext.fillStyle = "rgba(250,250,250,0.9)";
+            canvasBufferContext.strokeStyle="rgba(250,250,250,1.0)";
+            canvasBufferContext.beginPath();
+            canvasBufferContext.moveTo(aX + (aXSize * 0.2), aY + (aYSize * 0.8));
+            canvasBufferContext.lineTo(aX + (aXSize * 0.3), aY + (aYSize * 0.8));
+            canvasBufferContext.lineTo(aX + (aXSize * 0.6), aY + (aYSize * 0.5));
+            canvasBufferContext.lineTo(aX + (aXSize * 0.8), aY + (aYSize * 0.5));
+            canvasBufferContext.lineTo(aX + (aXSize * 0.8), aY + (aYSize * 0.3));
+            canvasBufferContext.lineTo(aX + (aXSize * 0.7), aY + (aYSize * 0.4));
+            canvasBufferContext.lineTo(aX + (aXSize * 0.6), aY + (aYSize * 0.3));
+            canvasBufferContext.lineTo(aX + (aXSize * 0.7), aY + (aYSize * 0.2));
+            canvasBufferContext.lineTo(aX + (aXSize * 0.5), aY + (aYSize * 0.2));
+            canvasBufferContext.lineTo(aX + (aXSize * 0.5), aY + (aYSize * 0.4));
+            canvasBufferContext.lineTo(aX + (aXSize * 0.2), aY + (aYSize * 0.7));
+            canvasBufferContext.fill();
+            canvasBufferContext.stroke();
+            break;
+          case "delete":
+            canvasBufferContext.strokeStyle="rgba(250,250,250,1.0)";
+            canvasBufferContext.lineWidth=xBuf;
+            canvasBufferContext.beginPath();
+            canvasBufferContext.moveTo(aX + (aXSize * 0.2), aY + (aYSize * 0.8));
+            canvasBufferContext.lineTo(aX + (aXSize * 0.8), aY + (aYSize * 0.2));
+            canvasBufferContext.stroke();
+            canvasBufferContext.beginPath();
+            canvasBufferContext.moveTo(aX + (aXSize * 0.2), aY + (aYSize * 0.2));
+            canvasBufferContext.lineTo(aX + (aXSize * 0.8), aY + (aYSize * 0.8));
+            canvasBufferContext.stroke();
+            break;
+          case "upgrade":
+            break;
+        }
+        aY += aYSize + (2*yBuf);
+      }
     }
   }
 

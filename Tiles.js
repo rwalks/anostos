@@ -17,6 +17,22 @@ Tiles = function() {
     this.addTile(tile,terrain,true);
   }
 
+  this.isClear = function(obj,terrain,humans){
+    for(h in humans){
+      if (humans[h].pointWithin(obj.position.x+(obj.size.x/2),obj.position.y+(obj.size.y/2))){
+        return false;
+      }
+    }
+    for(x = obj.position.x; x < obj.position.x+(obj.size.x); x += config.gridInterval){
+      for(y = obj.position.y; y < obj.position.y+(obj.size.y); y += config.gridInterval){
+        if(terrain[x] && terrain[x][y]){
+          return false;
+        }
+      }
+    }
+    return true;
+  }
+
   this.TerrainTile = function(x,y){
     this.name = ["Soil",""];
     this.size = {'x':2*config.gridInterval,'y':2*config.gridInterval};
