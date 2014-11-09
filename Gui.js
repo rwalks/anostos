@@ -459,36 +459,32 @@ Gui = function() {
     var bX = x+xBuf;
     var bXInt = xSize / Object.keys(this.buildings).length;
     for(b in this.buildings){
+      var currentTab = (b == this.buildTab);
        switch(b){
         case "power":
-          canvasBufferContext.fillStyle = "rgba(250,250,0,0.9)";
+          drawPower(canvasBufferContext,bX,y+yBuf,bXInt-(2*xBuf),yTab-(2*yBuf),currentTab);
           break;
         case "oxygen":
           canvasBufferContext.fillStyle = "rgba(250,250,250,0.9)";
+          drawPower(canvasBufferContext,bX,y+yBuf,bXInt-(2*xBuf),yTab-(2*yBuf),currentTab);
           break;
         case "water":
           canvasBufferContext.fillStyle = "rgba(0,0,250,0.9)";
+          drawPower(canvasBufferContext,bX,y+yBuf,bXInt-(2*xBuf),yTab-(2*yBuf),currentTab);
           break;
         case "earth":
           canvasBufferContext.fillStyle = "rgba(20,250,100,0.9)";
+          drawPower(canvasBufferContext,bX,y+yBuf,bXInt-(2*xBuf),yTab-(2*yBuf),currentTab);
           break;
         case "construction":
           canvasBufferContext.fillStyle = "rgba(100,100,100,0.9)";
+          drawPower(canvasBufferContext,bX,y+yBuf,bXInt-(2*xBuf),yTab-(2*yBuf),currentTab);
           break;
         case "other":
           canvasBufferContext.fillStyle = "rgba(250,50,50,0.9)";
+          drawPower(canvasBufferContext,bX,y+yBuf,bXInt-(2*xBuf),yTab-(2*yBuf),currentTab);
           break;
        }
-       if(b == this.buildTab){
-         canvasBufferContext.lineWidth=Math.floor(config.xRatio)+"";
-         canvasBufferContext.strokeStyle = "rgba(250,0,0,1.0)";
-       }else{
-         canvasBufferContext.strokeStyle = "rgba(250,0,0,0)";
-       }
-       canvasBufferContext.beginPath();
-       canvasBufferContext.rect(bX,y+yBuf,bXInt-(2*xBuf),yTab-(2*yBuf));
-       canvasBufferContext.fill();
-       canvasBufferContext.stroke();
        bX += bXInt;
     }
    canvasBufferContext.stroke();
@@ -545,6 +541,18 @@ Gui = function() {
     canvasBufferContext.lineTo(x+(xSize*0.6),y+yBuf);
     canvasBufferContext.fill();
     canvasBufferContext.stroke();
+
+  }
+
+  var drawPower = function(canvasBufferContext,x,y,xS,yS,selected){
+    var aRed = (selected) ? 200 : 0;
+    canvasBufferContext.fillStyle = "rgba("+aRed+",50,100,0.9)";
+    canvasBufferContext.strokeStyle="rgba("+aRed+",50,175,1.0)";
+    canvasBufferContext.beginPath();
+    canvasBufferContext.rect(x,y,xS,yS);
+    canvasBufferContext.fill();
+    canvasBufferContext.stroke();
+    // canvasBufferContext.fillStyle = "rgba(250,250,0,0.5)";
 
   }
 }

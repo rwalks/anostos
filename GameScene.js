@@ -63,7 +63,7 @@ var GameScene = function (strs){
           buildTarget = guiRet.buildTarget;
         }else if(guiRet && guiRet.action){
           if (guiRet.action == "build" || guiRet.action == "delete"){
-            this.uiMode = guiRet.action;
+            this.uiMode = (guiRet.action == this.uiMode) ? "select" : guiRet.action;
           }
         }
       }else{
