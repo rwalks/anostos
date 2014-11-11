@@ -117,4 +117,21 @@ var SceneUtils = function (){
     }
   }
 
+  var rdbaString;
+  var xColor = {
+    'b': Math.floor(Math.random() * 250),
+    'bMod':(Math.random() * 6)-3
+  };
+  this.drawPlanet = function(x,y,size,canvasBufferContext){
+    xColor.b += xColor.bMod;  if(xColor.b > 250 || xColor.b < 0){xColor.bMod = xColor.bMod * -1;}
+    rgbaString = "rgba(0,50,"+Math.floor(xColor.b)+",1.0)";
+
+    canvasBufferContext.fillStyle = rgbaString;
+    canvasBufferContext.beginPath();
+    canvasBufferContext.arc(x,y,size,0,Math.PI*2,false);
+    canvasBufferContext.stroke();
+    canvasBufferContext.fill();
+  }
+
+
 }
