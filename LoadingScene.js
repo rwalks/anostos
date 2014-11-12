@@ -29,14 +29,17 @@ var LoadingScene = function (){
 
 
   var title = new Title();
-  var aud = new Audio("deep_spaceRadio.ogg");
+  var aud = new Audio("deep_space.ogg");
   aud.load();
 
+
+  var timer;
   this.update = function(mousePos){
     if(loadingMode){
       if(aud.readyState == 4){
         loadingMode = false;
         creditMode = true;
+        aud.play();
       }
     }else if(creditMode){
       sceneTimer += 1;
@@ -276,8 +279,10 @@ var LoadingScene = function (){
     canvasBufferContext.fill();
     canvasBufferContext.stroke();
     if(sceneTimer > humanDuration * 0.82){
-      sceneUtils.drawPlanet(eyeX-scaleM/3.2+lX*0.05,y-scaleM/3+(lY/2),lX/250+(scaleM/7),canvasBufferContext);
-      sceneUtils.drawPlanet(eyeX+scaleM/1.5+lX*0.18,y-scaleM/3+(lY/2),lX/250+(scaleM/7),canvasBufferContext);
+      if(sceneTimer > humanDuration * 0.9){
+        sceneUtils.drawPlanet(eyeX-scaleM/3.2+lX*0.05,y-scaleM/3+(lY/2),lX/250+(scaleM/7),canvasBufferContext);
+        sceneUtils.drawPlanet(eyeX+scaleM/1.5+lX*0.18,y-scaleM/3+(lY/2),lX/250+(scaleM/7),canvasBufferContext);
+      }
       canvasBufferContext.beginPath();
       canvasBufferContext.fillStyle = "rgba(0,0,0,0.6)";
       canvasBufferContext.strokeStyle= "rgba(180,110,70,1.0)";
