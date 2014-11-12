@@ -126,6 +126,8 @@ var SceneUtils = function (){
     xColor.b += xColor.bMod;  if(xColor.b > 250 || xColor.b < 0){xColor.bMod = xColor.bMod * -1;}
     rgbaString = "rgba(0,50,"+Math.floor(xColor.b)+",1.0)";
 
+    canvasBufferContext.lineWidth=Math.floor(config.xRatio)+"";
+    canvasBufferContext.strokeStyle="rgba(250,250,250,0.8)";
     canvasBufferContext.fillStyle = rgbaString;
     canvasBufferContext.beginPath();
     canvasBufferContext.arc(x,y,size,0,Math.PI*2,false);
