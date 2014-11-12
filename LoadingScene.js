@@ -124,7 +124,7 @@ var LoadingScene = function (){
       drawCredit(canvasBufferContext);
     }else if(titleMode){
       sceneUtils.drawStars(stars, camera, clockCycle, canvasBufferContext);
-      sceneUtils.drawPlanet(config.canvasWidth/1.845,config.canvasHeight/2.15,150,canvasBufferContext);
+      sceneUtils.drawPlanet(config.canvasWidth/1.845,config.canvasHeight/2.18,150,canvasBufferContext);
       title.draw(canvasBufferContext);
     }
     else if(shipMode){
