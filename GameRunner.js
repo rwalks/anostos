@@ -90,7 +90,11 @@ function GameRunner() {
             }
             break;
           case 'keydown':
+            _scene.keyPress(event.keyCode,true);
+            break;
           case 'keyup':
+            _scene.keyPress(event.keyCode,false);
+            break;
         }
       }
     }
@@ -113,8 +117,10 @@ function GameRunner() {
     this.endScene = function(type){
       switch(type){
         case 'start':
-          var stars = _scene.stars;
-          _scene = new GameScene(stars);
+          _scene = new LandingScene(_scene.stars);
+          break;
+        case 'landing':
+          _scene = new GameScene(_scene.stars,_scene.terrain);
           break;
       }
     }

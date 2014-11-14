@@ -32,6 +32,9 @@ var LoadingScene = function (){
   var aud = new Audio("deep_space.ogg");
   aud.load();
 
+  this.keyPress = function(keyCode,keyDown){
+
+  }
 
   var timer;
   this.update = function(mousePos){
@@ -408,9 +411,9 @@ var LoadingScene = function (){
       canvasBufferContext.strokeStyle="rgba(250,250,250,0.8)";
       var x = oX + lX * 0.4
       var y = oY + lY * 0.3
-      canvasBufferContext.rect(x,y,lX*0.6,lY*0.4);
-      canvasBufferContext.fill();
-      canvasBufferContext.stroke();
+ //     canvasBufferContext.rect(x,y,lX*0.6,lY*0.4);
+ //     canvasBufferContext.fill();
+ //     canvasBufferContext.stroke();
       //cockpit
       canvasBufferContext.beginPath();
       canvasBufferContext.lineWidth=Math.floor(config.xRatio)+"";
@@ -432,10 +435,10 @@ var LoadingScene = function (){
     var job = jobs[Math.floor(Math.random()*jobs.length)];
     var name = config.nameGenerator();
     var crimes = ["Space Crime","Corporate Heresy","Unorthodox Methodologies","Space Piracy",
-                  "Lunar Exploitation","SpaceTime Disruption","Spacewar Crimes","Embezzlement",
+                  "Lunar Exploitation","SpaceTime Disruption","Spacewar Crimes","Neutron Embezzlement",
                   "SpaceDrug Smuggling","Interstellar Rebellion","Misuse of Antimatter",
                   "Planetary Bombardment","Destruction of Government Property",
-                  "Grandtheft Starship","SpaceHooliganism"];
+                  "Grandtheft Starship","SpaceHooliganism","Stellar Mismanagement"];
     var crime = crimes[Math.floor(Math.random()*crimes.length)];
     return ["In the year "+yr+", "+job+" "+name[0]+" "+name[1]+" was convicted of "+crime+".","The sentence: Colonization of a brutal outer world."];
   }

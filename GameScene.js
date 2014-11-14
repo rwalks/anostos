@@ -1,7 +1,7 @@
-var GameScene = function (strs){
+var GameScene = function (strs,trn){
   var sceneUtils = new SceneUtils();
   var stars = strs ? strs : sceneUtils.generateStars(10000);
-  var terrain = sceneUtils.generateTerrain();
+  var terrain = trn ? trn : sceneUtils.generateTerrain();
   var camera = new Camera(5000,6500);
   var mousePos;
   var clockCycle = 0;
@@ -25,6 +25,10 @@ var GameScene = function (strs){
   this.uiMode = "select";
 
   this.terrain = function(){return terrain;}
+
+  this.keyPress = function(keyCode,keyDown){
+
+  }
 
   this.update = function(mPos){
     mousePos = mPos;
