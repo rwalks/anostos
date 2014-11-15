@@ -9,6 +9,7 @@ var LoadingScene = function (){
   var camDY = 0;
 
   //animation variables
+  var smallShip;
   var sceneTimer = 0;
   var shipPos = {'x':-5*config.gridInterval*config.xRatio,'y':config.cY};
   camera.focusOn(shipPos);
@@ -65,6 +66,12 @@ var LoadingScene = function (){
       shipPos.y = config.cY + Math.sin(shipPos.x % 800)/4;
       sceneTimer += 1;
       camera.move(5,0);
+      if(sceneTimer > shipDuration / 2){
+        if(!smallShip){
+          smallShip = new Ship(shipPos.x,shipPos.y);
+        }
+        smallShip.update({});
+      }
       if(sceneTimer > shipDuration){
         sceneTimer = 0;
         shipMode = false;
@@ -132,6 +139,9 @@ var LoadingScene = function (){
     }
     else if(shipMode){
       sceneUtils.drawStars(stars, camera, clockCycle, canvasBufferContext);
+      if(smallShip){
+        smallShip.draw(camera,canvasBufferContext);
+      }
       drawShip(shipPos,camera,canvasBufferContext);
       this.drawText(shipMsg,canvasBufferContext);
     }

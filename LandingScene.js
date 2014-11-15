@@ -1,7 +1,7 @@
 var LandingScene = function (strs){
   var sceneUtils = new SceneUtils();
-  var stars = strs ? strs : sceneUtils.generateStars(10000);
-  var terrain = sceneUtils.generateTerrain();
+  this.stars = strs ? strs : sceneUtils.generateStars(10000);
+  this.terrain = sceneUtils.generateTerrain();
   var camera = new Camera(config.mapWidth/2,0);
   var mousePos;
   var clockCycle = 0;
@@ -9,11 +9,9 @@ var LandingScene = function (strs){
   this.count = 0;
   var ship = new Ship(config.mapWidth/2,0);
 
-  this.terrain = function(){return terrain;}
-
   this.update = function(mPos){
     camera.focusOn(ship.position);
-    ship.update(terrain);
+    ship.update(this.terrain);
     this.count = (this.count > 100) ? 0 : this.count + 1;
   }
 
@@ -35,6 +33,7 @@ var LandingScene = function (strs){
   this.click = function(clickPos,rightClick){
     if(rightClick){
     }else{
+      this.endScene();
     }
   }
 
@@ -43,19 +42,19 @@ var LandingScene = function (strs){
   }
 
   this.draw = function(canvasBufferContext){
-    sceneUtils.drawStars(stars, camera, clockCycle, canvasBufferContext);
+    sceneUtils.drawStars(this.stars, camera, clockCycle, canvasBufferContext);
     sceneUtils.drawBG(camera,clockCycle,canvasBufferContext);
     ship.draw(camera,canvasBufferContext);
-    drawMap(canvasBufferContext,this.count);
+    this.drawMap(canvasBufferContext,this.count);
   }
 
-  var drawMap = function(canvasBufferContext,count){
-    if(terrain){
+  this.drawMap = function(canvasBufferContext,count){
+    if(this.terrain){
       for(var x=camera.xOff-(camera.xOff%config.gridInterval);x<camera.xOff+config.cX;x+=config.gridInterval){
-        if(terrain[x]){
+        if(this.terrain[x]){
           for(var y=(camera.yOff-(camera.yOff%config.gridInterval));y<camera.yOff+config.cY;y+=config.gridInterval){
-            if(terrain[x][y]){
-              terrain[x][y].draw(camera,canvasBufferContext,count);
+            if(this.terrain[x][y]){
+              this.terrain[x][y].draw(camera,canvasBufferContext,count);
             }
           }
         }

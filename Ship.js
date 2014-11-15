@@ -3,7 +3,8 @@ Ship = function(x,y) {
   var counter = 0;
 
   this.position = {'x':x,'y':y};
-  this.velocity = {'x':0,'y':0};
+  var startingVX = (Math.random() * 20) - 10;
+  this.velocity = {'x':startingVX,'y':0};
   this.throttle = {'x':0,'y':0};
   var count = 0;
 
@@ -11,9 +12,10 @@ Ship = function(x,y) {
   this.theta = 0;
   this.acceleration = 0.05;
 
-    var lX = config.gridInterval * 2;
-    var lY = config.gridInterval * 2;
-  var shipGeometry = [[lX,lY],[lX,0],[lX,-lY],[0,-lY],[-lX,-lY],[-lX,0],[-lX,lY],[0,lY],[lX,lY]];
+  var lX = config.gridInterval * 2;
+  var lY = config.gridInterval * 2;
+  var shipGeometry = [[lX,lY],[lX,lY*1.5],[lX*1.5,lY],[lX,0],[lX,-lY],[0,-2*lY],
+                      [-lX,-lY],[-lX,0],[-lX*1.5,lY],[-lX*1.5.lY*1.5],[-lX,lY*1.5],[-lX,lY],[0,lY]];
 
   this.update = function(terrain){
     count += 1;
@@ -33,31 +35,36 @@ Ship = function(x,y) {
       var points = rotate(shipGeometry[i][0],shipGeometry[i][1],this.theta);
       var tX = this.position.x + points[0] + this.velocity.x;
       var tY = this.position.y + points[1] + this.velocity.y;
-      tX = tX - (tX % config.gridInterval);
-      tY = tY - (tY % config.gridInterval);
-      if(terrain[tX]&&terrain[tX][tY]){
-        if(Math.abs(this.velocity.x) + Math.abs(this.velocity.y) > 1){
-          //crash
-          crashList.push(i);
-          this.velocity.x = 0.2 * this.velocity.x;
-          this.velocity.y = 0.2 * this.velocity.y;
-        }else{
-          //no crash
-          if(tY > this.position.y){
-            this.velocity.y = 0;
-          }
-          if(tX > this.position.x){
-            this.velocity.x = 0;
-            this.theta -= 0.03;
-          }else if(tX < this.position.x){
-            this.velocity.x = 0;
-            this.theta += 0.03;
+      if(tX > config.mapWidth || tX < 0){
+        this.velocity.x = 0;
+      }else{
+        tX = tX - (tX % config.gridInterval);
+        tY = tY - (tY % config.gridInterval);
+        if(terrain[tX]&&terrain[tX][tY]){
+          if(Math.abs(this.velocity.x) + Math.abs(this.velocity.y) > 0.5){
+            //crash
+            crashList.push(i);
+            this.velocity.x = 0.8 * this.velocity.x;
+            this.velocity.y = 0.8 * this.velocity.y;
           }else{
-            this.velocity.x = 0;
+            //no crash
+            if(tY > this.position.y){
+              this.velocity.y = 0;
+            }
+            if(tX > this.position.x){
+              this.velocity.x = 0;
+              this.theta -= 0.03;
+            }else if(tX < this.position.x){
+              this.velocity.x = 0;
+              this.theta += 0.03;
+            }else{
+              this.velocity.x = 0;
+            }
           }
         }
       }
     }
+
     for(i in crashList){
       shipGeometry.splice(crashList[i],1);
     }
@@ -80,26 +87,78 @@ Ship = function(x,y) {
     this.throttle.y = points[1];
   }
 
+  this.drawExhaust = function(camera,canvasBufferContext){
+    var firstPoint;
+    var xRatio = config.canvasWidth / config.cX;
+    var yRatio = config.canvasHeight / config.cY;
+    var trailWidth = lX/10;
+    var y = 1.5*lY;
+    canvasBufferContext.lineWidth=Math.floor(config.xRatio)+"";
+    for(x=-lX;x<lX;x+=trailWidth){
+      y += (x < 0) ? lY / 4 : -lY / 4;
+      canvasBufferContext.beginPath();
+      var r = Math.floor(Math.random() * 250);
+      var g = Math.floor(Math.random() * 250);
+      var b = Math.floor(Math.random() * 250);
+      var a = Math.floor(Math.random() * 0.1) + 0.9;
+      var rgbaString = "rgba("+r+","+20+","+20+","+a+")";
+      canvasBufferContext.fillStyle = rgbaString;
+      var geometry = [[x,lY],[x+trailWidth,lY],[x+trailWidth,y],[x,y]];
+      for(i in geometry){
+        var points = rotate(geometry[i][0],geometry[i][1],this.theta);
+        var eX = (this.position.x+points[0]-camera.xOff)*xRatio;
+        var eY = (this.position.y+points[1]-camera.yOff)*yRatio;
+        if(i == 0){
+          canvasBufferContext.moveTo(eX,eY);
+          firstPoint = [eX,eY];
+        }else{
+          canvasBufferContext.lineTo(eX,eY);
+        }
+      }
+      canvasBufferContext.lineTo(firstPoint[0],firstPoint[1]);
+      canvasBufferContext.fill();
+    }
+  }
 
   this.draw = function(camera,canvasBufferContext){
+    var firstPoint;
     var xRatio = config.canvasWidth / config.cX;
     var yRatio = config.canvasHeight / config.cY;
     canvasBufferContext.beginPath();
     canvasBufferContext.lineWidth=Math.floor(config.xRatio)+"";
-    canvasBufferContext.fillStyle = "rgba(0,200,0,0.6)";
-    canvasBufferContext.strokeStyle="rgba(0,250,0,0.8)";
+    canvasBufferContext.fillStyle = "rgba(200,200,200,0.6)";
+    canvasBufferContext.strokeStyle="rgba(250,250,250,0.8)";
     for(i in shipGeometry){
       var points = rotate(shipGeometry[i][0],shipGeometry[i][1],this.theta);
       var x = (this.position.x+points[0]-camera.xOff)*xRatio;
       var y = (this.position.y+points[1]-camera.yOff)*yRatio;
       if(i == 0){
         canvasBufferContext.moveTo(x,y);
+        firstPoint = [x,y];
       }else{
         canvasBufferContext.lineTo(x,y);
       }
     }
+    canvasBufferContext.lineTo(firstPoint[0],firstPoint[1]);
     canvasBufferContext.stroke();
     canvasBufferContext.fill();
+    //draw window
+    var rad = config.gridInterval/2 * xRatio;
+    var windows = [[0,-rad],[0,rad/2]];
+    for(i in windows){
+      var points = rotate(windows[i][0],windows[i][1],this.theta);
+      var x = (this.position.x+points[0]-camera.xOff)*xRatio;
+      var y = (this.position.y+points[1]-camera.yOff)*yRatio;
+      canvasBufferContext.fillStyle = "rgba(0,0,200,0.6)";
+      canvasBufferContext.strokeStyle="rgba(50,50,250,0.8)";
+      canvasBufferContext.beginPath();
+      canvasBufferContext.arc(x,y,rad,0,2*Math.PI,false);
+      canvasBufferContext.fill();
+      canvasBufferContext.stroke();
+    }
+    if(this.throttle.x || this.throttle.y){
+      this.drawExhaust(camera,canvasBufferContext);
+    }
   }
 
   var rotate = function(x,y,theta){

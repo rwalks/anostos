@@ -92,14 +92,14 @@ Human = function(x,y) {
     var topY = fY;
     topX = topX - (topX % config.gridInterval);
     topY = topY - (topY % config.gridInterval);
-    if(terrain[topX][topY] && terrain[topX][topY].collision){
+    if(terrain[topX] && terrain[topX][topY] && terrain[topX][topY].collision){
       this.velocity.y += ((topY+config.gridInterval) - fY);
     }
     var botX = fX + (this.size.x / 2);
     var botY = fY + this.size.y;
     botX = botX - (botX % config.gridInterval);
     botY = botY - (botY % config.gridInterval);
-    if(terrain[botX][botY] && terrain[botX][botY].collision){
+    if(terrain[botX] && terrain[botX][botY] && terrain[botX][botY].collision){
       this.velocity.y -= ((fY+this.size.y) - botY);
       this.onGround = true;
       collide = true;
@@ -108,14 +108,14 @@ Human = function(x,y) {
     var rightY = fY + (this.size.y/2);
     rightX = rightX - (rightX % config.gridInterval);
     rightY = rightY - (rightY % config.gridInterval);
-    if(terrain[rightX][rightY] && terrain[rightX][rightY].collision){
+    if(terrain[rightX] && terrain[rightX][rightY] && terrain[rightX][rightY].collision){
       this.velocity.x -= ((fX + this.size.x) - rightX);
     }
     var leftX = fX;
     var leftY = fY + (this.size.y/2);
     leftX = leftX - (leftX % config.gridInterval);
     leftY = leftY - (leftY % config.gridInterval);
-    if(terrain[leftX][leftY] && terrain[leftX][leftY].collision){
+    if(terrain[leftX] && terrain[leftX][leftY] && terrain[leftX][leftY].collision){
       this.velocity.x += ((leftX+config.gridInterval) - fX);
     }
 
