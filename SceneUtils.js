@@ -13,12 +13,14 @@ var SceneUtils = function (){
       if(dY < 0.3){
         if(dY < 0.05){
           dY = (Math.random()*(terrainInterval*10))-(terrainInterval*5);
+        }else if(dY<0.1){
+          dY = (Math.random()*(terrainInterval*20))-(terrainInterval*10);
         }else{
-          dY = (Math.random()*(terrainInterval*2))-(terrainInterval*1);
+          dY = (Math.random()*(terrainInterval*4))-(terrainInterval*2);
         }
       }else{
-         // dY = (Math.random()*(terrainInterval*2))-(terrainInterval*1);
-         dY = 0;
+         dY = (Math.random()*(terrainInterval*2))-(terrainInterval*1);
+         //dY = 0;
       }
       var yMin = last + dY;
       for(var y=config.mapHeight;y>=yMin;y-=terrainInterval){
@@ -94,7 +96,7 @@ var SceneUtils = function (){
   this.drawStars = function(stars,camera,clockCycle,canvasBufferContext){
     var parallax = 10;
     for(x in stars){
-      if((x > camera.xOff/parallax)&&(x < ((camera.xOff/parallax) + config.canvasWidth))){
+      if((x > camera.xOff/parallax)&&(x < ((camera.xOff/parallax) + config.cX))){
         if(clockCycle % 2 == 0){
           var r = Math.floor(Math.random() * 250);
           var g = Math.floor(Math.random() * 250);
@@ -103,14 +105,14 @@ var SceneUtils = function (){
           var rgbaString = "rgba("+r+","+g+","+b+","+a+")";
         }
         for(y in stars[x]){
-          if((y > camera.yOff/parallax) && (y < (camera.yOff/parallax) + config.canvasHeight)){
+          if((y > camera.yOff/parallax) && (y < (camera.yOff/parallax) + config.cY)){
             if(clockCycle % 2 == 0){
               stars[x][y][0] = rgbaString;
             }
             canvasBufferContext.fillStyle = stars[x][y][0];
             var size = config.canvasWidth / 125;
             canvasBufferContext.font = stars[x][y][1]*size +"px Courier";
-            canvasBufferContext.fillText("*",x-camera.xOff/parallax,y-camera.yOff/parallax);
+            canvasBufferContext.fillText("*",(x-(camera.xOff/parallax))*config.xRatio,(y-(camera.yOff/parallax))*config.yRatio);
           }
         }
       }

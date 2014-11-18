@@ -10,7 +10,11 @@ Ship = function(x,y) {
 
   this.deltaR = 0;
   this.theta = 0;
-  this.acceleration = 0.05;
+  this.acceleration = 0.055;
+  this.currentFuel = 100;
+  this.maxFuel = 100;
+
+  this.explosions = [];
 
   var lX = config.gridInterval * 2;
   var lY = config.gridInterval * 2;
@@ -23,10 +27,23 @@ Ship = function(x,y) {
     this.terrainCollide(terrain);
     //apply move
     this.theta += this.deltaR;
+    if(this.throttle.x != 0 || this.throttle.y != 0){
+      this.currentFuel -= 0.5;
+    }
     this.velocity.x += this.throttle.x;
     this.velocity.y += this.throttle.y;
     this.position.x += this.velocity.x;
     this.position.y += this.velocity.y;
+    var doneList = [];
+    for(e in this.explosions){
+      var ret = this.explosions[e].update();
+      if(ret){
+        doneList.push(e);
+      }
+    }
+    for(i in doneList){
+      this.explosions.splice(doneList[i],1);
+    }
   }
 
   this.terrainCollide = function(terrain){
@@ -46,6 +63,7 @@ Ship = function(x,y) {
             crashList.push(i);
             this.velocity.x = 0.8 * this.velocity.x;
             this.velocity.y = 0.8 * this.velocity.y;
+            this.explosions.push(new Explosion(tX,tY));
           }else{
             //no crash
             if(tY > this.position.y){
@@ -82,7 +100,12 @@ Ship = function(x,y) {
   }
 
   this.accelerate = function(keyDown){
-    var points = keyDown ? rotate(0,-this.acceleration,this.theta) : [0,0];
+    var points = [0,0];
+    if(keyDown){
+      if(this.currentFuel > 0){
+        points = rotate(0,-this.acceleration,this.theta);
+      }
+    }
     this.throttle.x = points[0];
     this.throttle.y = points[1];
   }
@@ -121,7 +144,6 @@ Ship = function(x,y) {
   }
 
   this.draw = function(camera,canvasBufferContext){
-    var firstPoint;
     var xRatio = config.canvasWidth / config.cX;
     var yRatio = config.canvasHeight / config.cY;
     canvasBufferContext.beginPath();
@@ -139,7 +161,9 @@ Ship = function(x,y) {
         canvasBufferContext.lineTo(x,y);
       }
     }
-    canvasBufferContext.lineTo(firstPoint[0],firstPoint[1]);
+    if(firstPoint){
+      canvasBufferContext.lineTo(firstPoint[0],firstPoint[1]);
+    }
     canvasBufferContext.stroke();
     canvasBufferContext.fill();
     //draw window
@@ -158,6 +182,9 @@ Ship = function(x,y) {
     }
     if(this.throttle.x || this.throttle.y){
       this.drawExhaust(camera,canvasBufferContext);
+    }
+    for(e in this.explosions){
+      this.explosions[e].draw(camera,canvasBufferContext);
     }
   }
 

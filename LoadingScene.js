@@ -1,6 +1,6 @@
 var LoadingScene = function (){
   var sceneUtils = new SceneUtils();
-  var stars = sceneUtils.generateStars(10000);
+  var stars = sceneUtils.generateStars(20000);
   var camera = new Camera();
   var camWander = 5;
   var clockCycle = 0;
@@ -11,11 +11,14 @@ var LoadingScene = function (){
   //animation variables
   var smallShip;
   var sceneTimer = 0;
-  var shipPos = {'x':-5*config.gridInterval*config.xRatio,'y':config.cY};
-  camera.focusOn(shipPos);
+  var shipPos = {'x':-config.canvasWidth/3};
+  shipPos.y = config.cY/4 + Math.sin(shipPos.x % 800)/2;
+  camera.focusOn({'x':0,'y':0});
   var shipMode = false;
-  var shipDuration = 800;
+  var shipDuration = 1000;
   var shipMsg;
+  var planetR = config.canvasWidth / 20;
+  var drawPlanet = false;
   var titleMode = false;
   var printIndex = 0;
 
@@ -43,7 +46,7 @@ var LoadingScene = function (){
       if(aud.readyState == 4){
         loadingMode = false;
         creditMode = true;
-        aud.play();
+ //       aud.play();
       }
     }else if(creditMode){
       sceneTimer += 1;
@@ -62,15 +65,24 @@ var LoadingScene = function (){
       }
       camera.move(camDX,camDY);
     }else if(shipMode){
-      shipPos.x += 5.75;
-      shipPos.y = config.cY + Math.sin(shipPos.x % 800)/4;
+      shipPos.x += 6.5;
+      shipPos.y = config.cY/4 + Math.sin(shipPos.x % 800)/2;
       sceneTimer += 1;
       camera.move(5,0);
-      if(sceneTimer > shipDuration / 2){
+      if(sceneTimer > shipDuration * 0.5){
+        planetR += 1;
+        drawPlanet = true;
+      }
+      if(sceneTimer > shipDuration * 0.8){
+        drawPlanet = false;
         if(!smallShip){
-          smallShip = new Ship(shipPos.x,shipPos.y);
+          smallShip = new Ship(shipPos.x*1.1,shipPos.y*1.3);
+          smallShip.theta = 2.5;
+          smallShip.accelerate(true);
         }
+        shipPos.y =  Math.sin(shipPos.x % 800)/4;
         smallShip.update({});
+        camera.focusOn(smallShip.position);
       }
       if(sceneTimer > shipDuration){
         sceneTimer = 0;
@@ -136,13 +148,16 @@ var LoadingScene = function (){
       sceneUtils.drawStars(stars, camera, clockCycle, canvasBufferContext);
       sceneUtils.drawPlanet(config.canvasWidth/1.845,config.canvasHeight/2.18,150,canvasBufferContext);
       title.draw(canvasBufferContext);
-    }
-    else if(shipMode){
+    }else if(shipMode){
       sceneUtils.drawStars(stars, camera, clockCycle, canvasBufferContext);
       if(smallShip){
         smallShip.draw(camera,canvasBufferContext);
+        drawShip(shipPos,camera,canvasBufferContext);
+      }else if(drawPlanet){
+        sceneUtils.drawPlanet(config.canvasWidth/1.845,config.canvasHeight/2.18,planetR,canvasBufferContext);
+      }else{
+        drawShip(shipPos,camera,canvasBufferContext);
       }
-      drawShip(shipPos,camera,canvasBufferContext);
       this.drawText(shipMsg,canvasBufferContext);
     }
     else if(humanMode){
@@ -198,6 +213,7 @@ var LoadingScene = function (){
   }
 
   var scaleM = 0;
+  var water = 0;
   this.drawHuman = function(canvasBufferContext){
       //sleep chamber
       canvasBufferContext.beginPath();
@@ -313,6 +329,45 @@ var LoadingScene = function (){
       canvasBufferContext.moveTo(cx-scaleM/2,cy+scaleM/2);
       canvasBufferContext.bezierCurveTo(cx-scaleM/1.5-lX/20,cy,cx-scaleM/1.5-lX/20,cy+lY/4+scaleM/2,cx-scaleM/2,cy+lY/4+scaleM/2);
       canvasBufferContext.fill();
+      //button
+      if(sceneTimer > humanDuration * 0.2){
+        water += 2;
+
+      }
+      var x = (config.canvasWidth * 0.45) - (scaleM/1.5);
+      var y = (config.canvasHeight * 0.8) + scaleM*1.5;
+      var size = (config.canvasWidth / 80) + (scaleM/10);
+      var rgbaString = (water > 0) ? "rgba(0,250,0,0.6)" : "rgba(250,0,0,0.6)";
+      canvasBufferContext.strokeStyle=rgbaString;
+      canvasBufferContext.fillStyle=rgbaString;
+      canvasBufferContext.beginPath();
+      canvasBufferContext.arc(x,y,size,0,Math.PI*2,false);
+      canvasBufferContext.stroke();
+      canvasBufferContext.fill();
+      //goo
+      canvasBufferContext.beginPath();
+      canvasBufferContext.lineWidth=Math.floor(config.xRatio)+"";
+      canvasBufferContext.fillStyle = "rgba(0,50,200,0.4)";
+      canvasBufferContext.strokeStyle="rgba(0,100,250,0.8)";
+      var x = config.canvasWidth * 0.4;
+      var y = config.canvasHeight * 0.4;
+      var lX = config.canvasWidth * 0.3;
+      var lY = config.canvasHeight *0.2;
+      var topY = y-scaleM + water;
+      var midY = y-scaleM+lY*0.3;
+      var botY = y+lY+scaleM+1;
+      topY = (topY > botY) ? botY : topY;
+      if(topY >= midY){
+        midY = topY;
+      }
+      canvasBufferContext.moveTo(x-scaleM,botY);
+      canvasBufferContext.lineTo(x-scaleM,midY);
+      canvasBufferContext.lineTo(x-scaleM+lX*0.2,topY);
+      canvasBufferContext.lineTo(x+scaleM+lX*0.8,topY);
+      canvasBufferContext.lineTo(x+lX+scaleM,midY);
+      canvasBufferContext.lineTo(x+lX+scaleM,botY);
+      canvasBufferContext.fill();
+      canvasBufferContext.stroke();
 
 
       scaleM += 0.5;
@@ -321,12 +376,12 @@ var LoadingScene = function (){
   var drawShip = function(pos,camera,canvasBufferContext){
       canvasBufferContext.beginPath();
       canvasBufferContext.lineWidth=Math.floor(config.xRatio)+"";
-      canvasBufferContext.fillStyle = "rgba(200,200,200,0.6)";
+      canvasBufferContext.fillStyle = "rgba(100,100,100,0.9)";
       canvasBufferContext.strokeStyle="rgba(250,250,250,0.8)";
       var oX = (pos.x-camera.xOff)*config.xRatio;
       var oY = (pos.y-camera.yOff)*config.yRatio;
-      var lX = 10*config.gridInterval*config.xRatio;
-      var lY = 2*config.gridInterval*config.yRatio;
+      var lX = config.canvasWidth / 1.5;
+      var lY = config.canvasHeight / 4;
       canvasBufferContext.rect(oX,oY,lX,lY);
       canvasBufferContext.fill();
       canvasBufferContext.stroke();
@@ -346,17 +401,17 @@ var LoadingScene = function (){
       //engine
       canvasBufferContext.beginPath();
       canvasBufferContext.lineWidth=Math.floor(config.xRatio)+"";
-      canvasBufferContext.fillStyle = "rgba(200,200,200,0.6)";
+      canvasBufferContext.fillStyle = "rgba(100,100,100,0.9)";
       canvasBufferContext.strokeStyle="rgba(250,250,250,0.8)";
       var y = oY * 0.98;
-      var eX = 2*config.gridInterval*config.xRatio;
-      var eY = 2*config.gridInterval*config.yRatio * 1.4;
+      var eX = lX /8;
+      var eY = lY * 1.1;
       canvasBufferContext.rect(oX,y,eX,eY);
       canvasBufferContext.fill();
       canvasBufferContext.stroke();
       canvasBufferContext.beginPath();
       canvasBufferContext.lineWidth=Math.floor(config.xRatio)+"";
-      canvasBufferContext.fillStyle = "rgba(200,200,200,0.6)";
+      canvasBufferContext.fillStyle = "rgba(100,100,100,0.9)";
       canvasBufferContext.strokeStyle="rgba(250,250,250,0.8)";
       var y = oY + lY * 0.2;
       var eX = lX * 0.7;
@@ -367,7 +422,7 @@ var LoadingScene = function (){
       //nose
       canvasBufferContext.beginPath();
       canvasBufferContext.lineWidth=Math.floor(config.xRatio)+"";
-      canvasBufferContext.fillStyle = "rgba(200,200,200,0.6)";
+      canvasBufferContext.fillStyle = "rgba(100,100,100,0.9)";
       canvasBufferContext.strokeStyle="rgba(250,250,250,0.8)";
       var x = oX+lX;
       canvasBufferContext.moveTo(x,oY);
@@ -376,7 +431,7 @@ var LoadingScene = function (){
       canvasBufferContext.stroke();
       canvasBufferContext.beginPath();
       canvasBufferContext.lineWidth=Math.floor(config.xRatio)+"";
-      canvasBufferContext.fillStyle = "rgba(200,200,200,0.6)";
+      canvasBufferContext.fillStyle = "rgba(100,100,100,0.9)";
       canvasBufferContext.strokeStyle="rgba(250,250,250,0.8)";
       var x = oX+lX;
       var y = oY + lY * 0.2;
@@ -386,7 +441,7 @@ var LoadingScene = function (){
       canvasBufferContext.stroke();
       canvasBufferContext.beginPath();
       canvasBufferContext.lineWidth=Math.floor(config.xRatio)+"";
-      canvasBufferContext.fillStyle = "rgba(200,200,200,0.6)";
+      canvasBufferContext.fillStyle = "rgba(100,100,100,0.9)";
       canvasBufferContext.strokeStyle="rgba(250,250,250,0.8)";
       var x = oX+lX*0.3;
       var y = oY+lY;
@@ -396,7 +451,7 @@ var LoadingScene = function (){
       canvasBufferContext.stroke();
       canvasBufferContext.beginPath();
       canvasBufferContext.lineWidth=Math.floor(config.xRatio)+"";
-      canvasBufferContext.fillStyle = "rgba(200,200,200,0.6)";
+      canvasBufferContext.fillStyle = "rgba(100,100,100,0.9)";
       canvasBufferContext.strokeStyle="rgba(250,250,250,0.8)";
       var x = oX+lX*0.7;
       var y = oY + lY * 0.2;
@@ -406,18 +461,12 @@ var LoadingScene = function (){
       canvasBufferContext.stroke();
       canvasBufferContext.beginPath();
       canvasBufferContext.lineWidth=Math.floor(config.xRatio)+"";
-      canvasBufferContext.fillStyle = "rgba(50,50,50,0.6)";
+      canvasBufferContext.fillStyle = "rgba(50,50,50,0.9)";
       canvasBufferContext.strokeStyle="rgba(250,250,250,0.8)";
-      var x = oX+lX*0.2;
-      var y = oY;
-      canvasBufferContext.moveTo(x,y);
-      canvasBufferContext.bezierCurveTo(x,y-lY/3,x+lX/3,y-lY/2,x+lX/2,y);
-      canvasBufferContext.fill();
-      canvasBufferContext.stroke();
       //
       canvasBufferContext.beginPath();
       canvasBufferContext.lineWidth=Math.floor(config.xRatio)+"";
-      canvasBufferContext.fillStyle = "rgba(200,200,200,0.6)";
+      canvasBufferContext.fillStyle = "rgba(100,100,100,0.9)";
       canvasBufferContext.strokeStyle="rgba(250,250,250,0.8)";
       var x = oX + lX * 0.4
       var y = oY + lY * 0.3
@@ -427,7 +476,7 @@ var LoadingScene = function (){
       //cockpit
       canvasBufferContext.beginPath();
       canvasBufferContext.lineWidth=Math.floor(config.xRatio)+"";
-      canvasBufferContext.fillStyle = "rgba(200,200,200,0.6)";
+      canvasBufferContext.fillStyle = "rgba(100,100,100,0.9)";
       canvasBufferContext.strokeStyle="rgba(250,250,250,0.8)";
       var x = oX + lX * 0.3
       var y = oY - lY * 0.3
