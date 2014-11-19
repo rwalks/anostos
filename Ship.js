@@ -10,7 +10,7 @@ Ship = function(x,y) {
 
   this.deltaR = 0;
   this.theta = 0;
-  this.acceleration = 0.055;
+  this.acceleration = 0.07;
   this.currentFuel = 100;
   this.maxFuel = 100;
 
@@ -20,20 +20,25 @@ Ship = function(x,y) {
   var lY = config.gridInterval * 2;
   var shipGeometry = [[lX,lY],[lX,lY*1.5],[lX*1.5,lY],[lX,0],[lX,-lY],[0,-2*lY],
                       [-lX,-lY],[-lX,0],[-lX*1.5,lY],[-lX*1.5.lY*1.5],[-lX,lY*1.5],[-lX,lY],[0,lY]];
+  var damaged = false;
+  var destroyed = false;
+//  var destroyedMsg = deadMsg();
 
   this.update = function(terrain){
     count += 1;
-    this.velocity.y += 0.01;
-    this.terrainCollide(terrain);
-    //apply move
-    this.theta += this.deltaR;
-    if(this.throttle.x != 0 || this.throttle.y != 0){
-      this.currentFuel -= 0.5;
+    if(!destroyed){
+      this.velocity.y += 0.01;
+      this.terrainCollide(terrain);
+      //apply move
+      this.theta += this.deltaR;
+      if(this.throttle.x != 0 || this.throttle.y != 0){
+        this.currentFuel = (this.currentFuel > 0) ? this.currentFuel - 0.2 : 0;
+      }
+      this.velocity.x += this.throttle.x;
+      this.velocity.y += this.throttle.y;
+      this.position.x += this.velocity.x;
+      this.position.y += this.velocity.y;
     }
-    this.velocity.x += this.throttle.x;
-    this.velocity.y += this.throttle.y;
-    this.position.x += this.velocity.x;
-    this.position.y += this.velocity.y;
     var doneList = [];
     for(e in this.explosions){
       var ret = this.explosions[e].update();
@@ -60,6 +65,10 @@ Ship = function(x,y) {
         if(terrain[tX]&&terrain[tX][tY]){
           if(Math.abs(this.velocity.x) + Math.abs(this.velocity.y) > 0.5){
             //crash
+            if(shipGeometry[i][1] <= lY){
+              destroyed = damaged ? true : destroyed;
+              damaged = true;
+            }
             crashList.push(i);
             this.velocity.x = 0.8 * this.velocity.x;
             this.velocity.y = 0.8 * this.velocity.y;
@@ -83,6 +92,14 @@ Ship = function(x,y) {
       }
     }
 
+    if(destroyed){
+      for(i in shipGeometry){
+        var points = rotate(shipGeometry[i][0],shipGeometry[i][1],this.theta);
+        var tX = this.position.x + points[0] + this.velocity.x;
+        var tY = this.position.y + points[1] + this.velocity.y;
+        this.explosions.push(new Explosion(tX,tY));
+      }
+    }
     for(i in crashList){
       shipGeometry.splice(crashList[i],1);
     }
@@ -144,44 +161,46 @@ Ship = function(x,y) {
   }
 
   this.draw = function(camera,canvasBufferContext){
-    var xRatio = config.canvasWidth / config.cX;
-    var yRatio = config.canvasHeight / config.cY;
-    canvasBufferContext.beginPath();
-    canvasBufferContext.lineWidth=Math.floor(config.xRatio)+"";
-    canvasBufferContext.fillStyle = "rgba(200,200,200,0.6)";
-    canvasBufferContext.strokeStyle="rgba(250,250,250,0.8)";
-    for(i in shipGeometry){
-      var points = rotate(shipGeometry[i][0],shipGeometry[i][1],this.theta);
-      var x = (this.position.x+points[0]-camera.xOff)*xRatio;
-      var y = (this.position.y+points[1]-camera.yOff)*yRatio;
-      if(i == 0){
-        canvasBufferContext.moveTo(x,y);
-        firstPoint = [x,y];
-      }else{
-        canvasBufferContext.lineTo(x,y);
-      }
-    }
-    if(firstPoint){
-      canvasBufferContext.lineTo(firstPoint[0],firstPoint[1]);
-    }
-    canvasBufferContext.stroke();
-    canvasBufferContext.fill();
-    //draw window
-    var rad = config.gridInterval/2 * xRatio;
-    var windows = [[0,-rad],[0,rad/2]];
-    for(i in windows){
-      var points = rotate(windows[i][0],windows[i][1],this.theta);
-      var x = (this.position.x+points[0]-camera.xOff)*xRatio;
-      var y = (this.position.y+points[1]-camera.yOff)*yRatio;
-      canvasBufferContext.fillStyle = "rgba(0,0,200,0.6)";
-      canvasBufferContext.strokeStyle="rgba(50,50,250,0.8)";
+    if(!destroyed){
+      var xRatio = config.canvasWidth / config.cX;
+      var yRatio = config.canvasHeight / config.cY;
       canvasBufferContext.beginPath();
-      canvasBufferContext.arc(x,y,rad,0,2*Math.PI,false);
-      canvasBufferContext.fill();
+      canvasBufferContext.lineWidth=Math.floor(config.xRatio)+"";
+      canvasBufferContext.fillStyle = "rgba(200,200,200,0.6)";
+      canvasBufferContext.strokeStyle="rgba(250,250,250,0.8)";
+      for(i in shipGeometry){
+        var points = rotate(shipGeometry[i][0],shipGeometry[i][1],this.theta);
+        var x = (this.position.x+points[0]-camera.xOff)*xRatio;
+        var y = (this.position.y+points[1]-camera.yOff)*yRatio;
+        if(i == 0){
+          canvasBufferContext.moveTo(x,y);
+          firstPoint = [x,y];
+        }else{
+          canvasBufferContext.lineTo(x,y);
+        }
+      }
+      if(firstPoint){
+        canvasBufferContext.lineTo(firstPoint[0],firstPoint[1]);
+      }
       canvasBufferContext.stroke();
-    }
-    if(this.throttle.x || this.throttle.y){
-      this.drawExhaust(camera,canvasBufferContext);
+      canvasBufferContext.fill();
+      //draw window
+      var rad = config.gridInterval/2 * xRatio;
+      var windows = [[0,-rad],[0,rad/2]];
+      for(i in windows){
+        var points = rotate(windows[i][0],windows[i][1],this.theta);
+        var x = (this.position.x+points[0]-camera.xOff)*xRatio;
+        var y = (this.position.y+points[1]-camera.yOff)*yRatio;
+        canvasBufferContext.fillStyle = "rgba(0,0,200,0.6)";
+        canvasBufferContext.strokeStyle="rgba(50,50,250,0.8)";
+        canvasBufferContext.beginPath();
+        canvasBufferContext.arc(x,y,rad,0,2*Math.PI,false);
+        canvasBufferContext.fill();
+        canvasBufferContext.stroke();
+      }
+      if(this.throttle.x || this.throttle.y){
+        this.drawExhaust(camera,canvasBufferContext);
+      }
     }
     for(e in this.explosions){
       this.explosions[e].draw(camera,canvasBufferContext);
@@ -192,6 +211,10 @@ Ship = function(x,y) {
     var rx = (x*Math.cos(theta))-(y*Math.sin(theta));
     var ry = (x*Math.sin(theta))+(y*Math.cos(theta));
     return [rx,ry];
+  }
+
+  var deadMsg = function(){
+    var num = Math.floor(Math.random() * 999999);
   }
 
 }

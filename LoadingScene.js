@@ -46,7 +46,7 @@ var LoadingScene = function (){
       if(aud.readyState == 4){
         loadingMode = false;
         creditMode = true;
- //       aud.play();
+        aud.play();
       }
     }else if(creditMode){
       sceneTimer += 1;
@@ -105,6 +105,7 @@ var LoadingScene = function (){
     if(loadingMode){
 
     }else if(titleMode){
+      aud.src = "";
       document.GameRunner.endScene("start");
     }else{
       titleMode = true;
