@@ -28,7 +28,6 @@ Explosion = function(x,y) {
       if(count < circ[3]){
         var x = (circ[0]-camera.xOff) * config.xRatio;
         var y = (circ[1]-camera.yOff) * config.yRatio;
-        console.log(x+" " + y + " " + (circ[4] + count) + " " );
         canvasBufferContext.beginPath();
         canvasBufferContext.lineWidth=Math.floor(config.xRatio)+"";
         canvasBufferContext.fillStyle = circ[2];

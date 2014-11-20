@@ -1,4 +1,5 @@
-var LandingScene = function (strs){
+var LandingScene = function (strs,nam){
+  this.heroName = nam;
   var sceneUtils = new SceneUtils();
   this.stars = strs ? strs : sceneUtils.generateStars(10000);
   this.terrain = sceneUtils.generateTerrain();
@@ -7,26 +8,27 @@ var LandingScene = function (strs){
   var clockCycle = 0;
   var clockMax = 800;
   this.count = 0;
-  var ship = new Ship(config.mapWidth/2,0);
-  this.printIndex = 0;
+  this.ship = new Ship(config.mapWidth/2,0);
   var startMsg = ["Welcome to Anostos. Attempt landing using the arrow keys.", "We don't have much fuel.."];
+  var startIndex = 0;
+  var landIndex = 0;
 
   this.update = function(mPos){
-    camera.focusOn(ship.position);
-    ship.update(this.terrain);
-    this.count = (this.count > 10000) ? 0 : this.count + 1;
+    camera.focusOn(this.ship.position);
+    this.ship.update(this.terrain[0]);
+    this.count += 1;
   }
 
   this.keyPress = function(keyCode,keyDown){
     switch(keyCode){
       case 37:
-        ship.rotate(false,keyDown);
+        this.ship.rotate(false,keyDown);
         break;
       case 39:
-        ship.rotate(true,keyDown);
+        this.ship.rotate(true,keyDown);
         break;
       case 38:
-        ship.accelerate(keyDown);
+        this.ship.accelerate(keyDown);
         break;
     }
 
@@ -59,7 +61,7 @@ var LandingScene = function (strs){
     canvasBufferContext.fill();
     canvasBufferContext.stroke();
 
-    xSize = xSize * (ship.currentFuel / ship.maxFuel);
+    xSize = xSize * (this.ship.currentFuel / this.ship.maxFuel);
     canvasBufferContext.beginPath();
     canvasBufferContext.lineWidth=Math.floor(config.xRatio)+"";
     canvasBufferContext.fillStyle = "rgba(20,200,50,0.9)";
@@ -72,32 +74,44 @@ var LandingScene = function (strs){
   this.click = function(clickPos,rightClick){
     if(rightClick){
     }else{
-      this.endScene();
+      if(this.ship.destroyed){
+        this.endScene(false);
+      }else if(this.ship.landed){
+        this.endScene(true);
+      }
     }
   }
 
-  this.endScene = function(){
-    document.GameRunner.endScene("landing");
+  this.endScene = function(landed){
+    if(landed){
+      document.GameRunner.endScene("landing");
+    }else{
+      document.GameRunner.endScene("dead");
+    }
   }
 
   this.draw = function(canvasBufferContext){
     sceneUtils.drawStars(this.stars, camera, clockCycle, canvasBufferContext);
     sceneUtils.drawBG(camera,clockCycle,canvasBufferContext);
-    ship.draw(camera,canvasBufferContext);
+    this.ship.draw(camera,canvasBufferContext);
     this.drawMap(canvasBufferContext,this.count);
     this.drawFuel(canvasBufferContext);
     if(this.count < 500){
-      this.drawText(startMsg,canvasBufferContext);
+      startIndex = this.drawText(startMsg,canvasBufferContext,startIndex);
+    }else if(this.ship.destroyed){
+      landIndex = this.drawText(crashMsg,canvasBufferContext,landIndex);
+    }else if(this.ship.landed){
+      landIndex = this.drawText(landedMsg(this.ship),canvasBufferContext,landIndex);
     }
   }
 
   this.drawMap = function(canvasBufferContext,count){
-    if(this.terrain){
+    if(this.terrain[0]){
       for(var x=camera.xOff-(camera.xOff%config.gridInterval);x<camera.xOff+config.cX;x+=config.gridInterval){
-        if(this.terrain[x]){
+        if(this.terrain[0][x]){
           for(var y=(camera.yOff-(camera.yOff%config.gridInterval));y<camera.yOff+config.cY;y+=config.gridInterval){
-            if(this.terrain[x][y]){
-              this.terrain[x][y].draw(camera,canvasBufferContext,count);
+            if(this.terrain[0][x][y]){
+              this.terrain[0][x][y].draw(camera,canvasBufferContext,count);
             }
           }
         }
@@ -105,8 +119,8 @@ var LandingScene = function (strs){
     }
   }
 
-  this.drawText = function(msg,canvasBufferContext){
-    this.printIndex += ((this.count % 5 == 0) && (this.printIndex < (msg[0].length+msg[1].length))) ? 1 : 0;
+  this.drawText = function(msg,canvasBufferContext,index){
+    index += ((this.count % 5 == 0) && (index < (msg[0].length+msg[1].length))) ? 1 : 0;
     var x = config.canvasWidth / 14;
     var y = config.canvasHeight * 0.8;
     var fontSize = config.canvasWidth / (msg[0].length * 0.7) ;
@@ -119,13 +133,30 @@ var LandingScene = function (strs){
     canvasBufferContext.fill();
     canvasBufferContext.font = fontSize + 'px Courier New';
     canvasBufferContext.fillStyle = "rgba(50,250,200,0.9)";
-    if(this.printIndex < msg[0].length){
-      canvasBufferContext.fillText(msg[0].slice(0,this.printIndex),x,y);
+    if(index < msg[0].length){
+      canvasBufferContext.fillText(msg[0].slice(0,index),x,y);
     }else{
       canvasBufferContext.fillText(msg[0],x,y);
-      canvasBufferContext.fillText(msg[1].slice(0,this.printIndex-msg[0].length),x,y+fontSize*1.2);
+      canvasBufferContext.fillText(msg[1].slice(0,index-msg[0].length),x,y+fontSize*1.2);
     }
+    return index;
   }
 
+  var landedMsg = function(ship){
+    var msg;
+    if(ship.damaged){
+      msg = "Ship landed. Ship systems damaged. Resources reduced. Click to establish base.";
+    }else{
+      msg = "Ship landed. Ship systems nominal. Click to establish base.";
+    }
+    return [msg,"Justice: Pending..."];
+
+  }
+
+  var deadMsg = function(){
+    var num = Math.floor(Math.random() * 999999);
+    return ["Penal Expedition "+num+" Status: Destroyed on landing. Cause: Pilot error.","Justice: Served."]
+  }
+  var crashMsg = deadMsg();
 
 }

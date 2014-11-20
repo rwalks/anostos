@@ -1,4 +1,4 @@
-Human = function(x,y) {
+Human = function(x,y,name) {
 
   var counter = 0;
   var rdbaString;
@@ -21,7 +21,7 @@ Human = function(x,y) {
 
   this.actions = ["build","delete"];
 
-  this.name = config.nameGenerator();
+  this.name = name ? name : config.nameGenerator();
 
   //suit color
   var r = Math.floor(Math.random()*250);

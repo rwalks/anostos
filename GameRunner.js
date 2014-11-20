@@ -116,11 +116,14 @@ function GameRunner() {
 
     this.endScene = function(type){
       switch(type){
+        case 'dead':
+          _scene = new LoadingScene();
+          break;
         case 'start':
-          _scene = new LandingScene(_scene.stars);
+          _scene = new LandingScene(_scene.stars,_scene.heroName);
           break;
         case 'landing':
-          _scene = new GameScene(_scene.stars,_scene.terrain);
+          _scene = new GameScene(_scene.stars,_scene.terrain,_scene.ship,_scene.heroName);
           break;
       }
     }

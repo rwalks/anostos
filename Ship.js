@@ -14,22 +14,32 @@ Ship = function(x,y) {
   this.currentFuel = 100;
   this.maxFuel = 100;
 
+  this.leftLanded = false;
+  this.rightLanded = false;
+
   this.explosions = [];
 
   var lX = config.gridInterval * 2;
   var lY = config.gridInterval * 2;
   var shipGeometry = [[lX,lY],[lX,lY*1.5],[lX*1.5,lY],[lX,0],[lX,-lY],[0,-2*lY],
                       [-lX,-lY],[-lX,0],[-lX*1.5,lY],[-lX*1.5.lY*1.5],[-lX,lY*1.5],[-lX,lY],[0,lY]];
-  var damaged = false;
-  var destroyed = false;
-//  var destroyedMsg = deadMsg();
+  this.damaged = false;
+  this.destroyed = false;
+  this.landed = false;
 
   this.update = function(terrain){
     count += 1;
-    if(!destroyed){
+    if(!this.destroyed){
       this.velocity.y += 0.01;
       this.terrainCollide(terrain);
       //apply move
+      if(this.leftLanded && this.rightLanded){
+        this.deltaR = 0;
+      }else if(this.leftLanded){
+        this.deltaR = this.deltaR > 0 ? this.deltaR : 0;
+      }else if(this.rightLanded){
+        this.deltaR = this.deltaR < 0 ? this.deltaR : 0;
+      }
       this.theta += this.deltaR;
       if(this.throttle.x != 0 || this.throttle.y != 0){
         this.currentFuel = (this.currentFuel > 0) ? this.currentFuel - 0.2 : 0;
@@ -38,6 +48,8 @@ Ship = function(x,y) {
       this.velocity.y += this.throttle.y;
       this.position.x += this.velocity.x;
       this.position.y += this.velocity.y;
+
+      this.landed = (this.velocity.x == 0 && this.velocity.y == 0 && this.deltaR == 0 && (this.leftLanded || this.rightLanded))
     }
     var doneList = [];
     for(e in this.explosions){
@@ -52,11 +64,15 @@ Ship = function(x,y) {
   }
 
   this.terrainCollide = function(terrain){
+    this.rightLanded = false;
+    this.leftLanded = false;
     var crashList = [];
     for(i in shipGeometry){
       var points = rotate(shipGeometry[i][0],shipGeometry[i][1],this.theta);
-      var tX = this.position.x + points[0] + this.velocity.x;
-      var tY = this.position.y + points[1] + this.velocity.y;
+      var oX = this.position.x + points[0];
+      var oY = this.position.y + points[1];
+      var tX = oX + this.velocity.x;
+      var tY = oY + this.velocity.y;
       if(tX > config.mapWidth || tX < 0){
         this.velocity.x = 0;
       }else{
@@ -66,8 +82,8 @@ Ship = function(x,y) {
           if(Math.abs(this.velocity.x) + Math.abs(this.velocity.y) > 0.5){
             //crash
             if(shipGeometry[i][1] <= lY){
-              destroyed = damaged ? true : destroyed;
-              damaged = true;
+              this.destroyed = this.damaged ? true : this.destroyed;
+              this.damaged = true;
             }
             crashList.push(i);
             this.velocity.x = 0.8 * this.velocity.x;
@@ -80,10 +96,10 @@ Ship = function(x,y) {
             }
             if(tX > this.position.x){
               this.velocity.x = 0;
-              this.theta -= 0.03;
+              this.rightLanded = true;
             }else if(tX < this.position.x){
               this.velocity.x = 0;
-              this.theta += 0.03;
+              this.leftLanded = true;
             }else{
               this.velocity.x = 0;
             }
@@ -92,7 +108,7 @@ Ship = function(x,y) {
       }
     }
 
-    if(destroyed){
+    if(this.destroyed){
       for(i in shipGeometry){
         var points = rotate(shipGeometry[i][0],shipGeometry[i][1],this.theta);
         var tX = this.position.x + points[0] + this.velocity.x;
@@ -161,7 +177,7 @@ Ship = function(x,y) {
   }
 
   this.draw = function(camera,canvasBufferContext){
-    if(!destroyed){
+    if(!this.destroyed){
       var xRatio = config.canvasWidth / config.cX;
       var yRatio = config.canvasHeight / config.cY;
       canvasBufferContext.beginPath();
@@ -211,10 +227,6 @@ Ship = function(x,y) {
     var rx = (x*Math.cos(theta))-(y*Math.sin(theta));
     var ry = (x*Math.sin(theta))+(y*Math.cos(theta));
     return [rx,ry];
-  }
-
-  var deadMsg = function(){
-    var num = Math.floor(Math.random() * 999999);
   }
 
 }

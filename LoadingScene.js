@@ -410,6 +410,7 @@ var LoadingScene = function (){
       canvasBufferContext.rect(oX,y,eX,eY);
       canvasBufferContext.fill();
       canvasBufferContext.stroke();
+      //
       canvasBufferContext.beginPath();
       canvasBufferContext.lineWidth=Math.floor(config.xRatio)+"";
       canvasBufferContext.fillStyle = "rgba(100,100,100,0.9)";
@@ -430,6 +431,7 @@ var LoadingScene = function (){
       canvasBufferContext.bezierCurveTo(x+lX/3,oY,x+lX/3,oY+lY,x,oY+lY);
       canvasBufferContext.fill();
       canvasBufferContext.stroke();
+      //
       canvasBufferContext.beginPath();
       canvasBufferContext.lineWidth=Math.floor(config.xRatio)+"";
       canvasBufferContext.fillStyle = "rgba(100,100,100,0.9)";
@@ -440,6 +442,7 @@ var LoadingScene = function (){
       canvasBufferContext.bezierCurveTo(x+lX/3,y,x+lX/3,y+lY*0.6,x,y+lY*0.6);
       canvasBufferContext.fill();
       canvasBufferContext.stroke();
+      //
       canvasBufferContext.beginPath();
       canvasBufferContext.lineWidth=Math.floor(config.xRatio)+"";
       canvasBufferContext.fillStyle = "rgba(100,100,100,0.9)";
@@ -450,6 +453,7 @@ var LoadingScene = function (){
       canvasBufferContext.bezierCurveTo(x,y+lY/10,oX+lX,y+lY/2,oX+lX,y);
       canvasBufferContext.fill();
       canvasBufferContext.stroke();
+      //
       canvasBufferContext.beginPath();
       canvasBufferContext.lineWidth=Math.floor(config.xRatio)+"";
       canvasBufferContext.fillStyle = "rgba(100,100,100,0.9)";
@@ -460,20 +464,6 @@ var LoadingScene = function (){
       canvasBufferContext.bezierCurveTo(x+lX/3,y,x+lX/3,y+lY*0.6,x,y+lY*0.6);
       canvasBufferContext.fill();
       canvasBufferContext.stroke();
-      canvasBufferContext.beginPath();
-      canvasBufferContext.lineWidth=Math.floor(config.xRatio)+"";
-      canvasBufferContext.fillStyle = "rgba(50,50,50,0.9)";
-      canvasBufferContext.strokeStyle="rgba(250,250,250,0.8)";
-      //
-      canvasBufferContext.beginPath();
-      canvasBufferContext.lineWidth=Math.floor(config.xRatio)+"";
-      canvasBufferContext.fillStyle = "rgba(100,100,100,0.9)";
-      canvasBufferContext.strokeStyle="rgba(250,250,250,0.8)";
-      var x = oX + lX * 0.4
-      var y = oY + lY * 0.3
- //     canvasBufferContext.rect(x,y,lX*0.6,lY*0.4);
- //     canvasBufferContext.fill();
- //     canvasBufferContext.stroke();
       //cockpit
       canvasBufferContext.beginPath();
       canvasBufferContext.lineWidth=Math.floor(config.xRatio)+"";
@@ -484,16 +474,55 @@ var LoadingScene = function (){
       canvasBufferContext.rect(x,y,lX*0.2,lY*0.3);
       canvasBufferContext.fill();
       canvasBufferContext.stroke();
+      //lights
+      for(i=0;i<10;i++){
+        canvasBufferContext.beginPath();
+        canvasBufferContext.lineWidth=Math.floor(config.xRatio)+"";
+        canvasBufferContext.fillStyle = "rgba(200,200,20,0.7)";
+        canvasBufferContext.strokeStyle="rgba(250,250,25,0.9)";
+        var x = oX + lX * (0.3 + (i*0.02))
+        var y = oY - lY * 0.28;
+        var eX = lX * 0.01;
+        var eY = lY * 0.05;
+        canvasBufferContext.rect(x,y,eX,eY);
+        canvasBufferContext.fill();
+        canvasBufferContext.stroke();
+      }
+      for(i=0;i<42;i++){
+        canvasBufferContext.beginPath();
+        canvasBufferContext.lineWidth=Math.floor(config.xRatio)+"";
+        canvasBufferContext.fillStyle = "rgba(200,200,20,0.7)";
+        canvasBufferContext.strokeStyle="rgba(250,250,25,0.9)";
+        var x = oX + lX * (0.15 + (i*0.02))
+        var y = oY + lY * 0.05;
+        var eX = lX * 0.01;
+        var eY = lY * 0.05;
+        canvasBufferContext.rect(x,y,eX,eY);
+        canvasBufferContext.fill();
+        canvasBufferContext.stroke();
+      }
+      for(i=0;i<42;i++){
+        canvasBufferContext.beginPath();
+        canvasBufferContext.lineWidth=Math.floor(config.xRatio)+"";
+        canvasBufferContext.fillStyle = "rgba(200,200,20,0.7)";
+        canvasBufferContext.strokeStyle="rgba(250,250,25,0.9)";
+        var x = oX + lX * (0.15 + (i*0.02))
+        var y = oY + lY * 0.9;
+        var eX = lX * 0.01;
+        var eY = lY * 0.05;
+        canvasBufferContext.rect(x,y,eX,eY);
+        canvasBufferContext.fill();
+        canvasBufferContext.stroke();
+      }
 
   }
 
-  var shipMessage = function(){
+  var shipMessage = function(name){
     var yr = Math.floor(Math.random() * 8000);
     var jobs = ["Doctor","lawyer","Warlord","Cadet","physicist","engineer","aristocrat",
                 "trade baron","SpaceLord","writer","boxer","pop artist","spiritual leader",
                 "rap artist","professional baller","cosmonaut","disgruntled professor"];
     var job = jobs[Math.floor(Math.random()*jobs.length)];
-    var name = config.nameGenerator();
     var crimes = ["Space Crime","Corporate Heresy","Unorthodox Methodologies","Space Piracy",
                   "Lunar Exploitation","SpaceTime Disruption","Spacewar Crimes","Neutron Embezzlement",
                   "SpaceDrug Smuggling","Interstellar Rebellion","Misuse of Antimatter",
@@ -502,7 +531,9 @@ var LoadingScene = function (){
     var crime = crimes[Math.floor(Math.random()*crimes.length)];
     return ["In the year "+yr+", "+job+" "+name[0]+" "+name[1]+" was convicted of "+crime+".","The sentence: Colonization of a brutal outer world."];
   }
-  var shipMsg = shipMessage();
+
+  this.heroName = config.nameGenerator();
+  var shipMsg = shipMessage(this.heroName);
 
   var humanMessage = function(){
     var yrs = Math.floor(Math.random() * 1000);

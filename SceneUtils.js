@@ -1,5 +1,5 @@
-var SceneUtils = function (){
-  var bgs = [{},{},{}];
+var SceneUtils = function (bg){
+  var bgs = bg ? bg : [{},{},{}];
   var bgColors = [[20,10,100],[40,20,150],[100,50,200]];
 
   this.generateTerrain = function(){
@@ -36,7 +36,7 @@ var SceneUtils = function (){
       }
       last = yMin;
     }
-    return tMap;
+    return [tMap,bgs];
   }
 
   this.drawBG = function(camera,clockCycle,canvasBufferContext){

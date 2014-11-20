@@ -1,8 +1,11 @@
-var GameScene = function (strs,trn){
-  var sceneUtils = new SceneUtils();
+var GameScene = function (strs,trn,shp,nam){
+  var heroName = nam;
+  var sceneUtils = new SceneUtils(trn[1]);
   var stars = strs ? strs : sceneUtils.generateStars(10000);
-  var terrain = trn ? trn : sceneUtils.generateTerrain();
+  var terrain = trn ? trn[0] : sceneUtils.generateTerrain();
+  var ship = shp;
   var camera = new Camera(5000,6500);
+  camera.focusOn(ship.position);
   var mousePos;
   var clockCycle = 0;
   var clockMax = 800;
@@ -15,9 +18,12 @@ var GameScene = function (strs,trn){
   var focusTarget;
   var buildTarget;
 
-  for(var i=0;i<10;i++){
-    var x = Math.random()*config.mapWidth;
-    humans.push( new Human(x,6000) );
+  for(var i=0;i<3;i++){
+    var x = (Math.random()*(config.gridInterval*6))-(config.gridInterval*3) + ship.position.x;
+    var y = ship.position.y;
+    var name = (i == 0) ? heroName : false;
+    humans.push( new Human(x,y,name) );
+
   }
 
   var gui = new Gui();
@@ -120,9 +126,14 @@ var GameScene = function (strs,trn){
   this.draw = function(canvasBufferContext){
     sceneUtils.drawStars(stars, camera, clockCycle, canvasBufferContext);
     sceneUtils.drawBG(camera,clockCycle,canvasBufferContext);
+    if(onScreen(ship)){
+      ship.draw(camera,canvasBufferContext);
+    }
     drawMap(canvasBufferContext,this.count);
     for (h in humans){
-      humans[h].draw(camera,canvasBufferContext);
+      if(onScreen(humans[h])){
+        humans[h].draw(camera,canvasBufferContext);
+      }
     }
     if(this.uiMode == "build" && buildTarget){
       var bPos = clickToCoord(mousePos,true);
@@ -136,6 +147,10 @@ var GameScene = function (strs,trn){
       }
     }
     gui.draw(camera,canvasBufferContext);
+  }
+
+  var onScreen = function(obj){
+  return obj.position.x > camera.xOff && obj.position.x < camera.xOff + config.cX;
   }
 
   var drawBuildCursor = function(obj,canvasBufferContext,clear){
