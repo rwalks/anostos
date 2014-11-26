@@ -1,4 +1,4 @@
-var LandingScene = function (strs,nam){
+var LandingScene = function (strs,nam,aud){
   this.heroName = nam;
   var sceneUtils = new SceneUtils();
   this.stars = strs ? strs : sceneUtils.generateStars(10000);
@@ -8,7 +8,8 @@ var LandingScene = function (strs,nam){
   var clockCycle = 0;
   var clockMax = 800;
   this.count = 0;
-  this.ship = new Ship(config.mapWidth/2,0);
+  this.audio = aud;
+  this.ship = new Ship(config.mapWidth/2,0,this.audio);
   var startMsg = ["Welcome to Anostos. Attempt landing using the arrow keys.", "We don't have much fuel.."];
   var startIndex = 0;
   var landIndex = 0;
@@ -76,7 +77,8 @@ var LandingScene = function (strs,nam){
     }else{
       if(this.ship.destroyed){
         this.endScene(false);
-      }else if(this.ship.landed){
+      }else if(true){
+      //}else if(this.ship.landed){
         this.endScene(true);
       }
     }

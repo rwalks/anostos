@@ -13,7 +13,10 @@ var GameScene = function (strs,trn,shp,nam){
   var camDY = 0;
   var humans = [];
   var resources= new Resources();
+  var airtightWalls = {};
   this.count = 0;
+  var roomFinder = new Roomfinder();
+  this.rooms = [];
 
   var focusTarget;
   var buildTarget;
@@ -99,18 +102,53 @@ var GameScene = function (strs,trn,shp,nam){
               var obj = buildTarget.clone(coords);
               if(tiles.isClear(obj,terrain,humans)){
                 tiles.addTile(obj,terrain);
+                if(obj.airtight){
+                  airtightWalls[obj.position.x] = airtightWalls[obj.position.x] ? airtightWalls[obj.position.x] : {};
+                  airtightWalls[obj.position.x][obj.position.y] = true;
+                  this.regenRooms();
+                }
               }
             }
             break;
           case "delete":
             var coords = clickToCoord(clickPos,true);
             if(terrain[coords.x] && terrain[coords.x][coords.y]){
-              tiles.removeTile(terrain[coords.x][coords.y],terrain);
+              var obj = terrain[coords.x][coords.y];
+              if(obj.airtight){
+                delete airtightWalls[obj.position.x][obj.position.y];
+                this.regenRooms();
+              }
+              tiles.removeTile(obj,terrain);
             }
             break;
         }
       }
     }
+  }
+
+  this.regenRooms = function(){
+    var rooms = [];
+    for(x in airtightWalls){
+      for(y in airtightWalls[x]){
+        if(!inARoom(x,y,rooms)){
+          var rm = roomFinder.findRoom(~~x,~~y,terrain);
+          if(rm.length > 0){
+            rooms.push(new Room(rm));
+          }
+        }
+      }
+    }
+    console.log(rooms);
+    this.rooms = rooms;
+  }
+
+  var inARoom = function(x,y,rooms){
+    for(r in rooms){
+      if(rooms[r].pointWithin(x,y)){
+        return true;
+      }
+    }
+    return false;
   }
 
   var clickToCoord = function(pos,roundToGrid){
@@ -129,10 +167,18 @@ var GameScene = function (strs,trn,shp,nam){
     if(onScreen(ship)){
       ship.draw(camera,canvasBufferContext);
     }
+    //for (r in this.rooms){
+    //  this.rooms[r].draw(camera,canvasBufferContext);
+   // }
     drawMap(canvasBufferContext,this.count);
     for (h in humans){
       if(onScreen(humans[h])){
         humans[h].draw(camera,canvasBufferContext);
+      }
+    }
+    for (r in this.rooms){
+      if(r == config.test){
+      this.rooms[r].draw(camera,canvasBufferContext);
       }
     }
     if(this.uiMode == "build" && buildTarget){

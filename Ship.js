@@ -1,6 +1,7 @@
-Ship = function(x,y) {
+Ship = function(x,y,aud) {
 
-  var counter = 0;
+
+  var audio = aud;
 
   this.position = {'x':x,'y':y};
   var startingVX = (Math.random() * 20) - 10;
@@ -43,6 +44,12 @@ Ship = function(x,y) {
       this.theta += this.deltaR;
       if(this.throttle.x != 0 || this.throttle.y != 0){
         this.currentFuel = (this.currentFuel > 0) ? this.currentFuel - 0.2 : 0;
+     //   if(count % 30 == 0){
+
+          audio.play("eng1");
+    //    }
+      }else{
+        audio.stop("eng1");
       }
       this.velocity.x += this.throttle.x;
       this.velocity.y += this.throttle.y;
@@ -89,6 +96,7 @@ Ship = function(x,y) {
             this.velocity.x = 0.8 * this.velocity.x;
             this.velocity.y = 0.8 * this.velocity.y;
             this.explosions.push(new Explosion(tX,tY));
+            audio.play('explosion2');
           }else{
             //no crash
             if(tY > this.position.y){
@@ -114,6 +122,7 @@ Ship = function(x,y) {
         var tX = this.position.x + points[0] + this.velocity.x;
         var tY = this.position.y + points[1] + this.velocity.y;
         this.explosions.push(new Explosion(tX,tY));
+        audio.play('explosion1');
       }
     }
     for(i in crashList){

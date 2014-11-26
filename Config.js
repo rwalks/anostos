@@ -44,4 +44,6 @@ var Config = function (){
     var lNB = Math.floor(Math.random()*lastNamesB.length);
     return [firstNames[fN],lastNamesA[lNA] + "" + lastNamesB[lNB]];
   }
+
+  this.test = 0;
 }

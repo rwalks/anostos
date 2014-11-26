@@ -33,8 +33,8 @@ var LoadingScene = function (){
 
 
   var title = new Title();
-  var aud = new Audio("deep_space.ogg");
-  aud.load();
+  this.audio = new AudioLoader();
+  this.audio.load();
 
   this.keyPress = function(keyCode,keyDown){
 
@@ -43,10 +43,10 @@ var LoadingScene = function (){
   var timer;
   this.update = function(mousePos){
     if(loadingMode){
-      if(aud.readyState == 4){
+      if(this.audio.ready()){
         loadingMode = false;
         creditMode = true;
-        aud.play();
+        this.audio.play("introMusic");
       }
     }else if(creditMode){
       sceneTimer += 1;
@@ -65,18 +65,24 @@ var LoadingScene = function (){
       }
       camera.move(camDX,camDY);
     }else if(shipMode){
+      if(sceneTimer == 0){
+        this.audio.play("introShip");
+      }
       shipPos.x += 6.5;
       shipPos.y = config.cY/4 + Math.sin(shipPos.x % 800)/2;
       sceneTimer += 1;
       camera.move(5,0);
       if(sceneTimer > shipDuration * 0.5){
-        planetR += 1;
+        if(drawPlanet == false){
+          this.audio.play("spookyPlanet");
+        }
         drawPlanet = true;
+        planetR += 1;
       }
       if(sceneTimer > shipDuration * 0.8){
         drawPlanet = false;
         if(!smallShip){
-          smallShip = new Ship(shipPos.x*1.1,shipPos.y*1.3);
+          smallShip = new Ship(shipPos.x*1.1,shipPos.y*1.3,this.audio);
           smallShip.theta = 2.5;
           smallShip.accelerate(true);
         }
@@ -96,6 +102,7 @@ var LoadingScene = function (){
       if(sceneTimer > humanDuration){
         humanMode = false;
         titleMode = true;
+        this.audio.play("spookyPlanet");
       }
 
     }
@@ -105,7 +112,7 @@ var LoadingScene = function (){
     if(loadingMode){
 
     }else if(titleMode){
-      aud.src = "";
+      this.audio.stop("introMusic");
       document.GameRunner.endScene("start");
     }else{
       titleMode = true;
@@ -117,7 +124,11 @@ var LoadingScene = function (){
 
 
   this.drawText = function(msg,canvasBufferContext){
-    printIndex += ((sceneTimer % 5 == 0) && (printIndex < (msg[0].length+msg[1].length))) ? 1 : 0;
+    if((sceneTimer % 5 == 0) && (printIndex < (msg[0].length+msg[1].length))){
+      this.audio.play('message',true);
+      printIndex += 1;
+    }
+
     var x = config.canvasWidth / 14;
     var y = config.canvasHeight * 0.8;
     var fontSize = config.canvasWidth / (msg[0].length * 0.7) ;
