@@ -73,7 +73,7 @@ Roomfinder = function() {
               }
 
               var current = openNodes[next.x][next.y];
-              while(current){
+              while(current.parentNode){
                 path.unshift([current.x,current.y]);
                 current = current.parentNode;
               }

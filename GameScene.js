@@ -133,13 +133,36 @@ var GameScene = function (strs,trn,shp,nam){
         if(!inARoom(x,y,rooms)){
           var rm = roomFinder.findRoom(~~x,~~y,terrain);
           if(rm.length > 0){
-            rooms.push(new Room(rm));
+            if(uniqueRoom(rm,rooms)){
+              rooms.push(new Room(rm));
+            }
           }
         }
       }
     }
-    console.log(rooms);
     this.rooms = rooms;
+  }
+
+  var uniqueRoom = function(rm,rooms){
+    var rmHash = {};
+    var dupe = false;
+    for(p in rm){
+      var point = rm[p];
+      rmHash[point[0]] = rmHash[point[0]] ? rmHash[point[0]] : {};
+      rmHash[point[0]][point[1]] = true;
+    }
+    for(r in rooms){
+      var counter = 0;
+      var room = rooms[r];
+      for(i in room.points){
+        var point = room.points[i];
+        counter += (rmHash[point[0]] && rmHash[point[0]][point[1]]) ? 1 : 0;
+      }
+      if(counter > (rm.length * 0.2)){
+        dupe = true;
+      }
+    }
+    return !dupe;
   }
 
   var inARoom = function(x,y,rooms){
@@ -167,9 +190,9 @@ var GameScene = function (strs,trn,shp,nam){
     if(onScreen(ship)){
       ship.draw(camera,canvasBufferContext);
     }
-    //for (r in this.rooms){
-    //  this.rooms[r].draw(camera,canvasBufferContext);
-   // }
+    for (r in this.rooms){
+      this.rooms[r].draw(camera,canvasBufferContext);
+    }
     drawMap(canvasBufferContext,this.count);
     for (h in humans){
       if(onScreen(humans[h])){

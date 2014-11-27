@@ -26,15 +26,18 @@ Room = function(points) {
     canvasBufferContext.fillStyle = "rgba(250,0,0,0.9)";
     canvasBufferContext.beginPath();
 
-    var x = (this.polygon[0][0] + config.gridInterval - camera.xOff) * config.xRatio;
-    var y = (this.polygon[0][1] + config.gridInterval - camera.yOff) * config.yRatio;
+    var x = (this.polygon[0][0] - camera.xOff) * config.xRatio;
+    var y = (this.polygon[0][1] - camera.yOff) * config.yRatio;
     canvasBufferContext.moveTo(x,y);
-    var points = this.polygon.slice(1,this.polygon.length-1);
+    var points = this.polygon;
     for(i in points){
       x = (points[i][0] - camera.xOff) * config.xRatio;
       y = (points[i][1] - camera.yOff) * config.yRatio;
       canvasBufferContext.lineTo(x,y);
     }
+    var x = (this.polygon[0][0] - camera.xOff) * config.xRatio;
+    var y = (this.polygon[0][1] - camera.yOff) * config.yRatio;
+    canvasBufferContext.lineTo(x,y);
     canvasBufferContext.fill();
 
   }
@@ -56,12 +59,21 @@ Room = function(points) {
     var cleanPath = [];
     for(p in path){
       if(!this.pointWithin(path[p][0],path[p][1],path)){
-        cleanPath.push(path[p]);
+        var dupe = false;
+        for(c in cleanPath){
+          if((path[p][0] == cleanPath[c][0]) && (path[p][1] == cleanPath[c][1])){
+            dupe = true;
+          }
+        }
+        if(!dupe){
+          cleanPath.push(path[p]);
+        }
       }
     }
     return cleanPath;
   }
-  this.polygon = this.cullPath(poly(points));
+  //this.polygon = this.cullPath(poly(points));
+  this.polygon = poly(points);
 
 }
 
