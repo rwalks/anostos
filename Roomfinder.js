@@ -45,7 +45,7 @@ Roomfinder = function() {
   this.findRoom = function(sX,sY,terrain){
     var openNodes = {};
     var closedNodes = {};
-    var curNode = new Node(sX,sY);
+    var curNode = new RoomNode(sX,sY);
     closedNodes = addNode(curNode,closedNodes);
     var dX = sX;
     var dY = sY;
@@ -62,7 +62,7 @@ Roomfinder = function() {
         var nX = curNode.x + xoffset;
         var nY = curNode.y + yoffset;
         if(validSpace(nX,nY,terrain)){
-          var next = new Node(nX,nY,curNode);
+          var next = new RoomNode(nX,nY,curNode);
           if(!nodeExists(next,closedNodes)){
             if(nodeExists(next,openNodes)){
               //complete room???
@@ -121,7 +121,7 @@ Roomfinder = function() {
 }
 
 
-Node = function(pX,pY,pNode){
+RoomNode = function(pX,pY,pNode){
   this.x = pX;
   this.y = pY;
   this.parentNode = pNode;

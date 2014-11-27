@@ -23,7 +23,7 @@ Room = function(points) {
   }
 
   this.draw = function(camera,canvasBufferContext){
-    canvasBufferContext.fillStyle = "rgba(250,0,0,0.9)";
+    canvasBufferContext.fillStyle = "rgba(250,0,0,0.2)";
     canvasBufferContext.beginPath();
 
     var x = (this.polygon[0][0] - camera.xOff) * config.xRatio;

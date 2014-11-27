@@ -158,7 +158,7 @@ var GameScene = function (strs,trn,shp,nam){
         var point = room.points[i];
         counter += (rmHash[point[0]] && rmHash[point[0]][point[1]]) ? 1 : 0;
       }
-      if(counter > (rm.length * 0.2)){
+      if(counter > (rm.length * 0.5)){
         dupe = true;
       }
     }
@@ -197,11 +197,6 @@ var GameScene = function (strs,trn,shp,nam){
     for (h in humans){
       if(onScreen(humans[h])){
         humans[h].draw(camera,canvasBufferContext);
-      }
-    }
-    for (r in this.rooms){
-      if(r == config.test){
-      this.rooms[r].draw(camera,canvasBufferContext);
       }
     }
     if(this.uiMode == "build" && buildTarget){
