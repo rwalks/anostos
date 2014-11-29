@@ -13,10 +13,11 @@ var GameScene = function (strs,trn,shp,nam){
   var camDY = 0;
   var humans = [];
   var resources= new Resources();
-  var airtightWalls = {};
   this.count = 0;
   var roomFinder = new Roomfinder();
   this.rooms = [];
+  var doors = {};
+  var airtightWalls = {};
 
   var focusTarget;
   var buildTarget;
@@ -42,6 +43,11 @@ var GameScene = function (strs,trn,shp,nam){
   this.update = function(mPos){
     mousePos = mPos;
     camera.update(mousePos);
+    for(x in doors){
+      for(y in doors[x]){
+        terrain[x][y].update(humans);
+      }
+    }
     for (h in humans){
       humans[h].update(terrain);
     }
@@ -107,6 +113,10 @@ var GameScene = function (strs,trn,shp,nam){
                   airtightWalls[obj.position.x][obj.position.y] = true;
                   this.regenRooms();
                 }
+                if(obj.type == 'door'){
+                  doors[obj.position.x] = doors[obj.position.x] ? doors[obj.position.x] : {};
+                  doors[obj.position.x][obj.position.y] = true;
+                }
               }
             }
             break;
@@ -117,6 +127,9 @@ var GameScene = function (strs,trn,shp,nam){
               if(obj.airtight){
                 delete airtightWalls[obj.position.x][obj.position.y];
                 this.regenRooms();
+              }
+              if(obj.type == 'door'){
+                delete doors[obj.position.x][obj.position.y];
               }
               tiles.removeTile(obj,terrain);
             }

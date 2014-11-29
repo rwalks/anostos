@@ -22,7 +22,8 @@ StorageBuild = function(type,pos) {
   this.name = [fName,lName];
   this.size = {'x':1*config.gridInterval,'y':1*config.gridInterval};
   this.position = pos ? pos : {'x':x,'y':y};
-  this.collision = true;
+  this.collision = function(){return true;}
+  this.pathable = false;
   this.lastDrawn = -1;
   this.type = "block";
   this.draw = function(camera,canvasBufferContext,count){
@@ -64,10 +65,13 @@ StorageBuild = function(type,pos) {
 
 ConveyorBuild = function(type,pos) {
   var fName = '';
+  this.pathable = false;
+  this.airtight = false;
   switch(type){
     case 'vent':
       fName = 'Air';
       lName = 'Vent';
+      this.airtight = true;
       break;
     case 'pipe':
       fName = 'Water';
@@ -81,9 +85,10 @@ ConveyorBuild = function(type,pos) {
   this.name = [fName,lName];
   this.size = {'x':1*config.gridInterval,'y':1*config.gridInterval};
   this.position = pos ? pos : {'x':x,'y':y};
-  this.collision = true;
+  this.collision = function(){return true;}
   this.lastDrawn = -1;
   this.type = "block";
+
   this.draw = function(camera,canvasBufferContext,count){
     //draw less often
     if(count > this.lastDrawn || Math.abs(count - this.lastDrawn) > 1){
@@ -147,7 +152,8 @@ GeneratorBuild = function(type,pos) {
   this.name = [fName,lName];
   this.size = {'x':1*config.gridInterval,'y':1*config.gridInterval};
   this.position = pos ? pos : {'x':0,'y':0};
-  this.collision = true;
+  this.collision = function(){return true;}
+  this.pathable = false;
   this.lastDrawn = -1;
   this.type = "block";
   this.draw = function(camera,canvasBufferContext,count){

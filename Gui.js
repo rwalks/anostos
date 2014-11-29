@@ -10,7 +10,7 @@ Gui = function() {
   this.buildOffset = 0;
 
   this.buildings = {
-  "construction":[new Block('soil'),new Block('metal')],
+  "construction":[new Block('soil'),new Block('metal'),new Door()],
   "power":[new StorageBuild('power'),new GeneratorBuild('solar'),new GeneratorBuild('power')],
   "oxygen":[new StorageBuild('oxygen'),new GeneratorBuild('oxygen'),new ConveyorBuild('vent')],
   "water":[new StorageBuild('water'),new GeneratorBuild('water'),new ConveyorBuild('pipe')],

@@ -46,4 +46,8 @@ var Config = function (){
   }
 
   this.test = 0;
+
+  this.distance = function(obj1, obj2) {
+    return Math.sqrt(Math.pow((obj2.position.x - obj1.position.x),2)+Math.pow((obj2.position.y-obj1.position.y),2));
+  }
 }

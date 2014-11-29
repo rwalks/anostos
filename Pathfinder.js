@@ -32,7 +32,7 @@ Pathfinder = function() {
     var valid = true;
     for(var x=nX;x<nX+size.x;x+=config.gridInterval){
       for(var y=nY;y<nY+size.y;y+=config.gridInterval){
-        if(grid[x] && grid[x][y]){
+        if(grid[x] && grid[x][y] && !grid[x][y].pathable){
           valid = false;
           break;
         }
