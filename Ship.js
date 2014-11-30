@@ -27,6 +27,7 @@ Ship = function(x,y,aud) {
   this.damaged = false;
   this.destroyed = false;
   this.landed = false;
+  this.altitude = 9999;
 
   this.update = function(terrain){
     count += 1;
@@ -44,10 +45,8 @@ Ship = function(x,y,aud) {
       this.theta += this.deltaR;
       if(this.throttle.x != 0 || this.throttle.y != 0){
         this.currentFuel = (this.currentFuel > 0) ? this.currentFuel - 0.2 : 0;
-     //   if(count % 30 == 0){
 
           audio.play("eng1");
-    //    }
       }else{
         audio.stop("eng1");
       }
@@ -55,6 +54,7 @@ Ship = function(x,y,aud) {
       this.velocity.y += this.throttle.y;
       this.position.x += this.velocity.x;
       this.position.y += this.velocity.y;
+      this.altitude = findAltitude(this.position,terrain);
 
       this.landed = (this.velocity.x == 0 && this.velocity.y == 0 && this.deltaR == 0 && (this.leftLanded || this.rightLanded))
     }
@@ -68,6 +68,17 @@ Ship = function(x,y,aud) {
     for(i in doneList){
       this.explosions.splice(doneList[i],1);
     }
+  }
+
+  var findAltitude = function(pos,terrain){
+    var x = pos.x - (pos.x % config.gridInterval);
+    var y = pos.y - (pos.y % config.gridInterval);
+    for(yT = y; yT < config.mapHeight; yT+=config.gridInterval){
+      if(terrain[x] && terrain[x][yT]){
+        return Math.floor(yT-pos.y);
+      }
+    }
+    return 0;
   }
 
   this.terrainCollide = function(terrain){

@@ -9,6 +9,7 @@ var LandingScene = function (strs,nam,aud){
   var clockMax = 800;
   this.count = 0;
   this.audio = aud;
+  this.audio.play('landing1');
   this.ship = new Ship(config.mapWidth/2,0,this.audio);
   var startMsg = ["Welcome to Anostos. Attempt landing using the arrow keys.", "We don't have much fuel.."];
   var startIndex = 0;
@@ -72,6 +73,44 @@ var LandingScene = function (strs,nam,aud){
     canvasBufferContext.stroke();
   }
 
+  this.drawAltitude = function(canvasBufferContext){
+    var sx = config.canvasWidth / 6;
+    var sy = config.canvasHeight / 30;
+    var x = (config.canvasWidth / 2) - (sx/2);
+    var y = 0;
+    canvasBufferContext.beginPath();
+    canvasBufferContext.lineWidth=Math.floor(config.xRatio)+"";
+    canvasBufferContext.fillStyle = "rgba(150,0,200,0.9)";
+    canvasBufferContext.strokeStyle="rgba(200,0,250,1.0)";
+    canvasBufferContext.rect(x,y,sx,sy);
+    canvasBufferContext.fill();
+    canvasBufferContext.stroke();
+    var xBuf = Math.floor(config.xRatio) * 2;
+    var yBuf = Math.floor(config.yRatio) * 2;
+    var xIndex = x + xBuf;
+    var yIndex = y + yBuf;
+    //draw gauge
+    var xSize = sx-(2*xBuf);
+    var ySize = sy-(2*yBuf);
+    canvasBufferContext.beginPath();
+    canvasBufferContext.lineWidth=Math.floor(config.xRatio)+"";
+    canvasBufferContext.fillStyle = "rgba(20,0,50,0.9)";
+    canvasBufferContext.strokeStyle="rgba(20,0,75,1.0)";
+    canvasBufferContext.rect(xIndex,yIndex,xSize,ySize);
+    canvasBufferContext.fill();
+    canvasBufferContext.stroke();
+
+    xSize = xSize * (this.ship.currentFuel / this.ship.maxFuel);
+    canvasBufferContext.beginPath();
+    canvasBufferContext.lineWidth=Math.floor(config.xRatio)+"";
+    canvasBufferContext.fillStyle = "rgba(20,200,50,0.9)";
+    canvasBufferContext.strokeStyle="rgba(20,250,75,1.0)";
+    canvasBufferContext.rect(xIndex,yIndex,xSize,ySize);
+    canvasBufferContext.fill();
+    canvasBufferContext.stroke();
+  }
+
+
   this.click = function(clickPos,rightClick){
     if(rightClick){
     }else{
@@ -85,6 +124,7 @@ var LandingScene = function (strs,nam,aud){
   }
 
   this.endScene = function(landed){
+    this.audio.stop('landing1');
     if(landed){
       document.GameRunner.endScene("landing");
     }else{

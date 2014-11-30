@@ -11,7 +11,7 @@ Gui = function() {
 
   this.buildings = {
   "construction":[new Block('soil'),new Block('metal'),new Door()],
-  "power":[new StorageBuild('power'),new GeneratorBuild('solar'),new GeneratorBuild('power')],
+  "power":[new StorageBuild('power'),new GeneratorBuild('solar')],
   "oxygen":[new StorageBuild('oxygen'),new GeneratorBuild('oxygen'),new ConveyorBuild('vent')],
   "water":[new StorageBuild('water'),new GeneratorBuild('water'),new ConveyorBuild('pipe')],
   "earth":[new StorageBuild('dry'),new GeneratorBuild('metal'),new ConveyorBuild('dry')],

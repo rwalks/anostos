@@ -14,8 +14,8 @@ Block = function(type,pos) {
       break;
     case 'metal':
       fName = 'Metal';
-      fillRGB = "rgba(150,150,150,0.9)";
-      strokeRGB="rgba(200,200,200,1.0)";
+      fillRGB = "rgba(200,220,200,0.9)";
+      strokeRGB="rgba(230,230,230,1.0)";
       this.airtight = true;
       break;
   }

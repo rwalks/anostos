@@ -7,6 +7,7 @@ var AudioLoader = function (){
                 "explosion1": {'src':"sounds/explosion1.ogg",'copies':[],'index':2},
                 "explosion2": {'src':"sounds/explosion2.ogg",'copies':[],'index':4},
                 "message": {'src':"sounds/message.ogg",'copies':[],'index':10},
+                "landing1": {'src':"sounds/landingmusic1.ogg",'copies':[],'index':1},
                 "eng3": {'src':"sounds/eng4.ogg",'copies':[],'index':5}
               }
 
