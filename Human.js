@@ -12,6 +12,7 @@ Human = function(x,y,name) {
   var walkAccel = 0.6;
   var count = 0;
   this.target;
+  this.targetObj;
   this.path = [];
   this.onGround = false;
   this.direction = true;
@@ -20,6 +21,7 @@ Human = function(x,y,name) {
   this.maxOxygen = 100; this.currentOxygen = 100;
 
   this.inventory = [];
+  this.action = false;
 
   this.actions = ["build","inventory","delete"];
 
@@ -56,8 +58,35 @@ Human = function(x,y,name) {
     //apply move
     this.position.x += this.velocity.x;
     this.position.y += this.velocity.y;
-    var targ = this.target ? terrain[this.target.x][this.target.y] : false;
-    if(targ && targ.interact && nodeDistance([targ.position.x,targ.position.y],this.position) < config.gridInterval*1.1){
+    if(this.action == 'build' && this.targetObj){
+      var targCoords = [this.targetObj.position.x,this.targetObj.position.y];
+      //var range = config.gridInterval * (Math.max(this.targetObj.size.x,this.targetObj.size.y));
+      var range = config.gridInterval * 3;
+    }else if(this.target){
+      var targCoords = [this.target.x,this.target.y];
+      var range = config.gridInterval * 3;
+    }
+    if(this.target && nodeDistance(targCoords,this.position) < range){
+      switch(this.action){
+        case 'build':
+          if(this.targetObj){
+            return {'action':'build','obj':this.targetObj};
+          }
+          break;
+        case 'delete':
+          var targ = terrain[this.target.x] ? terrain[this.target.x][this.target.y] : false;
+          if(targ){
+            return {'action':'delete','obj':targ};
+          }
+          break;
+        default:
+          var targ = terrain[this.target.x] ? terrain[this.target.x][this.target.y] : false;
+          if(targ && targ.interact == 'inventory'){
+            return {'action':'inventory','obj':targ};
+          }
+          break;
+      }
+
 
     }
   }
@@ -67,7 +96,8 @@ Human = function(x,y,name) {
     if(nextNode){
       //pop next node if close enough OR over it OR under it
       if((Math.abs(nodeDistance(nextNode,this.position)) < config.gridInterval/6) ||
-        ((this.position.x > nextNode[0] && this.position.x < nextNode[0] + config.gridInterval) && (nextNode[1] > this.position.y))){
+        ((this.position.x > nextNode[0] && this.position.x < nextNode[0] + config.gridInterval) &&
+         (nextNode[1] > this.position.y) && !this.onGround)){
         this.path.pop();
         nextNode = this.path[this.path.length-1];
       }
@@ -80,7 +110,7 @@ Human = function(x,y,name) {
         this.velocity.x = 0;
       }
       if(nextNode && nextNode[1] < this.position.y){
-        var height = 1;
+     //   var height = 1;
      //   if(this.path.length > 1){
      //     for(i=this.path.length-2;i>0;i--){
      //       var nn = this.path[i];
@@ -91,7 +121,7 @@ Human = function(x,y,name) {
      //       }
      //     }
      //   }
-        this.velocity.y -= 1 * height;
+        this.velocity.y -= 1.1;
       }
     }
   }
@@ -156,14 +186,20 @@ Human = function(x,y,name) {
             y > this.position.y && y < (this.position.y + this.size.y));
   }
 
-  this.click = function(coords,terrain){
+  this.click = function(coords,terrain,action,obj){
+    this.action = false;
     this.target = false;
+    this.targetObj = false;
     this.path = pathfinder.findPath(this.position.x,this.position.y,coords.x,coords.y,terrain);
     if(this.path.length > 0){
-      var targ = terrain[coords.x][coords.y];
-      if(targ){
-        this.target = targ.position;
+      this.action = action;
+      if(action == 'build'){
+        var p = this.path.shift();
+        this.target = {'x':p[0],'y':p[1]};
+      }else{
+        this.target = coords;
       }
+      this.targetObj = obj;
     }
     return;
   }

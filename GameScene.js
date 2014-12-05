@@ -50,7 +50,39 @@ var GameScene = function (strs,trn,shp,nam){
       }
     }
     for (h in humans){
-      humans[h].update(terrain);
+      var ret = humans[h].update(terrain);
+      if(ret){
+        switch(ret.action){
+          case 'delete':
+            var obj = ret.obj;
+            if(obj.airtight){
+              delete airtightWalls[obj.position.x][obj.position.y];
+              this.regenRooms();
+            }
+            if(obj.type == 'door'){
+              delete doors[obj.position.x][obj.position.y];
+            }
+            tiles.removeTile(obj,terrain);
+            break;
+          case 'build':
+            var obj = ret.obj;
+            if(tiles.isClear(obj,terrain,humans)){
+              tiles.addTile(obj,terrain);
+              if(obj.airtight){
+                airtightWalls[obj.position.x] = airtightWalls[obj.position.x] ? airtightWalls[obj.position.x] : {};
+                airtightWalls[obj.position.x][obj.position.y] = true;
+                this.regenRooms();
+              }
+              if(obj.type == 'door'){
+                doors[obj.position.x] = doors[obj.position.x] ? doors[obj.position.x] : {};
+                doors[obj.position.x][obj.position.y] = true;
+              }
+            }
+            break;
+          case 'inventory':
+            break;
+        }
+      }
     }
     gui.update(focusTarget,humans,resources.getResources(),buildTarget,this.uiMode);
     this.count = (this.count > 100) ? 0 : this.count + 1;
@@ -60,7 +92,7 @@ var GameScene = function (strs,trn,shp,nam){
     if(rightClick){
       if(this.uiMode == 'select' && focusTarget){
         var coords = clickToCoord(clickPos,true);
-        focusTarget.click(coords,terrain);
+        focusTarget.click(coords,terrain,'move');
       }else{
         this.uiMode = 'select';
       }
@@ -106,31 +138,14 @@ var GameScene = function (strs,trn,shp,nam){
               var coords = clickToCoord(clickPos,true);
               var obj = buildTarget.clone(coords);
               if(tiles.isClear(obj,terrain,humans)){
-                tiles.addTile(obj,terrain);
-                if(obj.airtight){
-                  airtightWalls[obj.position.x] = airtightWalls[obj.position.x] ? airtightWalls[obj.position.x] : {};
-                  airtightWalls[obj.position.x][obj.position.y] = true;
-                  this.regenRooms();
-                }
-                if(obj.type == 'door'){
-                  doors[obj.position.x] = doors[obj.position.x] ? doors[obj.position.x] : {};
-                  doors[obj.position.x][obj.position.y] = true;
-                }
+                focusTarget.click(coords,terrain,'build',obj);
               }
             }
             break;
           case "delete":
             var coords = clickToCoord(clickPos,true);
             if(terrain[coords.x] && terrain[coords.x][coords.y]){
-              var obj = terrain[coords.x][coords.y];
-              if(obj.airtight){
-                delete airtightWalls[obj.position.x][obj.position.y];
-                this.regenRooms();
-              }
-              if(obj.type == 'door'){
-                delete doors[obj.position.x][obj.position.y];
-              }
-              tiles.removeTile(obj,terrain);
+              focusTarget.click(coords,terrain,'delete');
             }
             break;
         }
