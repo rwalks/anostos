@@ -172,6 +172,7 @@ Ship = function(x,y,aud) {
     canvasBufferContext.lineWidth=Math.floor(config.xRatio)+"";
     for(x=-lX;x<lX;x+=trailWidth){
       y += (x < 0) ? lY / 4 : -lY / 4;
+      var randY = y + (Math.random()*lY/2)-lY/2;
       canvasBufferContext.beginPath();
       var r = Math.floor(Math.random() * 250);
       var g = Math.floor(Math.random() * 250);
@@ -179,7 +180,7 @@ Ship = function(x,y,aud) {
       var a = Math.floor(Math.random() * 0.1) + 0.9;
       var rgbaString = "rgba("+r+","+20+","+20+","+a+")";
       canvasBufferContext.fillStyle = rgbaString;
-      var geometry = [[x,lY],[x+trailWidth,lY],[x+trailWidth,y],[x,y]];
+      var geometry = [[x,lY],[x+trailWidth,lY],[x+trailWidth,randY],[x,randY]];
       for(i in geometry){
         var points = rotate(geometry[i][0],geometry[i][1],this.theta);
         var eX = (this.position.x+points[0]-camera.xOff)*xRatio;

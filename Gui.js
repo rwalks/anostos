@@ -9,6 +9,8 @@ Gui = function() {
   this.buildTab = "construction";
   this.buildOffset = 0;
 
+  this.inventoryOffset = 0;
+
   this.buildings = {
   "construction":[new Block('soil'),new Block('metal'),new Door()],
   "power":[new StorageBuild('power'),new GeneratorBuild('solar')],
@@ -35,6 +37,10 @@ Gui = function() {
         break;
       case "roster":
         pos.x = config.canvasWidth * (7/8);
+        pos.y = config.canvasHeight * 0.1;
+        break;
+      case "inventory":
+        pos.x = config.canvasWidth *0.1;
         pos.y = config.canvasHeight * 0.1;
         break;
     }
@@ -77,6 +83,29 @@ Gui = function() {
       }else{
         this.buildOffset += (this.buildings[this.buildTab].slice(this.buildOffset).length > 6) ? 1 : 0;
       }
+    }else if(target == "inventory" && this.target && this.target.inventory){
+      var x = clickPos.x - this.position('inventory').x;
+      var y = clickPos.y - this.position('inventory').y;
+      var xSize = this.size('inventory').x;
+      var ySize = this.size('inventory').y;
+      var xBuf = Math.floor(config.xRatio) * 2;
+      var tabY = ySize/10;
+      var tArrowY = tabY + (ySize / 16);
+      var objY = ySize - (ySize / 16);
+      if(y <= tabY){
+        //tabs
+        var tX = Math.floor(6*((x - (2*xBuf)) / (xSize - (2*xBuf))));
+        if(tX >= 0){
+          this.buildOffset = 0;
+        }
+      }else if(y <= tArrowY){
+        this.inventoryOffset -= (this.inventoryOffset > 0) ? 1 : 0;
+      }else if(y <= objY){
+        var invIn = Math.floor(6*((y - tArrowY) / (objY - tArrowY)));
+        //clicking on an invetory square
+      }else{
+        this.inventoryOffset += (target.inventory.length > 6) ? 1 : 0;
+      }
     }else if(target == "target"){
       if(this.target && this.target.actions){
         var x = clickPos.x - this.position('target').x;
@@ -117,6 +146,10 @@ Gui = function() {
         size.x = config.canvasWidth / 6;
         size.y = config.canvasHeight * 0.6;
         break;
+      case "inventory":
+        size.x = config.canvasWidth / 6;
+        size.y = config.canvasHeight * 0.6;
+        break;
       case "roster":
         size.x = config.canvasWidth / 8;
         size.y = config.canvasHeight * 0.6;
@@ -128,16 +161,21 @@ Gui = function() {
   this.pointWithin = function(x,y){
     if (x > this.position('target').x && x < (this.position('target').x + this.size('target').x) &&
         y > this.position('target').y && y < (this.position('target').y + this.size('target').y)){
-          return "target"
+          return "target";
         }
     else if (x > this.position('roster').x && x < (this.position('roster').x + this.size('roster').x) &&
         y > this.position('roster').y && y < (this.position('roster').y + this.size('roster').y)){
-          return "roster"
+          return "roster";
         }
     else if ( this.uiMode == 'build' &&
         x > this.position('build').x && x < (this.position('build').x + this.size('build').x) &&
         y > this.position('build').y && y < (this.position('build').y + this.size('build').y)){
-          return "build"
+          return "build";
+        }
+    else if ( this.uiMode == 'inventory' &&
+        x > this.position('inventory').x && x < (this.position('inventory').x + this.size('inventory').x) &&
+        y > this.position('inventory').y && y < (this.position('inventory').y + this.size('inventory').y)){
+          return "inventory"
         };
     return false;
   }
@@ -147,6 +185,8 @@ Gui = function() {
     if(this.uiMode == 'build'){
      // this.drawGrid(camera,canvasBufferContext);
       this.drawBuild(this.size("build"),this.position("build"),canvasBufferContext);
+    }else if(this.uiMode == 'inventory'){
+      this.drawInventory(canvasBufferContext);
     }
     this.drawResources(this.size("resources"),this.position("resources"),canvasBufferContext);
     this.drawTarget(this.size("target"),this.position("target"),canvasBufferContext);
@@ -321,6 +361,36 @@ Gui = function() {
             canvasBufferContext.lineTo(aX + (aXSize * 0.5), aY + (aYSize * 0.2));
             canvasBufferContext.lineTo(aX + (aXSize * 0.5), aY + (aYSize * 0.4));
             canvasBufferContext.lineTo(aX + (aXSize * 0.2), aY + (aYSize * 0.7));
+            canvasBufferContext.fill();
+            canvasBufferContext.stroke();
+            break;
+          case "inventory":
+            canvasBufferContext.fillStyle = "rgba(250,250,250,0.9)";
+            canvasBufferContext.strokeStyle="rgba(250,250,250,1.0)";
+            //crates
+            canvasBufferContext.beginPath();
+            canvasBufferContext.rect(aX + (aXSize * 0.4), aY + (aYSize * 0.2),aXSize*0.2,aYSize*0.2);
+            canvasBufferContext.fill();
+            canvasBufferContext.stroke();
+            canvasBufferContext.beginPath();
+            canvasBufferContext.rect(aX + (aXSize * 0.2), aY + (aYSize * 0.6),aXSize*0.2,aYSize*0.2);
+            canvasBufferContext.fill();
+            canvasBufferContext.stroke();
+            canvasBufferContext.beginPath();
+            canvasBufferContext.rect(aX + (aXSize * 0.6), aY + (aYSize * 0.6),aXSize*0.2,aYSize*0.2);
+            canvasBufferContext.fill();
+            canvasBufferContext.stroke();
+            //sides
+            canvasBufferContext.beginPath();
+            canvasBufferContext.rect(aX + (aXSize * 0.1), aY + (aYSize * 0.1),aXSize*0.03,aYSize*0.8);
+            canvasBufferContext.fill();
+            canvasBufferContext.stroke();
+            canvasBufferContext.beginPath();
+            canvasBufferContext.rect(aX + (aXSize * 0.1), aY + (aYSize * 0.9),aXSize*0.8,aYSize*0.03);
+            canvasBufferContext.fill();
+            canvasBufferContext.stroke();
+            canvasBufferContext.beginPath();
+            canvasBufferContext.rect(aX + (aXSize * 0.9), aY + (aYSize * 0.1),aXSize*0.03,aYSize*0.83);
             canvasBufferContext.fill();
             canvasBufferContext.stroke();
             break;
@@ -534,6 +604,86 @@ Gui = function() {
     canvasBufferContext.stroke();
     canvasBufferContext.beginPath();
     var aRed = (this.buildings[this.buildTab].slice(this.buildOffset).length > 6) ? 200 : 100;
+    canvasBufferContext.fillStyle = "rgba("+aRed+",0,50,0.9)";
+    canvasBufferContext.strokeStyle="rgba("+aRed+",0,75,1.0)";
+    canvasBufferContext.moveTo(x+(xSize*0.4),y+yBuf);
+    canvasBufferContext.lineTo(x+(xSize*0.5),y+yArrow-yBuf);
+    canvasBufferContext.lineTo(x+(xSize*0.6),y+yBuf);
+    canvasBufferContext.fill();
+    canvasBufferContext.stroke();
+
+  }
+
+  this.drawInventory = function(canvasBufferContext){
+    var size = this.size('inventory');
+    var pos = this.position('inventory');
+    canvasBufferContext.beginPath();
+    canvasBufferContext.lineWidth=Math.floor(config.xRatio)+"";
+    canvasBufferContext.fillStyle = "rgba(150,0,200,0.9)";
+    canvasBufferContext.strokeStyle="rgba(200,0,250,1.0)";
+    canvasBufferContext.rect(pos.x,pos.y,size.x,size.y);
+    canvasBufferContext.fill();
+    canvasBufferContext.stroke();
+    var xBuf = Math.floor(config.xRatio) * 2;
+    var yBuf = Math.floor(config.yRatio) * 2;
+    var x = pos.x + xBuf;
+    var y = pos.y + yBuf;
+    var xSize = size.x - (2*xBuf);
+    var yArrow = (size.y / 16) - (2*yBuf);
+    var yTab = (size.y / 10) - (2*yBuf);
+    var ySize = ((size.y - (yArrow*2) - yTab - (yBuf*6))/6)-(2*yBuf);
+    //tabs
+    canvasBufferContext.beginPath();
+    canvasBufferContext.fillStyle = "rgba(20,0,50,0.6)";
+    canvasBufferContext.strokeStyle="rgba(20,0,75,1.0)";
+    canvasBufferContext.rect(x,y,xSize,yTab);
+    canvasBufferContext.fill();
+   canvasBufferContext.stroke();
+    y += yTab + (2*yBuf);
+    //arrow
+    canvasBufferContext.beginPath();
+    canvasBufferContext.fillStyle = "rgba(20,0,50,0.6)";
+    canvasBufferContext.strokeStyle="rgba(20,0,75,1.0)";
+    canvasBufferContext.rect(x,y,xSize,yArrow);
+    canvasBufferContext.fill();
+    canvasBufferContext.stroke();
+    canvasBufferContext.beginPath();
+    var aRed = (this.inventoryOffset > 0) ? 200 : 100;
+    canvasBufferContext.fillStyle = "rgba("+aRed+",0,50,0.9)";
+    canvasBufferContext.strokeStyle="rgba("+aRed+",0,75,1.0)";
+    canvasBufferContext.moveTo(x+(xSize*0.4),y+yArrow-yBuf);
+    canvasBufferContext.lineTo(x+(xSize*0.5),y+yBuf);
+    canvasBufferContext.lineTo(x+(xSize*0.6),y+yArrow-yBuf);
+    canvasBufferContext.fill();
+    canvasBufferContext.stroke();
+    y += yArrow + (2*yBuf);
+    //objs
+    for(var i = 0;i<6;i++){
+      var invItem = false;
+      canvasBufferContext.beginPath();
+      canvasBufferContext.fillStyle = "rgba(20,0,50,0.9)";
+      canvasBufferContext.strokeStyle="rgba(20,0,75,1.0)";
+      canvasBufferContext.rect(x,y,xSize,ySize);
+      canvasBufferContext.fill();
+      canvasBufferContext.stroke();
+      if(invItem){
+        invItem.drawTargetPortrait(x,y,xSize/4,ySize,canvasBufferContext);
+        var fontSize = ySize / 4;
+        canvasBufferContext.font = fontSize + 'px Courier';
+        canvasBufferContext.fillStyle = "rgba(50,250,200,0.9)";
+        canvasBufferContext.fillText(invItem.name[0]+" "+invItem.name[1],x+(xSize/4),y+fontSize+yBuf);
+      }
+      y += ySize + (2*yBuf);
+    }
+    //arrow
+    canvasBufferContext.beginPath();
+    canvasBufferContext.fillStyle = "rgba(20,0,50,0.6)";
+    canvasBufferContext.strokeStyle="rgba(20,0,75,1.0)";
+    canvasBufferContext.rect(x,y,xSize,yArrow);
+    canvasBufferContext.fill();
+    canvasBufferContext.stroke();
+    canvasBufferContext.beginPath();
+    var aRed = (this.target && this.target.inventory && (this.target.inventory.slice(this.inventoryOffset).length > 6)) ? 200 : 100;
     canvasBufferContext.fillStyle = "rgba("+aRed+",0,50,0.9)";
     canvasBufferContext.strokeStyle="rgba("+aRed+",0,75,1.0)";
     canvasBufferContext.moveTo(x+(xSize*0.4),y+yBuf);

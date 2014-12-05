@@ -18,6 +18,9 @@ var LandingScene = function (strs,nam,aud){
   this.update = function(mPos){
     camera.focusOn(this.ship.position);
     this.ship.update(this.terrain[0]);
+    if(this.ship.altitude < 3000){
+      this.audio.play("landing2");
+    }
     this.count += 1;
   }
 
@@ -125,6 +128,7 @@ var LandingScene = function (strs,nam,aud){
 
   this.endScene = function(landed){
     this.audio.stop('landing1');
+    this.audio.stop('landing2');
     if(landed){
       document.GameRunner.endScene("landing");
     }else{

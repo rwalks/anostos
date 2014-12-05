@@ -24,7 +24,8 @@ var GameScene = function (strs,trn,shp,nam){
 
   for(var i=0;i<3;i++){
     var x = (Math.random()*(config.gridInterval*6))-(config.gridInterval*3) + ship.position.x;
-    var y = ship.position.y;
+    //var y = ship.position.y;
+    var y = 6000;
     var name = (i == 0) ? heroName : false;
     humans.push( new Human(x,y,name) );
 
@@ -81,9 +82,7 @@ var GameScene = function (strs,trn,shp,nam){
         }else if(guiRet && guiRet.buildTarget){
           buildTarget = guiRet.buildTarget;
         }else if(guiRet && guiRet.action){
-          if (guiRet.action == "build" || guiRet.action == "delete"){
-            this.uiMode = (guiRet.action == this.uiMode) ? "select" : guiRet.action;
-          }
+          this.uiMode = (guiRet.action == this.uiMode) ? "select" : guiRet.action;
         }
       }else{
         switch(this.uiMode){

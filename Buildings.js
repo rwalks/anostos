@@ -2,6 +2,8 @@ StorageBuild = function(type,pos) {
   var fName = '';
   var lName = '';
   this.size = {'x':1*config.gridInterval,'y':1*config.gridInterval};
+  this.interact = false;
+  this.inventory = new Inventory();
   switch(type){
     case 'power':
       fName = 'Chemical';
@@ -12,15 +14,18 @@ StorageBuild = function(type,pos) {
       fName = 'Water';
       lName = 'Cistern';
       this.size = {'x':2*config.gridInterval,'y':2*config.gridInterval};
+      this.interact = 'inventory';
       break;
     case 'oxygen':
       fName = 'Oxygen';
       lName = 'Tank';
       this.size = {'x':1*config.gridInterval,'y':2*config.gridInterval};
+      this.interact = 'inventory';
       break;
     case 'dry':
       fName = 'Dry';
       lName = 'Storage';
+      this.interact = 'inventory';
       break;
   }
   this.name = [fName,lName];
@@ -155,7 +160,6 @@ StorageBuild = function(type,pos) {
 
   this.drawTargetPortrait = function(oX,oY,xSize,ySize,canvasBufferContext){
     var scale = (xSize*0.4) / (this.size.x*config.xRatio);
-    console.log(scale);
     this.drawBlock(oX+(xSize*0.3),oY+(ySize*0.2),canvasBufferContext,scale);
   }
 
@@ -317,10 +321,12 @@ GeneratorBuild = function(type,pos) {
     case 'water':
       fName = 'Soil';
       lName = 'Evaporator';
+      this.size = {'x':4*config.gridInterval,'y':2*config.gridInterval};
       break;
     case 'oxygen':
       fName = 'Water';
       lName = 'Splitter';
+      this.size = {'x':2*config.gridInterval,'y':2*config.gridInterval};
       break;
     case 'metal':
       fName = 'Smelting';
@@ -377,6 +383,109 @@ GeneratorBuild = function(type,pos) {
       }
       canvasBufferContext.fill();
       canvasBufferContext.stroke();
+    }else if(type == 'oxygen'){
+      var capRGB = "rgba(180,180,190,1.0)";
+      canvasBufferContext.strokeStyle= "rgba(140,140,140,1.0)";
+      //topcap
+      canvasBufferContext.beginPath();
+      canvasBufferContext.lineWidth=Math.floor(config.xRatio)+"";
+      canvasBufferContext.fillStyle = capRGB;
+      canvasBufferContext.moveTo(oX,oY+lY*0.1);
+      var points = [[lX*0.1,0],[lX*0.4,0],[lX*0.5,lY*0.1],[lX*0.6,0],[lX*0.9,0],[lX,lY*0.1],[lX,lY*0.4],[lX*0.9,lY*0.5],
+                    [lX,lY*0.6],[lX,lY*0.9],[lX*0.9,lY],[lX*0.6,lY],
+                    [lX*0.5,lY*0.9],[lX*0.4,lY],[lX*0.1,lY],[0,lY*0.9],
+                    [0,lY*0.6],[lX*0.1,lY*0.5],[0,lY*0.4],[0,lY*0.1]];
+      for(p in points){
+        canvasBufferContext.lineTo(oX+points[p][0],oY+points[p][1]);
+      }
+      canvasBufferContext.fill();
+      canvasBufferContext.stroke();
+      //topChamber
+      canvasBufferContext.beginPath();
+      canvasBufferContext.lineWidth=Math.floor(config.xRatio)+"";
+      var dr = Math.floor(Math.random() * 50);
+      var da = Math.floor(Math.random() * 0.1) + 0.9;
+      var rgbaString = "rgba("+(220+dr)+","+(220+dr)+","+(220+dr)+","+da+")";
+      canvasBufferContext.fillStyle = rgbaString;
+      canvasBufferContext.moveTo(oX+(lX*0.8),oY+(lY*0.5));
+      var points = [[lX*0.2,lY*0.5],[lX*0.2,lY*0.3],[lX*0.5,lY*0.15],[lX*0.8,lY*0.3],[lX*0.8,lY*0.5]];
+      for(p in points){
+        canvasBufferContext.lineTo(oX+points[p][0],oY+points[p][1]);
+      }
+      canvasBufferContext.fill();
+      canvasBufferContext.stroke();
+      //bottomChamber
+      canvasBufferContext.beginPath();
+      canvasBufferContext.lineWidth=Math.floor(config.xRatio)+"";
+      var db = Math.floor(Math.random() * 50);
+      var da = Math.floor(Math.random() * 0.1) + 0.9;
+      var rgbaString = "rgba("+20+","+20+","+(200+db)+","+da+")";
+      canvasBufferContext.fillStyle = rgbaString;
+      canvasBufferContext.moveTo(oX+(lX*0.8),oY+(lY*0.5));
+      var points = [[lX*0.2,lY*0.5],[lX*0.2,lY*0.7],[lX*0.5,lY*0.85],[lX*0.8,lY*0.7],[lX*0.8,lY*0.5]];
+      for(p in points){
+        canvasBufferContext.lineTo(oX+points[p][0],oY+points[p][1]);
+      }
+      canvasBufferContext.fill();
+      canvasBufferContext.stroke();
+      //energybarz
+      var dr = Math.floor(Math.random() * 50);
+      var dg = Math.floor(Math.random() * 50);
+      var da = Math.floor(Math.random() * 0.1) + 0.9;
+      var rgbaString = "rgba("+(200+dr)+","+(200+dg)+","+10+","+da+")";
+      canvasBufferContext.fillStyle = rgbaString;
+      canvasBufferContext.beginPath();
+      canvasBufferContext.rect(oX+(lX*0.4),oY+(lY*0.4),lX*0.2,lY*0.2);
+      canvasBufferContext.fill();
+
+    }else if(type == 'water'){
+      var capRGB = "rgba(180,180,190,1.0)";
+      canvasBufferContext.strokeStyle= "rgba(140,140,140,1.0)";
+      //topcap
+      canvasBufferContext.beginPath();
+      canvasBufferContext.lineWidth=Math.floor(config.xRatio)+"";
+      canvasBufferContext.fillStyle = capRGB;
+      canvasBufferContext.moveTo(oX,oY);
+      var points = [[lX,0],[lX*0.9,lY*0.2],[lX*0.9,lY*0.8],[lX,lY*0.9],[lX,lY],[0,lY],[0,lY*0.9],[lX*0.1,lY*0.8],
+                    [lX*0.1,lY*0.2],[0,0]];
+      for(p in points){
+        canvasBufferContext.lineTo(oX+points[p][0],oY+points[p][1]);
+      }
+      canvasBufferContext.fill();
+      canvasBufferContext.stroke();
+      //air
+      var dr = Math.floor(Math.random() * 50);
+      var da = Math.floor(Math.random() * 0.1) + 0.9;
+      var rgbaString = "rgba("+(200+dr)+","+(200+dr)+","+(200+dr)+","+da+")";
+      canvasBufferContext.fillStyle = rgbaString;
+      canvasBufferContext.beginPath();
+      canvasBufferContext.rect(oX+(lX*0.2),oY+(lY*0.2),lX*0.6,lY*0.2);
+      canvasBufferContext.fill();
+      //soil
+      var rgbaString = "rgba(20,200,150,0.9)";
+      canvasBufferContext.fillStyle = rgbaString;
+      canvasBufferContext.beginPath();
+      canvasBufferContext.rect(oX+(lX*0.2),oY+(lY*0.4),lX*0.6,lY*0.4);
+      canvasBufferContext.fill();
+      //red
+      var dr = Math.floor(Math.random() * 50);
+      var dg = Math.floor(Math.random() * 50);
+      var da = Math.floor(Math.random() * 0.1) + 0.9;
+      var rgbaString = "rgba("+(200+dr)+","+(200+dg)+","+20+","+da+")";
+      canvasBufferContext.fillStyle = rgbaString;
+      canvasBufferContext.beginPath();
+      canvasBufferContext.rect(oX+(lX*0.4),oY+(lY*0.2),lX*0.2,lY*0.6);
+      canvasBufferContext.fill();
+      var rgbaString = "rgba(100,100,100,0.9)";
+      canvasBufferContext.fillStyle = rgbaString;
+      for(var dx=0;dx<=lX*0.80;dx+=lX*0.80){
+        for(var dy=lY*0.2;dy<=lY*0.7;dy+=lY*0.5){
+          canvasBufferContext.beginPath();
+          canvasBufferContext.rect(oX+dx,oY+dy,lX*0.2,lY*0.1);
+          canvasBufferContext.fill();
+        }
+      }
+
     }else{
       canvasBufferContext.beginPath();
       canvasBufferContext.lineWidth=Math.floor(config.xRatio)+"";
@@ -390,7 +499,6 @@ GeneratorBuild = function(type,pos) {
 
   this.drawTargetPortrait = function(oX,oY,xSize,ySize,canvasBufferContext){
     var scale = (xSize*0.4) / (this.size.x*config.xRatio);
-    console.log(scale);
     this.drawBlock(oX+(xSize*0.3),oY+(ySize*0.2),canvasBufferContext,scale);
   }
 

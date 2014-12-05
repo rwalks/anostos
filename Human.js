@@ -9,7 +9,7 @@ Human = function(x,y,name) {
   this.position = {'x':x,'y':y};
   this.velocity = {'x':0,'y':0};
   var maxSpeed = {'x':3,'y':10};
-  var walkAccel = 0.5;
+  var walkAccel = 0.6;
   var count = 0;
   this.target;
   this.path = [];
@@ -19,7 +19,9 @@ Human = function(x,y,name) {
   this.maxHealth = 100; this.currentHealth = 100;
   this.maxOxygen = 100; this.currentOxygen = 100;
 
-  this.actions = ["build","delete"];
+  this.inventory = [];
+
+  this.actions = ["build","inventory","delete"];
 
   this.name = name ? name : config.nameGenerator();
 
@@ -54,12 +56,17 @@ Human = function(x,y,name) {
     //apply move
     this.position.x += this.velocity.x;
     this.position.y += this.velocity.y;
+    var targ = this.target ? terrain[this.target.x][this.target.y] : false;
+    if(targ && targ.interact && nodeDistance([targ.position.x,targ.position.y],this.position) < config.gridInterval*1.1){
+
+    }
   }
 
   this.followPath = function(){
     var nextNode = this.path[this.path.length-1];
     if(nextNode){
-      if((Math.abs(nodeDistance(nextNode,this.position)) < config.gridInterval/4) ||
+      //pop next node if close enough OR over it OR under it
+      if((Math.abs(nodeDistance(nextNode,this.position)) < config.gridInterval/6) ||
         ((this.position.x > nextNode[0] && this.position.x < nextNode[0] + config.gridInterval) && (nextNode[1] > this.position.y))){
         this.path.pop();
         nextNode = this.path[this.path.length-1];
@@ -69,9 +76,22 @@ Human = function(x,y,name) {
         this.velocity.x += walkAccel;
       }else if(nextNode && nextNode[0] < this.position.x){
         this.velocity.x -= walkAccel;
+      }else{
+        this.velocity.x = 0;
       }
       if(nextNode && nextNode[1] < this.position.y){
-        this.velocity.y -= 1;
+        var height = 1;
+     //   if(this.path.length > 1){
+     //     for(i=this.path.length-2;i>0;i--){
+     //       var nn = this.path[i];
+     //       if(nn[0] == nextNode[0]){
+     //        height += 1;
+     //       }else{
+     //        break;
+     //       }
+     //     }
+     //   }
+        this.velocity.y -= 1 * height;
       }
     }
   }
@@ -128,7 +148,7 @@ Human = function(x,y,name) {
   this.draw = function(camera,canvasContext){
     var animate = Math.abs(this.velocity.x) > 0.1;
     drawHuman(this.position.x,this.position.y,canvasContext,camera,this.direction,animate,this.fillColor,this.lineColor);
-  //  drawPath(this.path,canvasContext,camera);
+    //drawPath(this.path,canvasContext,camera);
   }
 
   this.pointWithin = function(x,y){
@@ -137,8 +157,14 @@ Human = function(x,y,name) {
   }
 
   this.click = function(coords,terrain){
-    this.target = coords;
+    this.target = false;
     this.path = pathfinder.findPath(this.position.x,this.position.y,coords.x,coords.y,terrain);
+    if(this.path.length > 0){
+      var targ = terrain[coords.x][coords.y];
+      if(targ){
+        this.target = targ.position;
+      }
+    }
     return;
   }
 

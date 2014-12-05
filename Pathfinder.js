@@ -56,10 +56,16 @@ Pathfinder = function() {
     var openNodes = {};
     var closedNodes = {};
     var curNode = new Node(sX,sY);
-    var dX = destX - (destX % size.x);
-    var dY = destY - (destY % size.y);
+    var dX = destX - (destX % config.gridInterval);
+    var dY = destY - (destY % config.gridInterval);
+    //find natural height
+    for(var nY = dY; nY > dY-(size.y*2); nY -= config.gridInterval){
+      if(validSpace(dX,nY,terrain)){
+        dY = nY;
+        break;
+      }
+    }
     dY = collapseY(dX,dY,terrain);
-
 
     var search = true;
     var validPath = false;
