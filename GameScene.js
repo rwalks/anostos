@@ -145,7 +145,7 @@ var GameScene = function (strs,trn,shp,nam){
           case "delete":
             var coords = clickToCoord(clickPos,true);
             if(terrain[coords.x] && terrain[coords.x][coords.y]){
-              focusTarget.click(coords,terrain,'delete');
+              focusTarget.click(coords,terrain,'delete',terrain[coords.x][coords.y]);
             }
             break;
         }

@@ -96,7 +96,7 @@ Gui = function() {
         //tabs
         var tX = Math.floor(6*((x - (2*xBuf)) / (xSize - (2*xBuf))));
         if(tX >= 0){
-          this.buildOffset = 0;
+          this.inventoryOffset = 0;
         }
       }else if(y <= tArrowY){
         this.inventoryOffset -= (this.inventoryOffset > 0) ? 1 : 0;
@@ -104,7 +104,7 @@ Gui = function() {
         var invIn = Math.floor(6*((y - tArrowY) / (objY - tArrowY)));
         //clicking on an invetory square
       }else{
-        this.inventoryOffset += (target.inventory.length > 6) ? 1 : 0;
+        this.inventoryOffset += (Object.keys(this.target.inventory).length > 6) ? 1 : 0;
       }
     }else if(target == "target"){
       if(this.target && this.target.actions){
@@ -659,7 +659,9 @@ Gui = function() {
     y += yArrow + (2*yBuf);
     //objs
     for(var i = 0;i<6;i++){
-      var invItem = false;
+      var invKey = Object.keys(this.target.inventory)[i];
+      console.log(invKey);
+      var invItem = this.target.inventory[invKey];
       canvasBufferContext.beginPath();
       canvasBufferContext.fillStyle = "rgba(20,0,50,0.9)";
       canvasBufferContext.strokeStyle="rgba(20,0,75,1.0)";
@@ -667,11 +669,11 @@ Gui = function() {
       canvasBufferContext.fill();
       canvasBufferContext.stroke();
       if(invItem){
-        invItem.drawTargetPortrait(x,y,xSize/4,ySize,canvasBufferContext);
+    //    invItem.drawTargetPortrait(x,y,xSize/4,ySize,canvasBufferContext);
         var fontSize = ySize / 4;
         canvasBufferContext.font = fontSize + 'px Courier';
         canvasBufferContext.fillStyle = "rgba(50,250,200,0.9)";
-        canvasBufferContext.fillText(invItem.name[0]+" "+invItem.name[1],x+(xSize/4),y+fontSize+yBuf);
+        canvasBufferContext.fillText(invKey,x+(xSize/4),y+fontSize+yBuf);
       }
       y += ySize + (2*yBuf);
     }
@@ -683,7 +685,7 @@ Gui = function() {
     canvasBufferContext.fill();
     canvasBufferContext.stroke();
     canvasBufferContext.beginPath();
-    var aRed = (this.target && this.target.inventory && (this.target.inventory.slice(this.inventoryOffset).length > 6)) ? 200 : 100;
+    var aRed = (this.target && this.target.inventory && (Object.keys(this.target.inventory).slice(this.inventoryOffset).length > 6)) ? 200 : 100;
     canvasBufferContext.fillStyle = "rgba("+aRed+",0,50,0.9)";
     canvasBufferContext.strokeStyle="rgba("+aRed+",0,75,1.0)";
     canvasBufferContext.moveTo(x+(xSize*0.4),y+yBuf);

@@ -6,17 +6,20 @@ Block = function(type,pos) {
   var strokeRGB;
   this.airtight = false;
   this.pathable = false;
+  this.cost = {};
   switch(type){
     case 'soil':
       fName = 'Soil';
       fillRGB = "rgba(20,200,150,0.9)";
       strokeRGB="rgba(40,250,200,1.0)";
+      this.cost.soil = 2;
       break;
     case 'metal':
       fName = 'Metal';
       fillRGB = "rgba(200,220,200,0.9)";
       strokeRGB="rgba(230,230,230,1.0)";
       this.airtight = true;
+      this.cost.metal = 2;
       break;
   }
 
@@ -74,6 +77,7 @@ Door = function(pos) {
   this.size = {'x':1*config.gridInterval,'y':2*config.gridInterval};
   this.position = pos ? pos : {'x':x,'y':y};
   this.open = false;
+  this.cost = {'metal': 4};
 
   this.collision = function(){
     return !this.open;
@@ -85,7 +89,6 @@ Door = function(pos) {
   this.update = function(humans){
     var closeHuman = false;
     for(h in humans){
-      console.log(config.distance(humans[h],this));
       if(config.distance(humans[h],this) <= config.gridInterval*1.1){
         closeHuman = true;
       }

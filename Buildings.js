@@ -4,28 +4,33 @@ StorageBuild = function(type,pos) {
   this.size = {'x':1*config.gridInterval,'y':1*config.gridInterval};
   this.interact = false;
   this.inventory = new Inventory();
+  this.cost = {};
   switch(type){
     case 'power':
       fName = 'Chemical';
       lName = 'Battery';
       this.size = {'x':1*config.gridInterval,'y':2*config.gridInterval};
+      this.cost = {'metal':8};
       break;
     case 'water':
       fName = 'Water';
       lName = 'Cistern';
       this.size = {'x':2*config.gridInterval,'y':2*config.gridInterval};
       this.interact = 'inventory';
+      this.cost = {'metal':8};
       break;
     case 'oxygen':
       fName = 'Oxygen';
       lName = 'Tank';
       this.size = {'x':1*config.gridInterval,'y':2*config.gridInterval};
       this.interact = 'inventory';
+      this.cost = {'metal':8};
       break;
     case 'dry':
       fName = 'Dry';
       lName = 'Storage';
       this.interact = 'inventory';
+      this.cost = {'metal':8};
       break;
   }
   this.name = [fName,lName];
@@ -181,14 +186,17 @@ ConveyorBuild = function(type,pos) {
       fName = 'Air';
       lName = 'Vent';
       this.airtight = true;
+      this.cost = {'metal':8};
       break;
     case 'pipe':
       fName = 'Water';
       lName = 'Pipe';
+      this.cost = {'metal':8};
       break;
     case 'dry':
       fName = 'Conveyor';
       lName = 'Tube';
+      this.cost = {'metal':8};
       break;
   }
   this.name = [fName,lName];
@@ -322,19 +330,23 @@ GeneratorBuild = function(type,pos) {
       fName = 'Soil';
       lName = 'Evaporator';
       this.size = {'x':4*config.gridInterval,'y':2*config.gridInterval};
+      this.cost = {'metal':8};
       break;
     case 'oxygen':
       fName = 'Water';
       lName = 'Splitter';
       this.size = {'x':2*config.gridInterval,'y':2*config.gridInterval};
+      this.cost = {'metal':8};
       break;
     case 'metal':
       fName = 'Smelting';
       lName = 'Chamber';
+      this.cost = {'metal':8};
       break;
     case 'solar':
       fName = 'Solar';
       lName = 'Panel';
+      this.cost = {'metal':8};
       this.size = {'x':3*config.gridInterval,'y':1*config.gridInterval};
   }
   this.name = [fName,lName];

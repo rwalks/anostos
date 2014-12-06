@@ -42,6 +42,7 @@ Tiles = function() {
     this.collision = function(){return true;}
     this.pathable = false;
     this.lastDrawn = -1;
+    this.cost = {'soil': 8};
     this.type = "construction";
     this.draw = function(camera,canvasBufferContext,count){
       //draw less often
