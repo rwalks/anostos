@@ -80,6 +80,7 @@ var GameScene = function (strs,trn,shp,nam){
             }
             break;
           case 'inventory':
+            this.uiMode = 'trade';
             break;
         }
       }
@@ -92,7 +93,14 @@ var GameScene = function (strs,trn,shp,nam){
     if(rightClick){
       if(this.uiMode == 'select' && focusTarget){
         var coords = clickToCoord(clickPos,true);
-        focusTarget.click(coords,terrain,'move');
+        var obj = false;
+  //      for(h in humans){
+  //        if(humans[h].pointWithin(coords.x,coords.y)){
+  //          obj = humans[h];
+  //        }
+  //      }
+        obj = !obj ? (terrain[coords.x] ? terrain[coords.x][coords.y] : false) : obj;
+        focusTarget.click(coords,terrain,'move',obj);
       }else{
         this.uiMode = 'select';
       }

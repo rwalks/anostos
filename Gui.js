@@ -10,6 +10,7 @@ Gui = function() {
   this.buildOffset = 0;
 
   this.inventoryOffset = 0;
+  this.tradeOffset = 0;
 
   this.buildings = {
   "construction":[new Block('soil'),new Block('metal'),new Door()],
@@ -41,6 +42,10 @@ Gui = function() {
         break;
       case "inventory":
         pos.x = config.canvasWidth *0.1;
+        pos.y = config.canvasHeight * 0.1;
+        break;
+      case "trade":
+        pos.x = config.canvasWidth *0.6;
         pos.y = config.canvasHeight * 0.1;
         break;
     }
@@ -101,10 +106,56 @@ Gui = function() {
       }else if(y <= tArrowY){
         this.inventoryOffset -= (this.inventoryOffset > 0) ? 1 : 0;
       }else if(y <= objY){
-        var invIn = Math.floor(6*((y - tArrowY) / (objY - tArrowY)));
         //clicking on an invetory square
+        var invIndex = Math.floor(6*((y - tArrowY) / (objY - tArrowY))) + this.inventoryOffset;
+        var resource = Object.keys(this.target.inventory.inv)[invIndex];
+        if(resource){
+          if(x >= xSize * 0.7 && x < xSize * 0.85){
+            //delete
+            this.target.inventory.removeItem(resource,1);
+          }else if(x >= xSize * 0.85 && x < xSize){
+            //trade
+            this.target.targetObj.inventory.addItem(resource,1);
+            this.target.inventory.removeItem(resource,1);
+          }
+        }
       }else{
-        this.inventoryOffset += (Object.keys(this.target.inventory).length > 6) ? 1 : 0;
+        this.inventoryOffset += (Object.keys(this.target.inventory.inv).length > 6) ? 1 : 0;
+      }
+    }else if(target == "trade" && this.target && this.target.targetObj && this.target.targetObj.inventory){
+      var x = clickPos.x - this.position('trade').x;
+      var y = clickPos.y - this.position('trade').y;
+      var xSize = this.size('trade').x;
+      var ySize = this.size('trade').y;
+      var xBuf = Math.floor(config.xRatio) * 2;
+      var tabY = ySize/10;
+      var tArrowY = tabY + (ySize / 16);
+      var objY = ySize - (ySize / 16);
+      if(y <= tabY){
+        //tabs
+        var tX = Math.floor(6*((x - (2*xBuf)) / (xSize - (2*xBuf))));
+        if(tX >= 0){
+          this.tradeOffset = 0;
+        }
+      }else if(y <= tArrowY){
+        this.tradeOffset -= (this.tradeOffset > 0) ? 1 : 0;
+      }else if(y <= objY){
+        //clicking on a trade square
+        var tradeIndex = Math.floor(6*((y - tArrowY) / (objY - tArrowY))) + this.tradeOffset;
+        var resource = Object.keys(this.target.targetObj.inventory.inv)[tradeIndex];
+        if(resource){
+          if(x >= xSize * 0.7 && x < xSize * 0.85){
+            //delete
+            this.target.targetObj.inventory.removeItem(resource,1);
+          }else if(x >= xSize * 0.85 && x < xSize){
+            //trade
+            this.target.inventory.addItem(resource,1);
+            this.target.targetObj.inventory.removeItem(resource,1);
+          }
+        }
+
+      }else{
+        this.tradeOffset += (Object.keys(this.target.targetObj.inventory.inv).length > 6) ? 1 : 0;
       }
     }else if(target == "target"){
       if(this.target && this.target.actions){
@@ -150,6 +201,10 @@ Gui = function() {
         size.x = config.canvasWidth / 6;
         size.y = config.canvasHeight * 0.6;
         break;
+      case "trade":
+        size.x = config.canvasWidth / 6;
+        size.y = config.canvasHeight * 0.6;
+        break;
       case "roster":
         size.x = config.canvasWidth / 8;
         size.y = config.canvasHeight * 0.6;
@@ -172,10 +227,15 @@ Gui = function() {
         y > this.position('build').y && y < (this.position('build').y + this.size('build').y)){
           return "build";
         }
-    else if ( this.uiMode == 'inventory' &&
+    else if ( (this.uiMode == 'inventory' || this.uiMode == 'trade') &&
         x > this.position('inventory').x && x < (this.position('inventory').x + this.size('inventory').x) &&
         y > this.position('inventory').y && y < (this.position('inventory').y + this.size('inventory').y)){
           return "inventory"
+        };
+    if ( this.uiMode == 'trade' &&
+        x > this.position('trade').x && x < (this.position('trade').x + this.size('trade').x) &&
+        y > this.position('trade').y && y < (this.position('trade').y + this.size('trade').y)){
+          return "trade"
         };
     return false;
   }
@@ -185,9 +245,12 @@ Gui = function() {
     if(this.uiMode == 'build'){
      // this.drawGrid(camera,canvasBufferContext);
       this.drawBuild(this.size("build"),this.position("build"),canvasBufferContext);
-    }else if(this.uiMode == 'inventory'){
+    }else if(this.uiMode == 'inventory' || this.uiMode == 'trade'){
       this.drawInventory(canvasBufferContext);
-    }
+      if(this.uiMode == 'trade'){
+        this.drawTrade(canvasBufferContext);
+      }
+    };
     this.drawResources(this.size("resources"),this.position("resources"),canvasBufferContext);
     this.drawTarget(this.size("target"),this.position("target"),canvasBufferContext);
     this.drawRoster(this.size("roster"),this.position("roster"),canvasBufferContext);
@@ -659,21 +722,70 @@ Gui = function() {
     y += yArrow + (2*yBuf);
     //objs
     for(var i = 0;i<6;i++){
-      var invKey = Object.keys(this.target.inventory)[i];
-      console.log(invKey);
-      var invItem = this.target.inventory[invKey];
+      var invKey = Object.keys(this.target.inventory.inv)[i];
+      var invCount = this.target.inventory.inv[invKey];
       canvasBufferContext.beginPath();
       canvasBufferContext.fillStyle = "rgba(20,0,50,0.9)";
       canvasBufferContext.strokeStyle="rgba(20,0,75,1.0)";
       canvasBufferContext.rect(x,y,xSize,ySize);
       canvasBufferContext.fill();
       canvasBufferContext.stroke();
-      if(invItem){
+      if(invCount){
     //    invItem.drawTargetPortrait(x,y,xSize/4,ySize,canvasBufferContext);
         var fontSize = ySize / 4;
         canvasBufferContext.font = fontSize + 'px Courier';
         canvasBufferContext.fillStyle = "rgba(50,250,200,0.9)";
         canvasBufferContext.fillText(invKey,x+(xSize/4),y+fontSize+yBuf);
+//count
+        var fontSize = ySize / 4;
+        canvasBufferContext.font = fontSize + 'px Courier';
+        canvasBufferContext.fillStyle = "rgba(50,250,200,0.9)";
+        canvasBufferContext.fillText(invCount,x+(xSize/2),y+fontSize+yBuf);
+
+        //draw delete
+        //
+        canvasBufferContext.beginPath();
+        canvasBufferContext.fillStyle = "rgba(20,50,100,0.9)";
+        canvasBufferContext.strokeStyle="rgba(20,50,175,1.0)";
+        canvasBufferContext.rect(x+(xSize*0.7),y,xSize*0.15,ySize);
+        canvasBufferContext.fill();
+        canvasBufferContext.stroke();
+
+        canvasBufferContext.strokeStyle="rgba(250,250,250,1.0)";
+        canvasBufferContext.fillStyle="rgba(250,250,250,1.0)";
+        canvasBufferContext.lineWidth=xBuf;
+        canvasBufferContext.beginPath();
+        canvasBufferContext.moveTo(x + (xSize * 0.72), y + (ySize * 0.3));
+        canvasBufferContext.lineTo(x + (xSize * 0.83), y + (ySize * 0.7));
+        canvasBufferContext.fill();
+        canvasBufferContext.stroke();
+        canvasBufferContext.beginPath();
+        canvasBufferContext.moveTo(x + (xSize * 0.83), y + (ySize * 0.3));
+        canvasBufferContext.lineTo(x + (xSize * 0.72), y + (ySize * 0.7));
+        canvasBufferContext.fill();
+        canvasBufferContext.stroke();
+        //draw trade arrow
+        var aRed = (this.target.actions[i] == this.uiMode) ? 200 : 0;
+        canvasBufferContext.beginPath();
+        canvasBufferContext.fillStyle = "rgba("+aRed+",50,100,0.9)";
+        canvasBufferContext.strokeStyle="rgba("+aRed+",50,175,1.0)";
+        canvasBufferContext.rect(x+(xSize*0.85),y,xSize*0.15,ySize);
+        canvasBufferContext.fill();
+        canvasBufferContext.stroke();
+
+        canvasBufferContext.strokeStyle="rgba(250,250,250,1.0)";
+        canvasBufferContext.fillStyle="rgba(250,250,250,1.0)";
+        canvasBufferContext.lineWidth=xBuf;
+        canvasBufferContext.beginPath();
+        canvasBufferContext.moveTo(x + (xSize * 0.86), y + (ySize * 0.01));
+        canvasBufferContext.lineTo(x + (xSize * 0.99), y + (ySize * 0.99));
+        canvasBufferContext.fill();
+        canvasBufferContext.stroke();
+        canvasBufferContext.beginPath();
+        canvasBufferContext.moveTo(x + (xSize * 0.99), y + (ySize * 0.01));
+        canvasBufferContext.lineTo(x + (xSize * 0.86), y + (ySize * 0.99));
+        canvasBufferContext.fill();
+        canvasBufferContext.stroke();
       }
       y += ySize + (2*yBuf);
     }
@@ -685,7 +797,140 @@ Gui = function() {
     canvasBufferContext.fill();
     canvasBufferContext.stroke();
     canvasBufferContext.beginPath();
-    var aRed = (this.target && this.target.inventory && (Object.keys(this.target.inventory).slice(this.inventoryOffset).length > 6)) ? 200 : 100;
+    var aRed = (this.target && this.target.inventory && (Object.keys(this.target.inventory.inv).slice(this.inventoryOffset).length > 6)) ? 200 : 100;
+    canvasBufferContext.fillStyle = "rgba("+aRed+",0,50,0.9)";
+    canvasBufferContext.strokeStyle="rgba("+aRed+",0,75,1.0)";
+    canvasBufferContext.moveTo(x+(xSize*0.4),y+yBuf);
+    canvasBufferContext.lineTo(x+(xSize*0.5),y+yArrow-yBuf);
+    canvasBufferContext.lineTo(x+(xSize*0.6),y+yBuf);
+    canvasBufferContext.fill();
+    canvasBufferContext.stroke();
+
+  }
+
+  this.drawTrade = function(canvasBufferContext){
+    var size = this.size('trade');
+    var pos = this.position('trade');
+    canvasBufferContext.beginPath();
+    canvasBufferContext.lineWidth=Math.floor(config.xRatio)+"";
+    canvasBufferContext.fillStyle = "rgba(150,0,200,0.9)";
+    canvasBufferContext.strokeStyle="rgba(200,0,250,1.0)";
+    canvasBufferContext.rect(pos.x,pos.y,size.x,size.y);
+    canvasBufferContext.fill();
+    canvasBufferContext.stroke();
+    var xBuf = Math.floor(config.xRatio) * 2;
+    var yBuf = Math.floor(config.yRatio) * 2;
+    var x = pos.x + xBuf;
+    var y = pos.y + yBuf;
+    var xSize = size.x - (2*xBuf);
+    var yArrow = (size.y / 16) - (2*yBuf);
+    var yTab = (size.y / 10) - (2*yBuf);
+    var ySize = ((size.y - (yArrow*2) - yTab - (yBuf*6))/6)-(2*yBuf);
+    //tabs
+    canvasBufferContext.beginPath();
+    canvasBufferContext.fillStyle = "rgba(20,0,50,0.6)";
+    canvasBufferContext.strokeStyle="rgba(20,0,75,1.0)";
+    canvasBufferContext.rect(x,y,xSize,yTab);
+    canvasBufferContext.fill();
+   canvasBufferContext.stroke();
+    y += yTab + (2*yBuf);
+    //arrow
+    canvasBufferContext.beginPath();
+    canvasBufferContext.fillStyle = "rgba(20,0,50,0.6)";
+    canvasBufferContext.strokeStyle="rgba(20,0,75,1.0)";
+    canvasBufferContext.rect(x,y,xSize,yArrow);
+    canvasBufferContext.fill();
+    canvasBufferContext.stroke();
+    canvasBufferContext.beginPath();
+    var aRed = (this.inventoryOffset > 0) ? 200 : 100;
+    canvasBufferContext.fillStyle = "rgba("+aRed+",0,50,0.9)";
+    canvasBufferContext.strokeStyle="rgba("+aRed+",0,75,1.0)";
+    canvasBufferContext.moveTo(x+(xSize*0.4),y+yArrow-yBuf);
+    canvasBufferContext.lineTo(x+(xSize*0.5),y+yBuf);
+    canvasBufferContext.lineTo(x+(xSize*0.6),y+yArrow-yBuf);
+    canvasBufferContext.fill();
+    canvasBufferContext.stroke();
+    y += yArrow + (2*yBuf);
+    //objs
+    for(var i = 0;i<6;i++){
+      canvasBufferContext.beginPath();
+      canvasBufferContext.fillStyle = "rgba(20,0,50,0.9)";
+      canvasBufferContext.strokeStyle="rgba(20,0,75,1.0)";
+      canvasBufferContext.rect(x,y,xSize,ySize);
+      canvasBufferContext.fill();
+      canvasBufferContext.stroke();
+      if(this.target.targetObj && this.target.targetObj.inventory){
+        var invKey = Object.keys(this.target.targetObj.inventory.inv)[i];
+        var invCount = this.target.targetObj.inventory.inv[invKey];
+        if(invCount){
+      //    invItem.drawTargetPortrait(x,y,xSize/4,ySize,canvasBufferContext);
+          var fontSize = ySize / 4;
+          canvasBufferContext.font = fontSize + 'px Courier';
+          canvasBufferContext.fillStyle = "rgba(50,250,200,0.9)";
+          canvasBufferContext.fillText(invKey,x+(xSize/4),y+fontSize+yBuf);
+  //count
+          var fontSize = ySize / 4;
+          canvasBufferContext.font = fontSize + 'px Courier';
+          canvasBufferContext.fillStyle = "rgba(50,250,200,0.9)";
+          canvasBufferContext.fillText(invCount,x+(xSize/2),y+fontSize+yBuf);
+
+          //draw delete
+          //
+          canvasBufferContext.beginPath();
+          canvasBufferContext.fillStyle = "rgba(20,50,100,0.9)";
+          canvasBufferContext.strokeStyle="rgba(20,50,175,1.0)";
+          canvasBufferContext.rect(x+(xSize*0.7),y,xSize*0.15,ySize);
+          canvasBufferContext.fill();
+          canvasBufferContext.stroke();
+
+          canvasBufferContext.strokeStyle="rgba(250,250,250,1.0)";
+          canvasBufferContext.fillStyle="rgba(250,250,250,1.0)";
+          canvasBufferContext.lineWidth=xBuf;
+          canvasBufferContext.beginPath();
+          canvasBufferContext.moveTo(x + (xSize * 0.72), y + (ySize * 0.3));
+          canvasBufferContext.lineTo(x + (xSize * 0.83), y + (ySize * 0.7));
+          canvasBufferContext.fill();
+          canvasBufferContext.stroke();
+          canvasBufferContext.beginPath();
+          canvasBufferContext.moveTo(x + (xSize * 0.83), y + (ySize * 0.3));
+          canvasBufferContext.lineTo(x + (xSize * 0.72), y + (ySize * 0.7));
+          canvasBufferContext.fill();
+          canvasBufferContext.stroke();
+          //draw trade arrow
+          var aRed = (this.target.actions[i] == this.uiMode) ? 200 : 0;
+          canvasBufferContext.beginPath();
+          canvasBufferContext.fillStyle = "rgba("+aRed+",50,100,0.9)";
+          canvasBufferContext.strokeStyle="rgba("+aRed+",50,175,1.0)";
+          canvasBufferContext.rect(x+(xSize*0.85),y,xSize*0.15,ySize);
+          canvasBufferContext.fill();
+          canvasBufferContext.stroke();
+
+          canvasBufferContext.strokeStyle="rgba(250,250,250,1.0)";
+          canvasBufferContext.fillStyle="rgba(250,250,250,1.0)";
+          canvasBufferContext.lineWidth=xBuf;
+          canvasBufferContext.beginPath();
+          canvasBufferContext.moveTo(x + (xSize * 0.86), y + (ySize * 0.01));
+          canvasBufferContext.lineTo(x + (xSize * 0.99), y + (ySize * 0.99));
+          canvasBufferContext.fill();
+          canvasBufferContext.stroke();
+          canvasBufferContext.beginPath();
+          canvasBufferContext.moveTo(x + (xSize * 0.99), y + (ySize * 0.01));
+          canvasBufferContext.lineTo(x + (xSize * 0.86), y + (ySize * 0.99));
+          canvasBufferContext.fill();
+          canvasBufferContext.stroke();
+        }
+      }
+      y += ySize + (2*yBuf);
+    }
+    //arrow
+    canvasBufferContext.beginPath();
+    canvasBufferContext.fillStyle = "rgba(20,0,50,0.6)";
+    canvasBufferContext.strokeStyle="rgba(20,0,75,1.0)";
+    canvasBufferContext.rect(x,y,xSize,yArrow);
+    canvasBufferContext.fill();
+    canvasBufferContext.stroke();
+    canvasBufferContext.beginPath();
+    var aRed = (this.target && this.target.inventory.inv && (Object.keys(this.target.inventory.inv).slice(this.inventoryOffset).length > 6)) ? 200 : 100;
     canvasBufferContext.fillStyle = "rgba("+aRed+",0,50,0.9)";
     canvasBufferContext.strokeStyle="rgba("+aRed+",0,75,1.0)";
     canvasBufferContext.moveTo(x+(xSize*0.4),y+yBuf);

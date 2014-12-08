@@ -18,6 +18,7 @@ StorageBuild = function(type,pos) {
       this.size = {'x':2*config.gridInterval,'y':2*config.gridInterval};
       this.interact = 'inventory';
       this.cost = {'metal':8};
+      this.inventory.resourcesAllowed = ['water'];
       break;
     case 'oxygen':
       fName = 'Oxygen';
@@ -25,12 +26,14 @@ StorageBuild = function(type,pos) {
       this.size = {'x':1*config.gridInterval,'y':2*config.gridInterval};
       this.interact = 'inventory';
       this.cost = {'metal':8};
+      this.inventory.resourcesAllowed = ['oxygen'];
       break;
     case 'dry':
       fName = 'Dry';
       lName = 'Storage';
       this.interact = 'inventory';
       this.cost = {'metal':8};
+      this.inventory.resourcesAllowed = ['soil','metal'];
       break;
   }
   this.name = [fName,lName];

@@ -20,7 +20,7 @@ Human = function(x,y,name) {
   this.maxHealth = 100; this.currentHealth = 100;
   this.maxOxygen = 100; this.currentOxygen = 100;
 
-  this.inventory = {};
+  this.inventory = new Inventory();
   this.action = false;
 
   this.actions = ["build","inventory","delete"];
@@ -38,15 +38,21 @@ Human = function(x,y,name) {
   this.lineColor = "rgba("+r+","+g+","+b+",1.0)";
 
   this.salvage = function(obj){
-    console.log(inv);
-    for(i in this.targetObj.inventory){
-      this.inventory[i] = this.inventory[i] ? this.inventory[i] + inv[i] : inv[i];
+    var inv = this.targetObj.inventory ? this.targetObj.inventory.inv : false;
+    if(inv){
+      for(i in inv){
+        this.inventory.addItem(i,inv[i]);
+      }
     }
-    for(i in this.targetObj.cost){
-      this.inventory[i] = this.inventory[i] ? this.inventory[i] + (inv[i]/2) : inv[i]/2;
+
+    inv = this.targetObj.cost;
+    if(inv){
+      for(i in inv){
+        this.inventory.addItem(i,Math.floor(inv[i]/2));
+      }
     }
-    console.log(this.inventory);
   }
+
 
   this.update = function(terrain){
     count += 1;
@@ -78,31 +84,33 @@ Human = function(x,y,name) {
       var range = config.gridInterval * 3;
     }
     if(this.target && nodeDistance(targCoords,this.position) < range){
+      var ret;
       switch(this.action){
         case 'build':
           if(this.targetObj){
-            this.path = [];
-            return {'action':'build','obj':this.targetObj};
+            ret = {'action':'build','obj':this.targetObj};
           }
           break;
         case 'delete':
           if(this.targetObj){
             var targ = terrain[this.targetObj.position.x] ? terrain[this.targetObj.position.x][this.targetObj.position.y] : false;
             if(targ && targ == this.targetObj){
-              this.path = [];
               this.salvage(this.targetObj);
-              return {'action':'delete','obj':targ};
+              ret = {'action':'delete','obj':targ};
             }
           }
           break;
         default:
           var targ = terrain[this.target.x] ? terrain[this.target.x][this.target.y] : false;
           if(targ && targ.interact == 'inventory'){
-            this.path = [];
-            return {'action':'inventory','obj':targ};
+            ret = {'action':'inventory','obj':targ};
           }
           break;
       }
+
+      this.path = [];
+      this.target = false;
+      return ret;
 
 
     }
@@ -216,7 +224,7 @@ Human = function(x,y,name) {
     this.action = false;
     this.target = false;
     this.targetObj = false;
-    if(action == 'move'){
+    if(!obj){
       this.path = pathfinder.findPath(this.position.x,this.position.y,coords.x,coords.y,terrain);
     }else if(obj){
       //find spot adjacent to obj
@@ -242,12 +250,7 @@ Human = function(x,y,name) {
     }
     if(this.path.length > 0){
       this.action = action;
-      if(action == 'build' || action == 'delete' || action == 'inventory'){
-        var p = this.path[0];
-        this.target = {'x':p[0],'y':p[1]};
-      }else{
-        this.target = coords;
-      }
+      this.target = coords;
       this.targetObj = obj;
     }
     return;
