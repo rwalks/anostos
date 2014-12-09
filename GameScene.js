@@ -18,6 +18,8 @@ var GameScene = function (strs,trn,shp,nam){
   this.rooms = [];
   var doors = {};
   var airtightWalls = {};
+  var containers = {};
+  var generators = {};
 
   var focusTarget;
   var buildTarget;
@@ -59,7 +61,11 @@ var GameScene = function (strs,trn,shp,nam){
               delete airtightWalls[obj.position.x][obj.position.y];
               this.regenRooms();
             }
-            if(obj.type == 'door'){
+            if(obj.type == 'container'){
+              delete containers[obj.position.x][obj.position.y];
+            if(obj.type == 'generator'){
+              delete generators[obj.position.x][obj.position.y];
+            }else if(obj.type == 'door'){
               delete doors[obj.position.x][obj.position.y];
             }
             tiles.removeTile(obj,terrain);
@@ -76,7 +82,14 @@ var GameScene = function (strs,trn,shp,nam){
               if(obj.type == 'door'){
                 doors[obj.position.x] = doors[obj.position.x] ? doors[obj.position.x] : {};
                 doors[obj.position.x][obj.position.y] = true;
+              }else if(obj.type == 'container'){
+                containers[obj.position.x] = containers[obj.position.x] ? containers[obj.position.x] : {};
+                containers[obj.position.x][obj.position.y] = true;
+              }else if(obj.type == 'generator'){
+                generators[obj.position.x] = generators[obj.position.x] ? generators[obj.position.x] : {};
+                generators[obj.position.x][obj.position.y] = true;
               }
+
             }
             break;
           case 'inventory':

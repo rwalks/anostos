@@ -41,7 +41,7 @@ StorageBuild = function(type,pos) {
   this.collision = function(){return true;}
   this.pathable = false;
   this.lastDrawn = -1;
-  this.type = "block";
+  this.type = "storage";
   this.draw = function(camera,canvasBufferContext,count){
     //draw less often
     if(count > this.lastDrawn || Math.abs(count - this.lastDrawn) > 1){
@@ -207,7 +207,7 @@ ConveyorBuild = function(type,pos) {
   this.position = pos ? pos : {'x':x,'y':y};
   this.collision = function(){return false;}
   this.lastDrawn = -1;
-  this.type = "block";
+  this.type = "conveyor";
 
   this.draw = function(camera,canvasBufferContext,count){
     //draw less often
@@ -357,7 +357,7 @@ GeneratorBuild = function(type,pos) {
   this.collision = function(){return true;}
   this.pathable = false;
   this.lastDrawn = -1;
-  this.type = "block";
+  this.type = "generator";
 
   this.draw = function(camera,canvasBufferContext,count){
     //draw less often
