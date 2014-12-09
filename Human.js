@@ -89,6 +89,8 @@ Human = function(x,y,name) {
         case 'build':
           if(this.targetObj){
             ret = {'action':'build','obj':this.targetObj};
+            this.path = [];
+            this.target = false;
           }
           break;
         case 'delete':
@@ -97,6 +99,8 @@ Human = function(x,y,name) {
             if(targ && targ == this.targetObj){
               this.salvage(this.targetObj);
               ret = {'action':'delete','obj':targ};
+              this.path = [];
+              this.target = false;
             }
           }
           break;
@@ -104,12 +108,12 @@ Human = function(x,y,name) {
           var targ = terrain[this.target.x] ? terrain[this.target.x][this.target.y] : false;
           if(targ && targ.interact == 'inventory'){
             ret = {'action':'inventory','obj':targ};
+            this.path = [];
+            this.target = false;
           }
           break;
       }
 
-      this.path = [];
-      this.target = false;
       return ret;
 
 
@@ -212,7 +216,7 @@ Human = function(x,y,name) {
   this.draw = function(camera,canvasContext){
     var animate = Math.abs(this.velocity.x) > 0.1;
     drawHuman(this.position.x,this.position.y,canvasContext,camera,this.direction,animate,this.fillColor,this.lineColor);
-    //drawPath(this.path,canvasContext,camera);
+    drawPath(this.path,canvasContext,camera);
   }
 
   this.pointWithin = function(x,y){
