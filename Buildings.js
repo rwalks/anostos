@@ -19,6 +19,7 @@ StorageBuild = function(type,pos) {
       this.interact = 'inventory';
       this.cost = {'metal':8};
       this.inventory.resourcesAllowed = ['water'];
+      this.resourceAffinities = ['water'];
       break;
     case 'oxygen':
       fName = 'Oxygen';
@@ -27,6 +28,7 @@ StorageBuild = function(type,pos) {
       this.interact = 'inventory';
       this.cost = {'metal':8};
       this.inventory.resourcesAllowed = ['oxygen'];
+      this.resourceAffinities = ['oxygen'];
       break;
     case 'dry':
       fName = 'Dry';
@@ -34,6 +36,7 @@ StorageBuild = function(type,pos) {
       this.interact = 'inventory';
       this.cost = {'metal':8};
       this.inventory.resourcesAllowed = ['soil','metal'];
+      this.resourceAffinities = ['dry'];
       break;
   }
   this.name = [fName,lName];
@@ -41,7 +44,7 @@ StorageBuild = function(type,pos) {
   this.collision = function(){return true;}
   this.pathable = false;
   this.lastDrawn = -1;
-  this.type = "storage";
+  this.type = "container";
   this.draw = function(camera,canvasBufferContext,count){
     //draw less often
     if(count > this.lastDrawn || Math.abs(count - this.lastDrawn) > 1){
@@ -190,16 +193,19 @@ ConveyorBuild = function(type,pos) {
       lName = 'Vent';
       this.airtight = true;
       this.cost = {'metal':8};
+      this.resourceAffinities = ['oxygen'];
       break;
     case 'pipe':
       fName = 'Water';
       lName = 'Pipe';
       this.cost = {'metal':8};
+      this.resourceAffinities = ['water'];
       break;
     case 'dry':
       fName = 'Conveyor';
       lName = 'Tube';
       this.cost = {'metal':8};
+      this.resourceAffinities = ['dry'];
       break;
   }
   this.name = [fName,lName];
@@ -334,17 +340,20 @@ GeneratorBuild = function(type,pos) {
       lName = 'Evaporator';
       this.size = {'x':4*config.gridInterval,'y':2*config.gridInterval};
       this.cost = {'metal':8};
+      this.resourceAffinities = ['water','dry'];
       break;
     case 'oxygen':
       fName = 'Water';
       lName = 'Splitter';
       this.size = {'x':2*config.gridInterval,'y':2*config.gridInterval};
       this.cost = {'metal':8};
+      this.resourceAffinities = ['water','oxygen'];
       break;
     case 'metal':
       fName = 'Smelting';
       lName = 'Chamber';
       this.cost = {'metal':8};
+      this.resourceAffinities = ['dry','oxygen'];
       break;
     case 'solar':
       fName = 'Solar';

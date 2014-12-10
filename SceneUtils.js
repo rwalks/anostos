@@ -1,5 +1,5 @@
 var SceneUtils = function (bg){
-  var bgs = bg ? bg : [{},{},{}];
+  this.bgs = bg ? bg : [{},{},{}];
   var bgColors = [[20,10,100],[40,20,150],[100,50,200]];
 
   this.generateTerrain = function(){
@@ -28,15 +28,15 @@ var SceneUtils = function (bg){
          tiles.addTile(tile,tMap,false);
       }
       if(x % (config.gridInterval * 4) == 0){
-        bgs[0][x] = yMin - ((Math.random() * 50) + 200);
-        bgs[1][x] = yMin - ((Math.random() * 50) + 100);
+        this.bgs[0][x] = yMin - ((Math.random() * 50) + 200);
+        this.bgs[1][x] = yMin - ((Math.random() * 50) + 100);
       }
       if(x % (config.gridInterval * 2) == 0){
-        bgs[2][x] = yMin - 50;
+        this.bgs[2][x] = yMin - 50;
       }
       last = yMin;
     }
-    return [tMap,bgs];
+    return tMap;
   }
 
   this.drawBG = function(camera,clockCycle,canvasBufferContext){
@@ -44,10 +44,10 @@ var SceneUtils = function (bg){
     var xRatio = config.canvasWidth / config.cX;
     var yRatio = config.canvasHeight / config.cY;
     var parallax = 4;
-    for(b in bgs){
+    for(b in this.bgs){
       var camX = camera.xOff / parallax;
       var camY = camera.yOff;
-      var bg = bgs[b];
+      var bg = this.bgs[b];
       var bgC = bgColors[b];
       canvasBufferContext.fillStyle = "rgba("+bgC[0]+","+bgC[1]+","+bgC[2]+",1.0)";
       canvasBufferContext.beginPath();

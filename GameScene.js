@@ -1,8 +1,8 @@
-var GameScene = function (strs,trn,shp,nam){
+var GameScene = function (strs,trn,shp,nam,bg){
   var heroName = nam;
-  var sceneUtils = new SceneUtils(trn[1]);
+  var sceneUtils = new SceneUtils(bg);
   var stars = strs ? strs : sceneUtils.generateStars(10000);
-  var terrain = trn ? trn[0] : sceneUtils.generateTerrain();
+  var terrain = trn ? trn : new Terrain();
   var ship = shp;
   var camera = new Camera(5000,6500);
   camera.focusOn(ship.position);
@@ -42,19 +42,19 @@ var GameScene = function (strs,trn,shp,nam){
   this.update = function(mPos){
     mousePos = mPos;
     camera.update(mousePos);
+    var regen = [];
     for (h in humans){
       var ret = humans[h].update(terrain);
       if(ret){
         switch(ret.action){
           case 'delete':
             var obj = ret.obj;
-            tiles.removeTile(obj,terrain);
+            regen = terrain.removeTile(obj);
             break;
           case 'build':
             var obj = ret.obj;
-            if(tiles.isClear(obj,terrain,humans)){
-              tiles.addTile(obj,terrain);
-
+            if(terrain.isClear(obj,humans)){
+              regen = terrain.addTile(obj);
             }
             break;
           case 'inventory':
@@ -64,6 +64,11 @@ var GameScene = function (strs,trn,shp,nam){
       }
     }
     gui.update(focusTarget,humans,resources.getResources(),buildTarget,this.uiMode);
+    for(r in regen){
+      if(regen[r] == 'rooms'){
+        this.regenRooms();
+      }
+    }
     this.count = (this.count > 100) ? 0 : this.count + 1;
   }
 
@@ -77,7 +82,7 @@ var GameScene = function (strs,trn,shp,nam){
   //          obj = humans[h];
   //        }
   //      }
-        obj = !obj ? (terrain[coords.x] ? terrain[coords.x][coords.y] : false) : obj;
+        obj = !obj ? terrain.getTile(coords.x,coords.y) : obj;
         focusTarget.click(coords,terrain,'move',obj);
       }else{
         this.uiMode = 'select';
@@ -115,7 +120,7 @@ var GameScene = function (strs,trn,shp,nam){
               var coords = clickToCoord(clickPos,true);
               var x = coords.x;
               var y = coords.y;
-              focusTarget = terrain[x][y];
+              focusTarget = terrain.getTile(x,y);
             }
             this.uiMode = "select";
             break;
@@ -123,15 +128,15 @@ var GameScene = function (strs,trn,shp,nam){
             if(buildTarget){
               var coords = clickToCoord(clickPos,true);
               var obj = buildTarget.clone(coords);
-              if(tiles.isClear(obj,terrain,humans)){
+              if(terrain.isClear(obj,humans)){
                 focusTarget.click(coords,terrain,'build',obj);
               }
             }
             break;
           case "delete":
             var coords = clickToCoord(clickPos,true);
-            if(terrain[coords.x] && terrain[coords.x][coords.y]){
-              focusTarget.click(coords,terrain,'delete',terrain[coords.x][coords.y]);
+            if(terrain.getTile(coords.x,coords.y)){
+              focusTarget.click(coords,terrain,'delete',terrain.getTile(coords.x,coords.y));
             }
             break;
         }
@@ -141,10 +146,11 @@ var GameScene = function (strs,trn,shp,nam){
 
   this.regenRooms = function(){
     var rooms = [];
+    var airtightWalls = terrain.getType('airtight');
     for(x in airtightWalls){
       for(y in airtightWalls[x]){
         if(!inARoom(x,y,rooms)){
-          var rm = roomFinder.findRoom(~~x,~~y,terrain);
+          var rm = roomFinder.findRoom(~~x,~~y,terrain.terrain);
           if(rm.length > 0){
             if(uniqueRoom(rm,rooms)){
               rooms.push(new Room(rm));
@@ -206,7 +212,7 @@ var GameScene = function (strs,trn,shp,nam){
     for (r in this.rooms){
       this.rooms[r].draw(camera,canvasBufferContext);
     }
-    drawMap(canvasBufferContext,this.count);
+    terrain.drawMap(canvasBufferContext,camera,this.count);
     for (h in humans){
       if(onScreen(humans[h])){
         humans[h].draw(camera,canvasBufferContext);
@@ -215,12 +221,12 @@ var GameScene = function (strs,trn,shp,nam){
     if(this.uiMode == "build" && buildTarget){
       var bPos = clickToCoord(mousePos,true);
       var obj = buildTarget.clone(bPos);
-      var clear = tiles.isClear(obj,terrain,humans);
+      var clear = terrain.isClear(obj,humans);
       drawBuildCursor(obj,canvasBufferContext,clear);
     }else if(this.uiMode == "delete"){
       var bPos = clickToCoord(mousePos,true);
-      if(terrain[bPos.x] && terrain[bPos.x][bPos.y]){
-        drawBuildCursor(terrain[bPos.x][bPos.y],canvasBufferContext,false);
+      if(terrain.getTile(bPos.x,bPos.y)){
+        drawBuildCursor(terrain.getTile(bPos.x,bPos.y),canvasBufferContext,false);
       }
     }
     gui.draw(camera,canvasBufferContext);
@@ -247,20 +253,6 @@ var GameScene = function (strs,trn,shp,nam){
     canvasBufferContext.rect(originX,originY,lX,lY);
     canvasBufferContext.fill();
     canvasBufferContext.stroke();
-  }
-
-  var drawMap = function(canvasBufferContext,count){
-    if(terrain){
-      for(var x=camera.xOff-(camera.xOff%config.gridInterval);x<camera.xOff+config.cX;x+=config.gridInterval){
-        if(terrain[x]){
-          for(var y=(camera.yOff-(camera.yOff%config.gridInterval));y<camera.yOff+config.cY;y+=config.gridInterval){
-            if(terrain[x][y]){
-              terrain[x][y].draw(camera,canvasBufferContext,count);
-            }
-          }
-        }
-      }
-    }
   }
 
 }

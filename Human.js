@@ -66,7 +66,7 @@ Human = function(x,y,name) {
     this.velocity.x = (Math.abs(this.velocity.x) > maxSpeed.x) ? (this.velocity.x * (maxSpeed.x/Math.abs(this.velocity.x))) : this.velocity.x ;
     this.velocity.y = (Math.abs(this.velocity.y) > maxSpeed.y) ? (this.velocity.y * (maxSpeed.y/Math.abs(this.velocity.y))) : this.velocity.y ;
     //terrain detection
-    this.terrainCollide(terrain);
+    this.terrainCollide(terrain.terrain);
     //friction
     this.velocity.x = this.velocity.x * (this.onGround ? 0.8 : 0.9);
     this.velocity.y = this.velocity.y * 0.9;
@@ -95,7 +95,7 @@ Human = function(x,y,name) {
           break;
         case 'delete':
           if(this.targetObj){
-            var targ = terrain[this.targetObj.position.x] ? terrain[this.targetObj.position.x][this.targetObj.position.y] : false;
+            var targ = terrain.getTile(this.targetObj.position.x,this.targetObj.position.y);
             if(targ && targ == this.targetObj){
               this.salvage(this.targetObj);
               ret = {'action':'delete','obj':targ};
@@ -105,7 +105,7 @@ Human = function(x,y,name) {
           }
           break;
         default:
-          var targ = terrain[this.target.x] ? terrain[this.target.x][this.target.y] : false;
+          var targ = terrain.getTile(this.target.x,this.target.y);
           if(targ && targ.interact == 'inventory'){
             ret = {'action':'inventory','obj':targ};
             this.path = [];
@@ -228,8 +228,9 @@ Human = function(x,y,name) {
     this.action = false;
     this.target = false;
     this.targetObj = false;
+    var terMap = terrain.terrain;
     if(!obj){
-      this.path = pathfinder.findPath(this.position.x,this.position.y,coords.x,coords.y,terrain);
+      this.path = pathfinder.findPath(this.position.x,this.position.y,coords.x,coords.y,terMap);
     }else if(obj){
       //find spot adjacent to obj
       var minX = obj.position.x - this.size.x;
@@ -241,8 +242,8 @@ Human = function(x,y,name) {
         for(var y = 0; y <= ((maxY-minY)/ config.gridInterval); y++){
           var tX = (this.position.x > obj.position.x) ? (minX + (x*config.gridInterval)) : (maxX - (x*config.gridInterval));
           var tY = (this.position.y < obj.position.y) ? (minY + (y*config.gridInterval)) : (maxY - (y*config.gridInterval));
-          if(pathfinder.validSpace(tX,tY,terrain)){
-            this.path = pathfinder.findPath(this.position.x,this.position.y,tX,tY,terrain);
+          if(pathfinder.validSpace(tX,tY,terMap)){
+            this.path = pathfinder.findPath(this.position.x,this.position.y,tX,tY,terMap);
             if(this.path.length > 0){
               found = true;
               break;
