@@ -383,6 +383,7 @@ Gui = function() {
       canvasBufferContext.font = fontSize + 'px Courier';
       canvasBufferContext.fillStyle = "rgba(50,250,200,0.9)";
       canvasBufferContext.fillText(this.target.name[0]+" "+this.target.name[1],xIndex+xBuf,yIndex+fontSize+yBuf);
+      canvasBufferContext.fillText("Position: "+this.target.position.x+", "+this.target.position.y,xIndex+xBuf,yIndex+(fontSize+yBuf)*2);
     }
     //draw action buttons
     xIndex += (xSize + (xBuf *1.5));

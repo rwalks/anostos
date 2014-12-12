@@ -14,8 +14,6 @@ var GameScene = function (strs,trn,shp,nam,bg){
   var humans = [];
   var resources= new Resources();
   this.count = 0;
-  var roomFinder = new Roomfinder();
-  this.rooms = [];
 
   var focusTarget;
   var buildTarget;
@@ -63,10 +61,11 @@ var GameScene = function (strs,trn,shp,nam,bg){
         }
       }
     }
+    terrain.update(humans);
     gui.update(focusTarget,humans,resources.getResources(),buildTarget,this.uiMode);
     for(r in regen){
       if(regen[r] == 'rooms'){
-        this.regenRooms();
+        terrain.regenBuildings();
       }
     }
     this.count = (this.count > 100) ? 0 : this.count + 1;
@@ -144,55 +143,6 @@ var GameScene = function (strs,trn,shp,nam,bg){
     }
   }
 
-  this.regenRooms = function(){
-    var rooms = [];
-    var airtightWalls = terrain.getType('airtight');
-    for(x in airtightWalls){
-      for(y in airtightWalls[x]){
-        if(!inARoom(x,y,rooms)){
-          var rm = roomFinder.findRoom(~~x,~~y,terrain.terrain);
-          if(rm.length > 0){
-            if(uniqueRoom(rm,rooms)){
-              rooms.push(new Room(rm));
-            }
-          }
-        }
-      }
-    }
-    this.rooms = rooms;
-  }
-
-  var uniqueRoom = function(rm,rooms){
-    var rmHash = {};
-    var dupe = false;
-    for(p in rm){
-      var point = rm[p];
-      rmHash[point[0]] = rmHash[point[0]] ? rmHash[point[0]] : {};
-      rmHash[point[0]][point[1]] = true;
-    }
-    for(r in rooms){
-      var counter = 0;
-      var room = rooms[r];
-      for(i in room.points){
-        var point = room.points[i];
-        counter += (rmHash[point[0]] && rmHash[point[0]][point[1]]) ? 1 : 0;
-      }
-      if(counter > (rm.length * 0.5)){
-        dupe = true;
-      }
-    }
-    return !dupe;
-  }
-
-  var inARoom = function(x,y,rooms){
-    for(r in rooms){
-      if(rooms[r].pointWithin(x,y)){
-        return true;
-      }
-    }
-    return false;
-  }
-
   var clickToCoord = function(pos,roundToGrid){
     var x = (pos.x/(config.canvasWidth / config.cX)) + camera.xOff;
     var y = (pos.y/(config.canvasHeight / config.cY)) + camera.yOff;
@@ -209,10 +159,7 @@ var GameScene = function (strs,trn,shp,nam,bg){
     if(onScreen(ship)){
       ship.draw(camera,canvasBufferContext);
     }
-    for (r in this.rooms){
-      this.rooms[r].draw(camera,canvasBufferContext);
-    }
-    terrain.drawMap(canvasBufferContext,camera,this.count);
+    terrain.draw(canvasBufferContext,camera,this.count);
     for (h in humans){
       if(onScreen(humans[h])){
         humans[h].draw(camera,canvasBufferContext);

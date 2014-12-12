@@ -1,0 +1,3 @@
+ResourceNetworkFinder = function() {
+
+}

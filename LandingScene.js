@@ -141,7 +141,7 @@ var LandingScene = function (strs,nam,aud){
     this.sceneUtils.drawStars(this.stars, camera, clockCycle, canvasBufferContext);
     this.sceneUtils.drawBG(camera,clockCycle,canvasBufferContext);
     this.ship.draw(camera,canvasBufferContext);
-    this.terrain.drawMap(canvasBufferContext,camera,this.count);
+    this.terrain.draw(canvasBufferContext,camera,this.count);
     this.drawFuel(canvasBufferContext);
     if(this.count < 500){
       startIndex = this.drawText(startMsg,canvasBufferContext,startIndex);

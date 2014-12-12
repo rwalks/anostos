@@ -1,12 +1,11 @@
 Room = function(points) {
 
+  this.id = 0;
   this.points = points;
 
   this.polygon;
 
   this.update = function(){
-    count += 1;
-    return (count > maxCount);
   }
 
   this.pointWithin = function(x,y,points){

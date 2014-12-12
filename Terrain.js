@@ -1,26 +1,25 @@
 Terrain = function(trMap) {
 
   this.terrain = trMap ? trMap : {};
-  
+//construct holders
+  var rooms = [];
+  var resourceNetworks = [];
+//tile reference holders
   var doors = {};
   var airtightWalls = {};
   var containers = {};
   var generators = {};
-
-  this.getType = function(type){
-    switch(type){
-      case 'airtight':
-        return airtightWalls;
-    }
-  }
+//
+  var updateCount = 0;
+  var resourceUpdateInterval = 5;
+  var roomFinder = new Roomfinder();
 
   this.addTile = function(tile,remove){
     var regen = [];
+    regen.push('rooms');
     if(remove){
       if(tile.airtight){
         delete airtightWalls[tile.position.x][tile.position.y];
-        this.regenRooms();
-        regen.push('rooms');
       }
       if(tile.type == 'container'){
         delete containers[tile.position.x][tile.position.y];
@@ -33,7 +32,6 @@ Terrain = function(trMap) {
       if(tile.airtight){
         airtightWalls[tile.position.x] = airtightWalls[tile.position.x] ? airtightWalls[tile.position.x] : {};
         airtightWalls[tile.position.x][tile.position.y] = true;
-        regen.push('rooms');
       }
       if(tile.type == 'door'){
         doors[tile.position.x] = doors[tile.position.x] ? doors[tile.position.x] : {};
@@ -69,6 +67,12 @@ Terrain = function(trMap) {
         this.terrain[x][y].update(humans);
       }
     }
+    if(updateCount >= resourceUpdateInterval){
+      this.updateBuildings();
+      updateCount = 0;
+    }else{
+      updateCount += 1;
+    }
 
   }
 
@@ -96,8 +100,13 @@ Terrain = function(trMap) {
     return true;
   }
 
-  this.drawMap = function(canvasBufferContext,camera,count){
+  this.draw = function(canvasBufferContext,camera,count){
     if(this.terrain){
+      //drawRooms
+      for (r in rooms){
+        rooms[r].draw(camera,canvasBufferContext);
+      }
+      //drawTiles
       for(var x=camera.xOff-(camera.xOff%config.gridInterval);x<camera.xOff+config.cX;x+=config.gridInterval){
         if(this.terrain[x]){
           for(var y=(camera.yOff-(camera.yOff%config.gridInterval));y<camera.yOff+config.cY;y+=config.gridInterval){
@@ -111,51 +120,56 @@ Terrain = function(trMap) {
   }
 
   this.updateBuildings = function(){
-    for(x in containers){
-      for(y in containers[x]){
-        this.updateResourceNetwork(containers[x][y]);
-      }
+    for(r in resourceNetworks){
+      resourceNetworks[r].update();
+    }
+    for(r in rooms){
+      rooms[r].update();
     }
   }
 
-  this.updateResourceNetwork(obj){
+  this.updateResourceNetwork = function(obj,markedContainers){
     var openNodes = {};
     var closedNodes = {};
-    var rooms = [];
-    var generators = [];
-    var containers = [];
-    var search = true;
+    var cRooms = [];
+    var cGens = [];
+    var cContainers = [];
     var current = obj;
-    while(search == true;){
+    var oxygenType = matchingAffinity(obj,{'resourceAffinities':["oxygen"]});
+    addNode(current,openNodes);
+    while(current){
       var x = current.position.x;
-      var y = current.position.x;
+      var y = current.position.y;
 
       switch(current.type){
         case 'generator':
-          generators.push(current);
+          cGens.push(current);
           break;
         case 'container':
-          containers.push(current);
+          cContainers.push(current);
+          addNode(current,markedContainers);
           break;
       }
       //search top and bottom
-      for(var vx = x; vx < (x + current.size.x); x += config.gridInterval){
-        for(var vy = y-config.gridInterval; vy < (y + current.size.y+config.gridInterval); y += config.gridInterval + current.size.y){
-          var node = this.terrain[vx][vy];
-          if(node && resourceType(node) && matchingAffinity(obj,node)){
-            if(!nodeExists(node,closedNodes) && !nodeExists(node,openNodes)){
-              addNode(node,openNodes);
-            }
-          }
-        }
-      }
-      //search left/right
-      for(var vx = x-configgridInterval; vx < (x + current.size.x); x += config.gridInterval){
-        for(var vy = y-config.gridInterval; vy < (y + current.size.y+config.gridInterval); y += config.gridInterval + current.size.y){
-          var node = this.terrain[vx][vy];
-          if(node && resourceType(node) && matchingAffinity(obj,node)){
-            if(!nodeExists(node,closedNodes) && !nodeExists(node,openNodes)){
-              addNode(node,openNodes);
+      var loopPoints = [[0,0,0,-config.gridInterval,config.gridInterval,current.size.y],
+                        [-config.gridInterval,current.size.x,current.size.x,0,0,0]];
+      for(lp in loopPoints){
+        var l = loopPoints[lp];
+        for(var vx = x+l[0]; vx < x + config.gridInterval+l[1]; vx += config.gridInterval+l[2]){
+          for(var vy = y+l[3]; vy < y + current.size.y+l[4]; vy += config.gridInterval + l[5]){
+            var node = this.terrain[vx][vy];
+            if(node){
+              if(oxygenType){
+                var r = tileInRoom(node,rooms);
+                if(r){
+                  cRooms.push(r);
+                }
+              }
+              if(resourceType(node) && matchingAffinity(obj,node)){
+                if(!nodeExists(node,closedNodes) && !nodeExists(node,openNodes)){
+                  addNode(node,openNodes);
+                }
+              }
             }
           }
         }
@@ -163,9 +177,20 @@ Terrain = function(trMap) {
       addNode(current,closedNodes);
       delete openNodes[current.position.x][current.position.y];
       var current = getNextNode(openNodes);
-      seach = current ? true : false;
     }
-
+    //handle lists
+    if(cContainers.length > 0 && (cRooms.length > 0 || cGens.length > 0)){
+      var uniqueIds = {};
+      var uniqueRooms = [];
+      for(r in cRooms){
+        if(!uniqueIds[cRooms[r].id]){
+          uniqueRooms.push(cRooms[r]);
+          uniqueIds[cRooms[r].id] = true;
+        }
+      }
+      return new ResourceNetwork(cRooms,cGens,cContainers,closedNodes);
+    }
+    return false;
   }
 
   var getNextNode = function(nodes){
@@ -180,7 +205,7 @@ Terrain = function(trMap) {
   var matchingAffinity = function(nodeA,nodeB){
     for(a in nodeA.resourceAffinities){
       for(b in nodeB.resourceAffinities){
-        if(nodeA[a] == nodeB[b]){
+        if(nodeA.resourceAffinities[a] == nodeB.resourceAffinities[b]){
           return true;
         }
       }
@@ -193,12 +218,98 @@ Terrain = function(trMap) {
   }
 
   var nodeExists = function(node,nodeMap){
-    return (nodeMap[node.x] && nodeMap[node.x][node.y]);
+    return (nodeMap[node.position.x] && nodeMap[node.position.x][node.position.y]);
   }
 
   var addNode = function(node,nodeMap){
-    nodeMap[node.x] = nodeMap[node.x] ? nodeMap[node.x] : {};
-    nodeMap[node.x][node.y] = node;
+    nodeMap[node.position.x] = nodeMap[node.position.x] ? nodeMap[node.position.x] : {};
+    nodeMap[node.position.x][node.position.y] = node;
+  }
+
+  this.regenBuildings = function(){
+    this.regenResourceNetworks();
+    this.regenRooms();
+    console.log("resourceNetworks:");
+    console.log(resourceNetworks);
+  }
+
+  this.regenResourceNetworks = function(){
+    var rNets = [];
+    var markedNodes = {};
+    for(x in containers){
+      for(y in containers[x]){
+        if(!(markedNodes[x] && markedNodes[x][y])){
+          var ret = this.updateResourceNetwork(this.terrain[x][y],markedNodes);
+          if(ret){
+            rNets.push(ret);
+          }
+        }
+      }
+    }
+    resourceNetworks = rNets;
+  }
+
+  this.regenRooms = function(){
+    var newRooms = [];
+    var rId = 0;
+    for(x in airtightWalls){
+      for(y in airtightWalls[x]){
+        if(!tileInRoom(this.terrain[x][y],newRooms)){
+          var rm = roomFinder.findRoom(~~x,~~y,this.terrain);
+          if(rm.length > 0){
+            if(uniqueRoom(rm,newRooms)){
+              rm.id = rId;
+              newRooms.push(new Room(rm));
+              rId += 1;
+            }
+          }
+        }
+      }
+    }
+    rooms = newRooms;
+  }
+
+  var uniqueRoom = function(rm,roomArray){
+    var rmHash = {};
+    var dupe = false;
+    for(p in rm){
+      var point = rm[p];
+      rmHash[point[0]] = rmHash[point[0]] ? rmHash[point[0]] : {};
+      rmHash[point[0]][point[1]] = true;
+    }
+    for(r in roomArray){
+      var counter = 0;
+      var room = roomArray[r];
+      for(i in room.points){
+        var point = room.points[i];
+        counter += (rmHash[point[0]] && rmHash[point[0]][point[1]]) ? 1 : 0;
+      }
+      if(counter > (rm.length * 0.5)){
+        dupe = true;
+      }
+    }
+    return !dupe;
+  }
+
+  var inARoom = function(x,y,roomArray){
+    for(r in roomArray){
+      if(roomArray[r].pointWithin(x,y)){
+        return roomArray[r];
+      }
+    }
+    return false;
+  }
+
+  var tileInRoom = function(tile,roomArray){
+    for(r in roomArray){
+      var pts = roomArray[r].points;
+      for(p in pts){
+        if(pts[p][0] == tile.position.x && pts[p][1] == tile.position.y ){
+          return roomArray[r];
+        }
+      }
+    }
+    return false;
   }
 
 
