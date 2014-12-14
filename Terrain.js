@@ -121,7 +121,10 @@ Terrain = function(trMap) {
 
   this.updateBuildings = function(){
     for(r in resourceNetworks){
-      resourceNetworks[r].update();
+      resourceNetworks[r].update(true);
+    }
+    for(r in resourceNetworks){
+      resourceNetworks[r].update(false);
     }
     for(r in rooms){
       rooms[r].update();
@@ -188,7 +191,7 @@ Terrain = function(trMap) {
           uniqueIds[cRooms[r].id] = true;
         }
       }
-      return new ResourceNetwork(cRooms,cGens,cContainers,closedNodes);
+      return new ResourceNetwork(cRooms,cGens,cContainers,closedNodes,obj.resourceAffinities);
     }
     return false;
   }
@@ -227,10 +230,8 @@ Terrain = function(trMap) {
   }
 
   this.regenBuildings = function(){
-    this.regenResourceNetworks();
     this.regenRooms();
-    console.log("resourceNetworks:");
-    console.log(resourceNetworks);
+    this.regenResourceNetworks();
   }
 
   this.regenResourceNetworks = function(){

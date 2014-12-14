@@ -115,8 +115,9 @@ Gui = function() {
             this.target.inventory.removeItem(resource,1);
           }else if(x >= xSize * 0.85 && x < xSize){
             //trade
-            this.target.targetObj.inventory.addItem(resource,1);
-            this.target.inventory.removeItem(resource,1);
+            if(this.target.targetObj.inventory.addItem(resource,1)){
+              this.target.inventory.removeItem(resource,1);
+            }
           }
         }
       }else{
@@ -149,8 +150,9 @@ Gui = function() {
             this.target.targetObj.inventory.removeItem(resource,1);
           }else if(x >= xSize * 0.85 && x < xSize){
             //trade
-            this.target.inventory.addItem(resource,1);
-            this.target.targetObj.inventory.removeItem(resource,1);
+            if(this.target.inventory.addItem(resource,1)){
+              this.target.targetObj.inventory.removeItem(resource,1);
+            }
           }
         }
 
@@ -383,7 +385,7 @@ Gui = function() {
       canvasBufferContext.font = fontSize + 'px Courier';
       canvasBufferContext.fillStyle = "rgba(50,250,200,0.9)";
       canvasBufferContext.fillText(this.target.name[0]+" "+this.target.name[1],xIndex+xBuf,yIndex+fontSize+yBuf);
-      canvasBufferContext.fillText("Position: "+this.target.position.x+", "+this.target.position.y,xIndex+xBuf,yIndex+(fontSize+yBuf)*2);
+      canvasBufferContext.fillText("Position: "+Math.floor(this.target.position.x)+", "+Math.floor(this.target.position.y),xIndex+xBuf,yIndex+(fontSize+yBuf)*2);
     }
     //draw action buttons
     xIndex += (xSize + (xBuf *1.5));

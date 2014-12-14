@@ -216,7 +216,7 @@ Human = function(x,y,name) {
   this.draw = function(camera,canvasContext){
     var animate = Math.abs(this.velocity.x) > 0.1;
     drawHuman(this.position.x,this.position.y,canvasContext,camera,this.direction,animate,this.fillColor,this.lineColor);
-    drawPath(this.path,canvasContext,camera);
+    //drawPath(this.path,canvasContext,camera);
   }
 
   this.pointWithin = function(x,y){

@@ -5,12 +5,14 @@ StorageBuild = function(type,pos) {
   this.interact = false;
   this.inventory = new Inventory();
   this.cost = {};
+  this.actions = ["inventory"];
   switch(type){
     case 'power':
       fName = 'Chemical';
       lName = 'Battery';
       this.size = {'x':1*config.gridInterval,'y':2*config.gridInterval};
       this.cost = {'metal':8};
+      this.actions = [];
       break;
     case 'water':
       fName = 'Water';
@@ -18,8 +20,9 @@ StorageBuild = function(type,pos) {
       this.size = {'x':2*config.gridInterval,'y':2*config.gridInterval};
       this.interact = 'inventory';
       this.cost = {'metal':8};
-      this.inventory.resourcesAllowed = ['water'];
+      this.inventory.allowedResources = ['water'];
       this.resourceAffinities = ['water'];
+      this.inventory.addItem('water',80);
       break;
     case 'oxygen':
       fName = 'Oxygen';
@@ -27,15 +30,16 @@ StorageBuild = function(type,pos) {
       this.size = {'x':1*config.gridInterval,'y':2*config.gridInterval};
       this.interact = 'inventory';
       this.cost = {'metal':8};
-      this.inventory.resourcesAllowed = ['oxygen'];
+      this.inventory.allowedResources = ['oxygen'];
       this.resourceAffinities = ['oxygen'];
+      this.inventory.addItem('oxygen',80);
       break;
     case 'dry':
       fName = 'Dry';
       lName = 'Storage';
       this.interact = 'inventory';
       this.cost = {'metal':8};
-      this.inventory.resourcesAllowed = ['soil','metal'];
+      this.inventory.allowedResources = ['soil','metal','ore'];
       this.resourceAffinities = ['dry'];
       break;
   }
@@ -330,6 +334,8 @@ ConveyorBuild = function(type,pos) {
 GeneratorBuild = function(type,pos) {
   var fName = '';
   this.size = {'x':1*config.gridInterval,'y':1*config.gridInterval};
+  this.inventory = new Inventory();
+  this.interact = false;
   switch(type){
      case 'power':
       fName = 'Nuclear';
@@ -341,6 +347,9 @@ GeneratorBuild = function(type,pos) {
       this.size = {'x':4*config.gridInterval,'y':2*config.gridInterval};
       this.cost = {'metal':8};
       this.resourceAffinities = ['water','dry'];
+      this.inventory.allowedResources = ['water','soil'];
+      this.genInput = {'soil':10};
+      this.genOutput = {'water':10};
       break;
     case 'oxygen':
       fName = 'Water';
@@ -348,12 +357,18 @@ GeneratorBuild = function(type,pos) {
       this.size = {'x':2*config.gridInterval,'y':2*config.gridInterval};
       this.cost = {'metal':8};
       this.resourceAffinities = ['water','oxygen'];
+      this.inventory.allowedResources = ['water','oxygen'];
+      this.genInput = {'water':10};
+      this.genOutput = {'oxygen':10};
       break;
     case 'metal':
       fName = 'Smelting';
       lName = 'Chamber';
       this.cost = {'metal':8};
       this.resourceAffinities = ['dry','oxygen'];
+      this.inventory.allowedResources = ['oxygen','ore'];
+      this.genInput = {'ore':10,'oxygen':10};
+      this.genOutput = {'metal':2};
       break;
     case 'solar':
       fName = 'Solar';

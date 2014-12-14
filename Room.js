@@ -5,6 +5,9 @@ Room = function(points) {
 
   this.polygon;
 
+  this.oxygen = 0;
+  this.maxOxygen = 20;
+
   this.update = function(){
   }
 
@@ -22,7 +25,8 @@ Room = function(points) {
   }
 
   this.draw = function(camera,canvasBufferContext){
-    canvasBufferContext.fillStyle = "rgba(250,0,0,0.2)";
+    var r = 250 - ((this.oxygen / this.maxOxygen) * 240);
+    canvasBufferContext.fillStyle = "rgba("+r+",10,10,0.2)";
     canvasBufferContext.beginPath();
 
     var x = (this.polygon[0][0] - camera.xOff) * config.xRatio;

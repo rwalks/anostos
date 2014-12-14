@@ -23,13 +23,19 @@ Inventory = function() {
     return false;
   }
 
+  this.itemCount = function(itemName){
+    return this.inv[itemName] ? this.inv[itemName] : 0;
+  }
+
   this.addItem = function(itemName,count){
     var inventoryRemaining = this.maxInventory - this.count();
     inventoryRemaining = inventoryRemaining < 0 ? 0 : inventoryRemaining;
     var invAdd = Math.min(inventoryRemaining,count);
     if(this.resourceAllowed(itemName) && invAdd > 0){
       this.inv[itemName] = this.inv[itemName] ? this.inv[itemName] + invAdd : invAdd;
+      return true;
     }
+    return false;
   }
 
   this.removeItem = function(itemName,count){
@@ -50,6 +56,10 @@ Inventory = function() {
       invCount += this.inv[i];
     }
     return invCount;
+  }
+
+  this.spaceRemaining = function(){
+    return this.maxInventory - this.count();
   }
 
   this.full = function(){

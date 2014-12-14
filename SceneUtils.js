@@ -49,7 +49,7 @@ var SceneUtils = function (bg){
       var camY = camera.yOff;
       var bg = this.bgs[b];
       var bgC = bgColors[b];
-      canvasBufferContext.fillStyle = "rgba("+bgC[0]+","+bgC[1]+","+bgC[2]+",1.0)";
+      canvasBufferContext.fillStyle = "rgba("+bgC[0]+","+bgC[1]+","+bgC[2]+",0.5)";
       canvasBufferContext.beginPath();
       canvasBufferContext.lineWidth="2";
       canvasBufferContext.strokeStyle="rgba(0,250,0,1.0)";
