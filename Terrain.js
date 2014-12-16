@@ -14,6 +14,10 @@ Terrain = function(trMap) {
   var resourceUpdateInterval = 5;
   var roomFinder = new Roomfinder();
 
+  this.getRooms = function(){
+    return rooms;
+  }
+
   this.addTile = function(tile,remove){
     var regen = [];
     regen.push('rooms');
@@ -259,8 +263,13 @@ Terrain = function(trMap) {
           var rm = roomFinder.findRoom(~~x,~~y,this.terrain);
           if(rm.length > 0){
             if(uniqueRoom(rm,newRooms)){
-              rm.id = rId;
-              newRooms.push(new Room(rm));
+              var newRoom = new Room(rm);
+              var tRoom = tileInRoom(this.terrain[x][y],rooms);
+              if(tRoom){
+                newRoom.oxygen = tRoom.oxygen;
+              }
+              newRoom.id = rId;
+              newRooms.push(newRoom);
               rId += 1;
             }
           }
@@ -292,7 +301,7 @@ Terrain = function(trMap) {
     return !dupe;
   }
 
-  var inARoom = function(x,y,roomArray){
+  this.inARoom = function(x,y,roomArray){
     for(r in roomArray){
       if(roomArray[r].pointWithin(x,y)){
         return roomArray[r];

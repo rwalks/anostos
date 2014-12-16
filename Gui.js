@@ -645,19 +645,41 @@ Gui = function() {
     //objs
     for(var i = 0;i<6;i++){
       var build = this.buildings[this.buildTab][i+this.buildOffset];
-      var aRed = (this.buildTarget && build == this.buildTarget) ? 100 : 20;
+      var canAfford = true;
+      var costString = "";
+      if(build){
+        for(var reso in build.cost){
+          costString += reso + ": " + build.cost[reso]+" ";
+          if(this.target.inventory.itemCount(reso) < build.cost[reso]){
+            canAfford = false;
+          }
+        }
+      }
       canvasBufferContext.beginPath();
-      canvasBufferContext.fillStyle = "rgba("+aRed+",0,50,0.9)";
-      canvasBufferContext.strokeStyle="rgba("+aRed+",0,75,1.0)";
+      if(!canAfford){
+        canvasBufferContext.fillStyle = "rgba(100,0,50,0.9)";
+        canvasBufferContext.strokeStyle="rgba(100,0,75,1.0)";
+      }else if(this.buildTarget && build == this.buildTarget){
+        canvasBufferContext.fillStyle = "rgba(20,0,120,0.9)";
+        canvasBufferContext.strokeStyle="rgba(20,0,150,1.0)";
+      }else{
+        canvasBufferContext.fillStyle = "rgba(20,0,50,0.9)";
+        canvasBufferContext.strokeStyle="rgba(20,0,75,1.0)";
+      }
       canvasBufferContext.rect(x,y,xSize,ySize);
       canvasBufferContext.fill();
       canvasBufferContext.stroke();
       if(build){
         build.drawTargetPortrait(x,y,xSize/4,ySize,canvasBufferContext);
         var fontSize = ySize / 4;
+        //name
         canvasBufferContext.font = fontSize + 'px Courier';
         canvasBufferContext.fillStyle = "rgba(50,250,200,0.9)";
         canvasBufferContext.fillText(build.name[0]+" "+build.name[1],x+(xSize/4),y+fontSize+yBuf);
+        //cost
+        canvasBufferContext.font = fontSize*0.75 + 'px Courier';
+        canvasBufferContext.fillStyle = "rgba(50,250,200,0.9)";
+        canvasBufferContext.fillText(costString,x+(xSize/4),y+ySize*0.5);
       }
       y += ySize + (2*yBuf);
     }
@@ -768,25 +790,31 @@ Gui = function() {
         canvasBufferContext.fill();
         canvasBufferContext.stroke();
         //draw trade arrow
-        var aRed = (this.target.actions[i] == this.uiMode) ? 200 : 0;
         canvasBufferContext.beginPath();
-        canvasBufferContext.fillStyle = "rgba("+aRed+",50,100,0.9)";
-        canvasBufferContext.strokeStyle="rgba("+aRed+",50,175,1.0)";
+        canvasBufferContext.fillStyle = "rgba(0,50,100,0.9)";
+        canvasBufferContext.strokeStyle="rgba(0,50,175,1.0)";
         canvasBufferContext.rect(x+(xSize*0.85),y,xSize*0.15,ySize);
         canvasBufferContext.fill();
         canvasBufferContext.stroke();
 
-        canvasBufferContext.strokeStyle="rgba(250,250,250,1.0)";
-        canvasBufferContext.fillStyle="rgba(250,250,250,1.0)";
+        var tAlpha = ("trade" == this.uiMode) ? 1 : 0.5;
+        var aRed = ("trade" == this.uiMode) ? 250 : 20;
+        canvasBufferContext.strokeStyle="rgba("+aRed+","+aRed+","+aRed+","+tAlpha+")";
+        canvasBufferContext.fillStyle="rgba("+aRed+","+aRed+","+aRed+","+tAlpha+")";
         canvasBufferContext.lineWidth=xBuf;
         canvasBufferContext.beginPath();
-        canvasBufferContext.moveTo(x + (xSize * 0.86), y + (ySize * 0.01));
-        canvasBufferContext.lineTo(x + (xSize * 0.99), y + (ySize * 0.99));
+        canvasBufferContext.moveTo(x + (xSize * 0.86), y + (ySize * 0.5));
+        canvasBufferContext.lineTo(x + (xSize * 0.99), y + (ySize * 0.5));
         canvasBufferContext.fill();
         canvasBufferContext.stroke();
         canvasBufferContext.beginPath();
-        canvasBufferContext.moveTo(x + (xSize * 0.99), y + (ySize * 0.01));
-        canvasBufferContext.lineTo(x + (xSize * 0.86), y + (ySize * 0.99));
+        canvasBufferContext.moveTo(x + (xSize * 0.99), y + (ySize * 0.5));
+        canvasBufferContext.lineTo(x + (xSize * 0.93), y + (ySize * 0.3));
+        canvasBufferContext.fill();
+        canvasBufferContext.stroke();
+        canvasBufferContext.beginPath();
+        canvasBufferContext.moveTo(x + (xSize * 0.99), y + (ySize * 0.5));
+        canvasBufferContext.lineTo(x + (xSize * 0.93), y + (ySize * 0.7));
         canvasBufferContext.fill();
         canvasBufferContext.stroke();
       }
@@ -900,7 +928,7 @@ Gui = function() {
           canvasBufferContext.fill();
           canvasBufferContext.stroke();
           //draw trade arrow
-          var aRed = (this.target.actions[i] == this.uiMode) ? 200 : 0;
+          var aRed = ("trade" == this.uiMode) ? 0 : 200;
           canvasBufferContext.beginPath();
           canvasBufferContext.fillStyle = "rgba("+aRed+",50,100,0.9)";
           canvasBufferContext.strokeStyle="rgba("+aRed+",50,175,1.0)";
@@ -912,13 +940,18 @@ Gui = function() {
           canvasBufferContext.fillStyle="rgba(250,250,250,1.0)";
           canvasBufferContext.lineWidth=xBuf;
           canvasBufferContext.beginPath();
-          canvasBufferContext.moveTo(x + (xSize * 0.86), y + (ySize * 0.01));
-          canvasBufferContext.lineTo(x + (xSize * 0.99), y + (ySize * 0.99));
+          canvasBufferContext.moveTo(x + (xSize * 0.86), y + (ySize * 0.5));
+          canvasBufferContext.lineTo(x + (xSize * 0.99), y + (ySize * 0.5));
           canvasBufferContext.fill();
           canvasBufferContext.stroke();
           canvasBufferContext.beginPath();
-          canvasBufferContext.moveTo(x + (xSize * 0.99), y + (ySize * 0.01));
-          canvasBufferContext.lineTo(x + (xSize * 0.86), y + (ySize * 0.99));
+          canvasBufferContext.moveTo(x + (xSize * 0.99), y + (ySize * 0.5));
+          canvasBufferContext.lineTo(x + (xSize * 0.93), y + (ySize * 0.3));
+          canvasBufferContext.fill();
+          canvasBufferContext.stroke();
+          canvasBufferContext.beginPath();
+          canvasBufferContext.moveTo(x + (xSize * 0.99), y + (ySize * 0.5));
+          canvasBufferContext.lineTo(x + (xSize * 0.93), y + (ySize * 0.7));
           canvasBufferContext.fill();
           canvasBufferContext.stroke();
         }

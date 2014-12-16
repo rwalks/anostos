@@ -1,6 +1,6 @@
 Inventory = function() {
   this.inv = {};
-  this.maxInventory = 40;
+  this.maxInventory = 200;
   this.allowedResources = true;
 
   this.length = function(){
@@ -48,6 +48,22 @@ Inventory = function() {
     }
     return true;
 
+  }
+
+  this.purchase = function(cost){
+    var canAfford = true;
+    for(var r in cost){
+      if(this.itemCount(r) < cost[r]){
+        canAfford = false;
+      }
+    }
+    if(canAfford){
+      for(var r in cost){
+        this.removeItem(r,cost[r]);
+      }
+      return true;
+    }
+    return false;
   }
 
   this.count = function(){

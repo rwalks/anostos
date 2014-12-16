@@ -33,8 +33,7 @@ Tiles = function() {
     return true;
   }
 
-  this.TerrainTile = function(x,y){
-    this.name = ["Soil",""];
+  this.TerrainTile = function(x,y,type){
     this.size = {'x':2*config.gridInterval,'y':2*config.gridInterval};
     x = x - (x % this.size.x);
     y = y - (y % this.size.y);
@@ -42,16 +41,30 @@ Tiles = function() {
     this.collision = function(){return true;}
     this.pathable = false;
     this.lastDrawn = -1;
-    this.cost = {'soil': 8};
     this.type = "construction";
+    var fillStyle; var strokeStyle;
+    switch(type){
+      case "soil":
+        this.name = ["Soil",""];
+        this.cost = {'soil': 8};
+        fillStyle = "rgba(20,200,150,1.0)";
+        strokeStyle="rgba(40,250,200,1.0)";
+        break;
+      case "ore":
+        this.name = ["Metal","Ore"];
+        this.cost = {'ore': 8};
+        fillStyle = "rgba(110,100,130,1.0)";
+        strokeStyle = "rgba(210,200,230,1.0)";
+        break;
+    }
     this.draw = function(camera,canvasBufferContext,count){
       //draw less often
       if(count > this.lastDrawn || Math.abs(count - this.lastDrawn) > 1){
         this.lastDrawn = count;
         canvasBufferContext.beginPath();
         canvasBufferContext.lineWidth=Math.floor(config.xRatio)+"";
-        canvasBufferContext.fillStyle = "rgba(20,200,150,0.9)";
-        canvasBufferContext.strokeStyle="rgba(40,250,200,1.0)";
+        canvasBufferContext.fillStyle = fillStyle;
+        canvasBufferContext.strokeStyle = strokeStyle;
         var originX = (this.position.x-camera.xOff)*config.xRatio;
         var originY = (this.position.y-camera.yOff)*config.yRatio;
         var lX = this.size.x*config.xRatio;

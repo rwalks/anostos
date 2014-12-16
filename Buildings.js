@@ -22,7 +22,6 @@ StorageBuild = function(type,pos) {
       this.cost = {'metal':8};
       this.inventory.allowedResources = ['water'];
       this.resourceAffinities = ['water'];
-      this.inventory.addItem('water',80);
       break;
     case 'oxygen':
       fName = 'Oxygen';
@@ -32,13 +31,13 @@ StorageBuild = function(type,pos) {
       this.cost = {'metal':8};
       this.inventory.allowedResources = ['oxygen'];
       this.resourceAffinities = ['oxygen'];
-      this.inventory.addItem('oxygen',80);
       break;
     case 'dry':
       fName = 'Dry';
       lName = 'Storage';
       this.interact = 'inventory';
       this.cost = {'metal':8};
+      this.size = {'x':2*config.gridInterval,'y':2*config.gridInterval};
       this.inventory.allowedResources = ['soil','metal','ore'];
       this.resourceAffinities = ['dry'];
       break;
@@ -162,6 +161,38 @@ StorageBuild = function(type,pos) {
       }
       canvasBufferContext.fill();
       canvasBufferContext.stroke();
+    }else if(type == 'dry'){
+      //topcap
+      canvasBufferContext.beginPath();
+      canvasBufferContext.lineWidth=Math.floor(config.xRatio)+"";
+      canvasBufferContext.fillStyle= "rgba(130,100,70,1.0)";
+      canvasBufferContext.strokeStyle= "rgba(200,150,100,1.0)";
+      canvasBufferContext.moveTo(oX,oY);
+      var points = [
+        [lX*0.1,0],[lX*0.15,lY*-0.05],[lX*0.35,lY*-0.05],[lX*0.4,0],[lX*0.6,0],[lX*0.65,lY*-0.05],[lX*0.85,lY*-0.05],[lX*0.9,0],[lX,0],
+        [lX,lY*0.1],[lX*1.05,lY*0.15],[lX*1.05,lY*0.35],[lX,lY*0.4],[lX,lY*0.6],[lX*1.05,lY*0.65],[lX*1.05,lY*0.85],[lX,lY*0.9],[lX,lY],
+        [lX*0.9,lY],[lX*0.85,lY*0.95],[lX*0.65,lY*0.95],[lX*0.6,lY],[lX*0.4,lY],[lX*0.35,lY*0.95],[lX*0.15,lY*0.95],[lX*0.1,lY],[0,lY],
+        [0,lY*0.9],[lX*0.05,lY*0.85],[lX*0.05,lY*0.65],[0,lY*0.6],[0,lY*0.4],[lX*0.05,lY*0.35],[lX*0.05,lY*0.15],[0,lY*0.1],[0,0]
+          ];
+      for(p in points){
+        canvasBufferContext.lineTo(oX+points[p][0],oY+points[p][1]);
+      }
+      canvasBufferContext.fill();
+      canvasBufferContext.stroke();
+      //energybarz
+      var ey = oY + lY*0.1;
+      var sx = lX*0.1;
+      var sy = lY*0.8;
+      for(var ex=oX+(lX*0.2);ex<oX+(lX*0.9);ex+=lX*0.2){
+        var dr = Math.floor(Math.random() * 30);
+        var da = Math.floor(Math.random() * 0.1) + 0.9;
+        var rgbaString = "rgba("+(100+dr)+","+(40+dr)+","+dr+","+da+")";
+        canvasBufferContext.beginPath();
+        canvasBufferContext.fillStyle = rgbaString;
+        canvasBufferContext.rect(ex,ey,sx,sy);
+        canvasBufferContext.fill();
+
+      }
     }else{
       canvasBufferContext.beginPath();
       canvasBufferContext.lineWidth=Math.floor(config.xRatio)+"";
@@ -196,19 +227,19 @@ ConveyorBuild = function(type,pos) {
       fName = 'Air';
       lName = 'Vent';
       this.airtight = true;
-      this.cost = {'metal':8};
+      this.cost = {'metal':4};
       this.resourceAffinities = ['oxygen'];
       break;
     case 'pipe':
       fName = 'Water';
       lName = 'Pipe';
-      this.cost = {'metal':8};
+      this.cost = {'metal':4};
       this.resourceAffinities = ['water'];
       break;
     case 'dry':
       fName = 'Conveyor';
       lName = 'Tube';
-      this.cost = {'metal':8};
+      this.cost = {'metal':4};
       this.resourceAffinities = ['dry'];
       break;
   }
@@ -345,7 +376,7 @@ GeneratorBuild = function(type,pos) {
       fName = 'Soil';
       lName = 'Evaporator';
       this.size = {'x':4*config.gridInterval,'y':2*config.gridInterval};
-      this.cost = {'metal':8};
+      this.cost = {'metal':16};
       this.resourceAffinities = ['water','dry'];
       this.inventory.allowedResources = ['water','soil'];
       this.genInput = {'soil':10};
@@ -355,7 +386,7 @@ GeneratorBuild = function(type,pos) {
       fName = 'Water';
       lName = 'Splitter';
       this.size = {'x':2*config.gridInterval,'y':2*config.gridInterval};
-      this.cost = {'metal':8};
+      this.cost = {'metal':16};
       this.resourceAffinities = ['water','oxygen'];
       this.inventory.allowedResources = ['water','oxygen'];
       this.genInput = {'water':10};
@@ -364,16 +395,16 @@ GeneratorBuild = function(type,pos) {
     case 'metal':
       fName = 'Smelting';
       lName = 'Chamber';
-      this.cost = {'metal':8};
+      this.cost = {'metal':16};
       this.resourceAffinities = ['dry','oxygen'];
       this.inventory.allowedResources = ['oxygen','ore'];
       this.genInput = {'ore':10,'oxygen':10};
-      this.genOutput = {'metal':2};
+      this.genOutput = {'metal':5};
       break;
     case 'solar':
       fName = 'Solar';
       lName = 'Panel';
-      this.cost = {'metal':8};
+      this.cost = {'metal':10};
       this.size = {'x':3*config.gridInterval,'y':1*config.gridInterval};
   }
   this.name = [fName,lName];
@@ -492,10 +523,10 @@ GeneratorBuild = function(type,pos) {
       }
       canvasBufferContext.fill();
       canvasBufferContext.stroke();
-      //air
-      var dr = Math.floor(Math.random() * 50);
+      //water
+      var db = Math.floor(Math.random() * 150);
       var da = Math.floor(Math.random() * 0.1) + 0.9;
-      var rgbaString = "rgba("+(200+dr)+","+(200+dr)+","+(200+dr)+","+da+")";
+      var rgbaString = "rgba("+20+","+20+","+(100+db)+","+da+")";
       canvasBufferContext.fillStyle = rgbaString;
       canvasBufferContext.beginPath();
       canvasBufferContext.rect(oX+(lX*0.2),oY+(lY*0.2),lX*0.6,lY*0.2);

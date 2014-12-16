@@ -24,7 +24,7 @@ var SceneUtils = function (bg){
       }
       var yMin = last + dY;
       for(var y=config.mapHeight;y>=yMin;y-=terrainInterval){
-         var tile = new tiles.TerrainTile(x,y);
+         var tile = new tiles.TerrainTile(x,y,'soil');
          tiles.addTile(tile,tMap,false);
       }
       if(x % (config.gridInterval * 4) == 0){
@@ -36,7 +36,28 @@ var SceneUtils = function (bg){
       }
       last = yMin;
     }
+
+    generateOre(tMap);
     return tMap;
+  }
+
+  var generateOre = function(tMap){
+    for(var i = 0; i < 1000; i ++){
+      var x = Math.floor(Math.random() * (config.mapWidth/config.terrainInterval)) * config.terrainInterval;
+      var y = (config.mapHeight/2) + (Math.floor(Math.random() * (config.mapHeight/2/config.terrainInterval)) * config.terrainInterval);
+      if(tMap[x] && tMap[x][y]){
+        var oreVeinLength = Math.random() * 10;
+        for(var z = 0; z < oreVeinLength; z++){
+          var tile = new tiles.TerrainTile(x,y,'ore');
+          tiles.addTile(tile,tMap);
+          if(Math.random() > 0.5){
+            x += (Math.random() > 0.5) ? config.terrainInterval : -config.terrainInterval;
+          }else{
+            y += (Math.random() > 0.5) ? config.terrainInterval : -config.terrainInterval;
+          }
+        }
+      }
+    }
   }
 
   this.drawBG = function(camera,clockCycle,canvasBufferContext){

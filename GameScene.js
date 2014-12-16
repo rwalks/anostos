@@ -26,6 +26,9 @@ var GameScene = function (strs,trn,shp,nam,bg){
     humans.push( new Human(x,y,name) );
 
   }
+  //starting resources
+  humans[0].inventory.addItem('oxygen',80);
+  humans[0].inventory.addItem('metal',150);
 
   var gui = new Gui();
 

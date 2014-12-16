@@ -18,10 +18,13 @@ Human = function(x,y,name) {
   this.direction = true;
   this.distress = false;
   this.maxHealth = 100; this.currentHealth = 100;
-  this.maxOxygen = 100; this.currentOxygen = 100;
+  this.maxOxygen = 20; this.currentOxygen = 20;
+  var oxygenConsumptionRate = 0.03;
 
   this.inventory = new Inventory();
   this.action = false;
+
+  this.dead = false;
 
   this.actions = ["build","inventory","delete"];
 
@@ -57,66 +60,92 @@ Human = function(x,y,name) {
   this.update = function(terrain){
     count += 1;
     if(count > 100){ count = 0; }
-    //resources
-    //move path
-    this.followPath();
-    //gravity
-    this.velocity.y += config.gravity;
-    //max speed
-    this.velocity.x = (Math.abs(this.velocity.x) > maxSpeed.x) ? (this.velocity.x * (maxSpeed.x/Math.abs(this.velocity.x))) : this.velocity.x ;
-    this.velocity.y = (Math.abs(this.velocity.y) > maxSpeed.y) ? (this.velocity.y * (maxSpeed.y/Math.abs(this.velocity.y))) : this.velocity.y ;
-    //terrain detection
-    this.terrainCollide(terrain.terrain);
-    //friction
-    this.velocity.x = this.velocity.x * (this.onGround ? 0.8 : 0.9);
-    this.velocity.y = this.velocity.y * 0.9;
-    if(this.velocity.x > 0){this.direction = true;}
-    if(this.velocity.x < 0){this.direction = false;}
-    //apply move
-    this.position.x += this.velocity.x;
-    this.position.y += this.velocity.y;
-    if(this.action == 'build' && this.targetObj){
-      var targCoords = [this.targetObj.position.x,this.targetObj.position.y];
-      //var range = config.gridInterval * (Math.max(this.targetObj.size.x,this.targetObj.size.y));
-      var range = config.gridInterval * 3;
-    }else if(this.target){
-      var targCoords = [this.target.x,this.target.y];
-      var range = config.gridInterval * 3;
+
+    if(this.currentHealth <= 0 && !this.dead){
+      this.dead = true;
+      return {'action':'die'};
     }
-    if(this.target && nodeDistance(targCoords,this.position) < range){
-      var ret;
-      switch(this.action){
-        case 'build':
-          if(this.targetObj){
-            ret = {'action':'build','obj':this.targetObj};
-            this.path = [];
-            this.target = false;
+    if(!this.dead){
+      var room = terrain.inARoom(this.position.x,this.position.y,terrain.getRooms());
+      spaceSuit = !(room && room.oxygen > 0);
+      if(count % 10 == 0){
+        //check room + oxygen;
+        if(this.currentOxygen > 0){
+          //breathe
+          this.currentOxygen -= oxygenConsumptionRate;
+        }else{
+          //hurt
+          this.wound(1);
+        }
+        if(room){
+          var oxygenReq = Math.min(this.maxOxygen - this.currentOxygen, oxygenConsumptionRate*6);
+          if(room.oxygen > 0){
+            var oxygenTransfer = Math.min(oxygenReq,room.oxygen);
+            room.oxygen -= oxygenTransfer;
+            this.currentOxygen += oxygenTransfer;
           }
-          break;
-        case 'delete':
-          if(this.targetObj){
-            var targ = terrain.getTile(this.targetObj.position.x,this.targetObj.position.y);
-            if(targ && targ == this.targetObj){
-              this.salvage(this.targetObj);
-              ret = {'action':'delete','obj':targ};
+        }
+      }
+      //move path
+      this.followPath();
+      //gravity
+      this.velocity.y += config.gravity;
+      //max speed
+      this.velocity.x = (Math.abs(this.velocity.x) > maxSpeed.x) ? (this.velocity.x * (maxSpeed.x/Math.abs(this.velocity.x))) : this.velocity.x ;
+      this.velocity.y = (Math.abs(this.velocity.y) > maxSpeed.y) ? (this.velocity.y * (maxSpeed.y/Math.abs(this.velocity.y))) : this.velocity.y ;
+      //terrain detection
+      this.terrainCollide(terrain.terrain);
+      //friction
+      this.velocity.x = this.velocity.x * (this.onGround ? 0.8 : 0.9);
+      this.velocity.y = this.velocity.y * 0.9;
+      if(this.velocity.x > 0){this.direction = true;}
+      if(this.velocity.x < 0){this.direction = false;}
+      //apply move
+      this.position.x += this.velocity.x;
+      this.position.y += this.velocity.y;
+      if(this.action == 'build' && this.targetObj){
+        var targCoords = [this.targetObj.position.x,this.targetObj.position.y];
+        //var range = config.gridInterval * (Math.max(this.targetObj.size.x,this.targetObj.size.y));
+        var range = config.gridInterval * 3;
+      }else if(this.target){
+        var targCoords = [this.target.x,this.target.y];
+        var range = config.gridInterval * 3;
+      }
+      if(this.target && nodeDistance(targCoords,this.position) < range){
+        var ret;
+        switch(this.action){
+          case 'build':
+            if(this.targetObj && this.inventory.purchase(this.targetObj.cost)){
+              ret = {'action':'build','obj':this.targetObj};
               this.path = [];
               this.target = false;
             }
-          }
-          break;
-        default:
-          var targ = terrain.getTile(this.target.x,this.target.y);
-          if(targ && targ.interact == 'inventory'){
-            ret = {'action':'inventory','obj':targ};
-            this.path = [];
-            this.target = false;
-          }
-          break;
+            break;
+          case 'delete':
+            if(this.targetObj){
+              var targ = terrain.getTile(this.targetObj.position.x,this.targetObj.position.y);
+              if(targ && targ == this.targetObj){
+                this.salvage(this.targetObj);
+                ret = {'action':'delete','obj':targ};
+                this.path = [];
+                this.target = false;
+              }
+            }
+            break;
+          default:
+            var targ = terrain.getTile(this.target.x,this.target.y);
+            if(targ && targ.interact == 'inventory'){
+              ret = {'action':'inventory','obj':targ};
+              this.path = [];
+              this.target = false;
+            }
+            break;
+        }
+
+        return ret;
+
+
       }
-
-      return ret;
-
-
     }
   }
 
@@ -148,17 +177,6 @@ Human = function(x,y,name) {
         this.velocity.x = 0;
       }
       if(nextNode && nextNode[1] < this.position.y){
-     //   var height = 1;
-     //   if(this.path.length > 1){
-     //     for(i=this.path.length-2;i>0;i--){
-     //       var nn = this.path[i];
-     //       if(nn[0] == nextNode[0]){
-     //        height += 1;
-     //       }else{
-     //        break;
-     //       }
-     //     }
-     //   }
         this.velocity.y = -walkAccel * 0.7;
       }
     }
@@ -217,6 +235,11 @@ Human = function(x,y,name) {
     var animate = Math.abs(this.velocity.x) > 0.1;
     drawHuman(this.position.x,this.position.y,canvasContext,camera,this.direction,animate,this.fillColor,this.lineColor);
     //drawPath(this.path,canvasContext,camera);
+  }
+
+  this.wound = function(damage){
+    var dam = Math.min(damage,this.currentHealth);
+    this.currentHealth -= dam;
   }
 
   this.pointWithin = function(x,y){
