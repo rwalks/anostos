@@ -3,12 +3,13 @@ var AudioLoader = function (){
   var files = {"introMusic": {'src':"sounds/deep_space.ogg",'copies':[],'index':1},
                 "spookyPlanet": {'src':"sounds/spooky1.ogg",'copies':[],'index':1},
                 "introShip": {'src':"sounds/eng1.ogg",'copies':[],'index':1},
-                "eng1": {'src':"sounds/engS.ogg",'copies':[],'index':1},
-                "explosion1": {'src':"sounds/explosion1.ogg",'copies':[],'index':2},
+                "eng1": {'src':"sounds/engS.ogg",'copies':[],'index':4},
+                "explosion1": {'src':"sounds/explosion1.ogg",'copies':[],'index':4},
                 "explosion2": {'src':"sounds/explosion2.ogg",'copies':[],'index':4},
-                "message": {'src':"sounds/message.ogg",'copies':[],'index':10},
+                "message": {'src':"sounds/message.ogg",'copies':[],'index':4},
                 "landing1": {'src':"sounds/landingmusic1.ogg",'copies':[],'index':1},
-                "eng3": {'src':"sounds/eng4.ogg",'copies':[],'index':5}
+                "landing2": {'src':"sounds/landingmusic2.ogg",'copies':[],'index':1},
+                "eng3": {'src':"sounds/eng4.ogg",'copies':[],'index':4}
               }
 
 

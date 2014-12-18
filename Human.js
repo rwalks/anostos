@@ -9,17 +9,25 @@ Human = function(x,y,name) {
   this.position = {'x':x,'y':y};
   this.velocity = {'x':0,'y':0};
   var maxSpeed = {'x':3,'y':10};
-  var walkAccel = 0.5;
+  var walkAccel = config.gridInterval/2;
   var count = 0;
-  this.target;
+  this.targetObj;
+  this.lastTarget;
   this.path = [];
   this.onGround = false;
   this.direction = true;
   this.distress = false;
   this.maxHealth = 100; this.currentHealth = 100;
-  this.maxOxygen = 100; this.currentOxygen = 100;
+  this.maxOxygen = 20; this.currentOxygen = 20;
+  var oxygenConsumptionRate = 0.03;
 
-  this.actions = ["build","delete"];
+  this.inventory = new Inventory();
+  this.action = false;
+  this.interact = 'inventory';
+
+  this.dead = false;
+
+  this.actions = ["build","inventory","delete"];
 
   this.name = name ? name : config.nameGenerator();
 
@@ -33,45 +41,139 @@ Human = function(x,y,name) {
   b = (b >= g && b >= r) ? 250 : 0;
   this.lineColor = "rgba("+r+","+g+","+b+",1.0)";
 
+  this.salvage = function(obj){
+    var inv = this.targetObj.inventory ? this.targetObj.inventory.inv : false;
+    if(inv){
+      for(i in inv){
+        this.inventory.addItem(i,inv[i]);
+      }
+    }
+
+    inv = this.targetObj.cost;
+    if(inv){
+      for(i in inv){
+        this.inventory.addItem(i,Math.floor(inv[i]/2));
+      }
+    }
+  }
+
+
   this.update = function(terrain){
     count += 1;
     if(count > 100){ count = 0; }
-    //resources
-    //move path
-    this.followPath();
-    //gravity
-    this.velocity.y += config.gravity;
-    //max speed
-    this.velocity.x = (Math.abs(this.velocity.x) > maxSpeed.x) ? (this.velocity.x * (maxSpeed.x/Math.abs(this.velocity.x))) : this.velocity.x ;
-    this.velocity.y = (Math.abs(this.velocity.y) > maxSpeed.y) ? (this.velocity.y * (maxSpeed.y/Math.abs(this.velocity.y))) : this.velocity.y ;
-    //terrain detection
-    this.terrainCollide(terrain);
-    //friction
-    this.velocity.x = this.velocity.x * (this.onGround ? 0.8 : 0.9);
-    this.velocity.y = this.velocity.y * 0.9;
-    if(this.velocity.x > 0){this.direction = true;}
-    if(this.velocity.x < 0){this.direction = false;}
-    //apply move
-    this.position.x += this.velocity.x;
-    this.position.y += this.velocity.y;
+
+    if(this.currentHealth <= 0 && !this.dead){
+      this.dead = true;
+      return {'action':'die'};
+    }
+    if(!this.dead){
+      var room = terrain.inARoom(this.position.x,this.position.y,terrain.getRooms());
+      spaceSuit = !(room && room.oxygen > 0);
+      if(count % 10 == 0){
+        //check room + oxygen;
+        if(this.currentOxygen > 0){
+          //breathe
+          this.currentOxygen -= oxygenConsumptionRate;
+        }else{
+          //hurt
+          this.wound(1);
+        }
+        if(room){
+          var oxygenReq = Math.min(this.maxOxygen - this.currentOxygen, oxygenConsumptionRate*6);
+          if(room.oxygen > 0){
+            var oxygenTransfer = Math.min(oxygenReq,room.oxygen);
+            room.oxygen -= oxygenTransfer;
+            this.currentOxygen += oxygenTransfer;
+          }
+        }
+      }
+      //move path
+      this.followPath();
+      //gravity
+      this.velocity.y += config.gravity;
+      //max speed
+      this.velocity.x = (Math.abs(this.velocity.x) > maxSpeed.x) ? (this.velocity.x * (maxSpeed.x/Math.abs(this.velocity.x))) : this.velocity.x ;
+      this.velocity.y = (Math.abs(this.velocity.y) > maxSpeed.y) ? (this.velocity.y * (maxSpeed.y/Math.abs(this.velocity.y))) : this.velocity.y ;
+      //terrain detection
+      this.terrainCollide(terrain.terrain);
+      //friction
+      this.velocity.x = this.velocity.x * (this.onGround ? 0.8 : 0.9);
+      this.velocity.y = this.velocity.y * 0.9;
+      if(this.velocity.x > 0){this.direction = true;}
+      if(this.velocity.x < 0){this.direction = false;}
+      //apply move
+      this.position.x += this.velocity.x;
+      this.position.y += this.velocity.y;
+      if(this.targetObj){
+        var targCoords = [this.targetObj.position.x+(this.targetObj.size.x/2),this.targetObj.position.y+(this.targetObj.size.y/2)];
+        if(this.action == 'build'){
+          var range = config.gridInterval * 3;
+        }else{
+          var range = config.gridInterval * 3;
+        }
+        var center = {'x':this.position.x+(this.size.x/2),'y':this.position.y+(this.size.y/2)};
+        if(nodeDistance(targCoords,center) < range){
+          var ret;
+          switch(this.action){
+            case 'build':
+              if(this.inventory.purchase(this.targetObj.cost)){
+                ret = {'action':'build','obj':this.targetObj};
+                this.path = [];
+                this.targetObj = false;
+              }
+              break;
+            case 'delete':
+              var targ = terrain.getTile(this.targetObj.position.x,this.targetObj.position.y);
+              if(targ && targ == this.targetObj){
+                this.salvage(this.targetObj);
+                ret = {'action':'delete','obj':targ};
+                this.path = [];
+                this.targetObj = false;
+              }
+              break;
+            default:
+              if(this.targetObj.interact == 'inventory'){
+                ret = {'action':'inventory','obj':targ};
+                this.path = [];
+                this.targetObj = false;
+              }
+              break;
+          }
+          return ret;
+        }
+      }
+    }
   }
 
   this.followPath = function(){
     var nextNode = this.path[this.path.length-1];
+    var straightPath = false;
+    if(this.path.length > 1){
+      if((this.position.x > nextNode[0] && this.position.x > this.path[this.path.length-2][0]) ||
+         (this.position.x < nextNode[0] && this.position.x < this.path[this.path.length-2][0])){
+          straightPath = true;
+      }
+    }
     if(nextNode){
-      if((Math.abs(nodeDistance(nextNode,this.position)) < config.gridInterval/4) ||
-        ((this.position.x > nextNode[0] && this.position.x < nextNode[0] + config.gridInterval) && (nextNode[1] > this.position.y))){
+      //pop next node if close enough OR over it OR under it
+      if((Math.abs(nodeDistance(nextNode,this.position)) < config.gridInterval/6) ||
+        (Math.abs(nextNode[0] - this.position.x) < config.gridInterval) &&
+         (nextNode[1] > this.position.y) && !this.onGround && straightPath){
         this.path.pop();
         nextNode = this.path[this.path.length-1];
       }
       //left or right
       if(nextNode && nextNode[0] > this.position.x){
-        this.velocity.x += walkAccel;
+      var d = nextNode[0] - this.position.x;
+        this.velocity.x = Math.min(walkAccel,d);
       }else if(nextNode && nextNode[0] < this.position.x){
-        this.velocity.x -= walkAccel;
+      var d = nextNode[0] - this.position.x;
+        this.velocity.x = Math.max(-walkAccel,d);
+      }else{
+        this.velocity.x = 0;
       }
       if(nextNode && nextNode[1] < this.position.y){
-        this.velocity.y -= 1;
+        this.velocity.y = -walkAccel * 0.7;
       }
     }
   }
@@ -128,7 +230,12 @@ Human = function(x,y,name) {
   this.draw = function(camera,canvasContext){
     var animate = Math.abs(this.velocity.x) > 0.1;
     drawHuman(this.position.x,this.position.y,canvasContext,camera,this.direction,animate,this.fillColor,this.lineColor);
-  //  drawPath(this.path,canvasContext,camera);
+    //drawPath(this.path,canvasContext,camera);
+  }
+
+  this.wound = function(damage){
+    var dam = Math.min(damage,this.currentHealth);
+    this.currentHealth -= dam;
   }
 
   this.pointWithin = function(x,y){
@@ -136,9 +243,42 @@ Human = function(x,y,name) {
             y > this.position.y && y < (this.position.y + this.size.y));
   }
 
-  this.click = function(coords,terrain){
-    this.target = coords;
-    this.path = pathfinder.findPath(this.position.x,this.position.y,coords.x,coords.y,terrain);
+  this.click = function(coords,terrain,action,obj){
+    this.action = false;
+    this.targetObj = false;
+    this.lastTarget = false;
+    var terMap = terrain.terrain;
+    if(!obj){
+      this.path = pathfinder.findPath(this.position.x,this.position.y,coords.x,coords.y,terMap);
+    }else if(obj){
+      //find spot adjacent to obj
+      var oX = obj.position.x - (obj.position.x % config.gridInterval);
+      var oY = obj.position.y - (obj.position.y % config.gridInterval);
+      var minX = oX - this.size.x;
+      var maxX = oX + obj.size.x + this.size.x;
+      var minY = oY - this.size.y;
+      var maxY = oY + obj.size.y + this.size.y;
+      var found = false;
+      for(var x = 0; x <= ((maxX-minX) / config.gridInterval); x++){
+        for(var y = 0; y <= ((maxY-minY)/ config.gridInterval); y++){
+          var tX = (this.position.x > obj.position.x) ? (minX + (x*config.gridInterval)) : (maxX - (x*config.gridInterval));
+          var tY = (this.position.y < obj.position.y) ? (minY + (y*config.gridInterval)) : (maxY - (y*config.gridInterval));
+          if(pathfinder.validSpace(tX,tY,terMap)){
+            this.path = pathfinder.findPath(this.position.x,this.position.y,tX,tY,terMap);
+            if(this.path.length > 0){
+              found = true;
+              break;
+            }
+          }
+        }
+        if(found){break;}
+      }
+    }
+    if(this.path.length > 0){
+      this.action = action;
+      this.targetObj = obj;
+      this.lastTarget = obj;
+    }
     return;
   }
 

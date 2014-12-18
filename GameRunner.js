@@ -123,7 +123,7 @@ function GameRunner() {
           _scene = new LandingScene(_scene.stars,_scene.heroName,_scene.audio);
           break;
         case 'landing':
-          _scene = new GameScene(_scene.stars,_scene.terrain,_scene.ship,_scene.heroName);
+          _scene = new GameScene(_scene.stars,_scene.terrain,_scene.ship,_scene.heroName,_scene.sceneUtils.bgs);
           break;
       }
     }

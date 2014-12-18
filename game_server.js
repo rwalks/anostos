@@ -32,7 +32,7 @@ function handler (req, res) {
       res.writeHead(404);
       res.end();
     })
-    s.once('fd', function () {res.writeHead(200);});
+    res.setHeader("Cache-Control","public,max-age=66666666");
     s.pipe(res);
 }
 

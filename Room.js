@@ -1,12 +1,15 @@
 Room = function(points) {
 
+  this.id = 0;
   this.points = points;
 
   this.polygon;
 
+  this.oxygen = 0;
+  this.maxOxygen = 20;
+
   this.update = function(){
-    count += 1;
-    return (count > maxCount);
+
   }
 
   this.pointWithin = function(x,y,points){
@@ -23,8 +26,9 @@ Room = function(points) {
   }
 
   this.draw = function(camera,canvasBufferContext){
-    canvasBufferContext.fillStyle = "rgba(250,0,0,0.2)";
+    var dr = 200 - Math.floor((this.oxygen / this.maxOxygen) * 190);
     canvasBufferContext.beginPath();
+    canvasBufferContext.fillStyle = "rgba("+dr+",10,10,0.2)";
 
     var x = (this.polygon[0][0] - camera.xOff) * config.xRatio;
     var y = (this.polygon[0][1] - camera.yOff) * config.yRatio;

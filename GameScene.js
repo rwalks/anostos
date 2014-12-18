@@ -1,8 +1,8 @@
-var GameScene = function (strs,trn,shp,nam){
+var GameScene = function (strs,trn,shp,nam,bg){
   var heroName = nam;
-  var sceneUtils = new SceneUtils(trn[1]);
+  var sceneUtils = new SceneUtils(bg);
   var stars = strs ? strs : sceneUtils.generateStars(10000);
-  var terrain = trn ? trn[0] : sceneUtils.generateTerrain();
+  var terrain = trn ? trn : new Terrain();
   var ship = shp;
   var camera = new Camera(5000,6500);
   camera.focusOn(ship.position);
@@ -12,23 +12,29 @@ var GameScene = function (strs,trn,shp,nam){
   var camDX = 0;
   var camDY = 0;
   var humans = [];
+  var corpses = [];
   var resources= new Resources();
   this.count = 0;
-  var roomFinder = new Roomfinder();
-  this.rooms = [];
-  var doors = {};
-  var airtightWalls = {};
 
   var focusTarget;
   var buildTarget;
 
+  var startTime = new Date();
+  var timeElapsed;
+  var gameOver = false;
+  var messageIndex = 0;
+
   for(var i=0;i<3;i++){
     var x = (Math.random()*(config.gridInterval*6))-(config.gridInterval*3) + ship.position.x;
     var y = ship.position.y;
+   // var y = 6000;
     var name = (i == 0) ? heroName : false;
     humans.push( new Human(x,y,name) );
 
   }
+  //starting resources
+  humans[0].inventory.addItem('oxygen',80);
+  humans[0].inventory.addItem('metal',150);
 
   var gui = new Gui();
 
@@ -41,28 +47,80 @@ var GameScene = function (strs,trn,shp,nam){
   }
 
   this.update = function(mPos){
+    var currentTime = new Date();
+    timeElapsed = currentTime - startTime;
     mousePos = mPos;
     camera.update(mousePos);
-    for(x in doors){
-      for(y in doors[x]){
-        terrain[x][y].update(humans);
+    var regen = [];
+    for (h in humans){
+      var ret = humans[h].update(terrain);
+      if(ret){
+        switch(ret.action){
+          case 'delete':
+            var obj = ret.obj;
+            regen = terrain.removeTile(obj);
+            break;
+          case 'build':
+            var obj = ret.obj;
+            if(terrain.isClear(obj,humans)){
+              regen = terrain.addTile(obj);
+            }
+            break;
+          case 'inventory':
+            this.uiMode = 'trade';
+            break;
+          case 'die':
+            this.addCorpse(humans[h]);
+            humans.splice(h,1);
+            if(humans.length < 1){
+              messageIndex = 0;
+              gameOver = timeElapsed;
+            }
+            break;
+        }
       }
     }
-    for (h in humans){
-      humans[h].update(terrain);
+    for(c in corpses){
+      corpses[c].update(terrain);
+      if(corpses[c].inventory && corpses[c].inventory.empty()){
+        corpses.splice(c,1);
+      }
     }
-    gui.update(focusTarget,humans,resources.getResources(),buildTarget,this.uiMode);
+    terrain.update(humans);
+    gui.update(focusTarget,humans,buildTarget,this.uiMode,timeElapsed,terrain.powerStats);
+    for(r in regen){
+      if(regen[r] == 'rooms'){
+        terrain.regenBuildings();
+      }
+    }
     this.count = (this.count > 100) ? 0 : this.count + 1;
   }
 
   this.click = function(clickPos,rightClick){
     if(rightClick){
       if(this.uiMode == 'select' && focusTarget){
+        var coords = clickToCoord(clickPos,false);
+        var obj = false;
+        for(h in humans){
+          if(humans[h].pointWithin(coords.x,coords.y)){
+            obj = humans[h];
+          }
+        }
+        if(!obj){
+          for(c in corpses){
+            if(corpses[c].pointWithin(coords.x,coords.y)){
+              obj = corpses[c];
+            }
+          }
+        }
         var coords = clickToCoord(clickPos,true);
-        focusTarget.click(coords,terrain);
+        obj = !obj ? terrain.getTile(coords.x,coords.y) : obj;
+        focusTarget.click(coords,terrain,'move',obj);
       }else{
         this.uiMode = 'select';
       }
+    }else if(gameOver){
+//      document.GameRunner.endScene("dead");
     }else{
       var targetFound = false;
       var coords = clickToCoord(clickPos,false);
@@ -81,9 +139,7 @@ var GameScene = function (strs,trn,shp,nam){
         }else if(guiRet && guiRet.buildTarget){
           buildTarget = guiRet.buildTarget;
         }else if(guiRet && guiRet.action){
-          if (guiRet.action == "build" || guiRet.action == "delete"){
-            this.uiMode = (guiRet.action == this.uiMode) ? "select" : guiRet.action;
-          }
+          this.uiMode = (guiRet.action == this.uiMode) ? "select" : guiRet.action;
         }
       }else{
         switch(this.uiMode){
@@ -95,10 +151,18 @@ var GameScene = function (strs,trn,shp,nam){
               }
             }
             if(!targetFound){
+              for(c in corpses){
+                if(corpses[c].pointWithin(x,y)){
+                  focusTarget = corpses[c];
+                  targetFound = true;
+                }
+              }
+            }
+            if(!targetFound){
               var coords = clickToCoord(clickPos,true);
               var x = coords.x;
               var y = coords.y;
-              focusTarget = terrain[x][y];
+              focusTarget = terrain.getTile(x,y);
             }
             this.uiMode = "select";
             break;
@@ -106,85 +170,20 @@ var GameScene = function (strs,trn,shp,nam){
             if(buildTarget){
               var coords = clickToCoord(clickPos,true);
               var obj = buildTarget.clone(coords);
-              if(tiles.isClear(obj,terrain,humans)){
-                tiles.addTile(obj,terrain);
-                if(obj.airtight){
-                  airtightWalls[obj.position.x] = airtightWalls[obj.position.x] ? airtightWalls[obj.position.x] : {};
-                  airtightWalls[obj.position.x][obj.position.y] = true;
-                  this.regenRooms();
-                }
-                if(obj.type == 'door'){
-                  doors[obj.position.x] = doors[obj.position.x] ? doors[obj.position.x] : {};
-                  doors[obj.position.x][obj.position.y] = true;
-                }
+              if(terrain.isClear(obj,humans,corpses)){
+                focusTarget.click(coords,terrain,'build',obj);
               }
             }
             break;
           case "delete":
             var coords = clickToCoord(clickPos,true);
-            if(terrain[coords.x] && terrain[coords.x][coords.y]){
-              var obj = terrain[coords.x][coords.y];
-              if(obj.airtight){
-                delete airtightWalls[obj.position.x][obj.position.y];
-                this.regenRooms();
-              }
-              if(obj.type == 'door'){
-                delete doors[obj.position.x][obj.position.y];
-              }
-              tiles.removeTile(obj,terrain);
+            if(terrain.getTile(coords.x,coords.y)){
+              focusTarget.click(coords,terrain,'delete',terrain.getTile(coords.x,coords.y));
             }
             break;
         }
       }
     }
-  }
-
-  this.regenRooms = function(){
-    var rooms = [];
-    for(x in airtightWalls){
-      for(y in airtightWalls[x]){
-        if(!inARoom(x,y,rooms)){
-          var rm = roomFinder.findRoom(~~x,~~y,terrain);
-          if(rm.length > 0){
-            if(uniqueRoom(rm,rooms)){
-              rooms.push(new Room(rm));
-            }
-          }
-        }
-      }
-    }
-    this.rooms = rooms;
-  }
-
-  var uniqueRoom = function(rm,rooms){
-    var rmHash = {};
-    var dupe = false;
-    for(p in rm){
-      var point = rm[p];
-      rmHash[point[0]] = rmHash[point[0]] ? rmHash[point[0]] : {};
-      rmHash[point[0]][point[1]] = true;
-    }
-    for(r in rooms){
-      var counter = 0;
-      var room = rooms[r];
-      for(i in room.points){
-        var point = room.points[i];
-        counter += (rmHash[point[0]] && rmHash[point[0]][point[1]]) ? 1 : 0;
-      }
-      if(counter > (rm.length * 0.5)){
-        dupe = true;
-      }
-    }
-    return !dupe;
-  }
-
-  var inARoom = function(x,y,rooms){
-    for(r in rooms){
-      if(rooms[r].pointWithin(x,y)){
-        return true;
-      }
-    }
-    return false;
   }
 
   var clickToCoord = function(pos,roundToGrid){
@@ -203,10 +202,12 @@ var GameScene = function (strs,trn,shp,nam){
     if(onScreen(ship)){
       ship.draw(camera,canvasBufferContext);
     }
-    for (r in this.rooms){
-      this.rooms[r].draw(camera,canvasBufferContext);
+    terrain.draw(canvasBufferContext,camera,this.count);
+    for (c in corpses){
+      if(onScreen(corpses[c])){
+        corpses[c].draw(camera,canvasBufferContext);
+      }
     }
-    drawMap(canvasBufferContext,this.count);
     for (h in humans){
       if(onScreen(humans[h])){
         humans[h].draw(camera,canvasBufferContext);
@@ -215,15 +216,26 @@ var GameScene = function (strs,trn,shp,nam){
     if(this.uiMode == "build" && buildTarget){
       var bPos = clickToCoord(mousePos,true);
       var obj = buildTarget.clone(bPos);
-      var clear = tiles.isClear(obj,terrain,humans);
+      var clear = terrain.isClear(obj,humans);
       drawBuildCursor(obj,canvasBufferContext,clear);
     }else if(this.uiMode == "delete"){
       var bPos = clickToCoord(mousePos,true);
-      if(terrain[bPos.x] && terrain[bPos.x][bPos.y]){
-        drawBuildCursor(terrain[bPos.x][bPos.y],canvasBufferContext,false);
+      if(terrain.getTile(bPos.x,bPos.y)){
+        drawBuildCursor(terrain.getTile(bPos.x,bPos.y),canvasBufferContext,false);
       }
     }
-    gui.draw(camera,canvasBufferContext);
+    if(gameOver){
+      this.drawText(gameOverMsg(gameOver),canvasBufferContext);
+    }else{
+      gui.draw(camera,canvasBufferContext);
+    }
+  }
+
+  this.addCorpse = function(corpse){
+    if(corpse.inventory){
+      var lootBox = new Corpse(corpse.position,corpse.inventory);
+      corpses.push(lootBox);
+    }
   }
 
   var onScreen = function(obj){
@@ -249,18 +261,34 @@ var GameScene = function (strs,trn,shp,nam){
     canvasBufferContext.stroke();
   }
 
-  var drawMap = function(canvasBufferContext,count){
-    if(terrain){
-      for(var x=camera.xOff-(camera.xOff%config.gridInterval);x<camera.xOff+config.cX;x+=config.gridInterval){
-        if(terrain[x]){
-          for(var y=(camera.yOff-(camera.yOff%config.gridInterval));y<camera.yOff+config.cY;y+=config.gridInterval){
-            if(terrain[x][y]){
-              terrain[x][y].draw(camera,canvasBufferContext,count);
-            }
-          }
-        }
-      }
+  this.drawText = function(msg,canvasBufferContext){
+    messageIndex += ((this.count % 5 == 0) && (messageIndex < (msg[0].length+msg[1].length))) ? 1 : 0;
+    var x = config.canvasWidth / 14;
+    var y = config.canvasHeight * 0.4;
+    var fontSize = config.canvasWidth / (msg[0].length * 0.9) ;
+    canvasBufferContext.beginPath();
+    canvasBufferContext.lineWidth=Math.floor(config.xRatio)+"";
+    canvasBufferContext.fillStyle = "rgba(100,100,100,0.6)";
+    canvasBufferContext.strokeStyle="rgba(200,200,200,0.8)";
+    canvasBufferContext.rect(x-fontSize,y-fontSize,msg[0].length*0.63*fontSize,3*fontSize);
+    canvasBufferContext.stroke();
+    canvasBufferContext.fill();
+    canvasBufferContext.font = fontSize + 'px Courier New';
+    canvasBufferContext.fillStyle = "rgba(50,250,200,0.9)";
+    if(messageIndex < msg[0].length){
+      canvasBufferContext.fillText(msg[0].slice(0,messageIndex),x,y);
+    }else{
+      canvasBufferContext.fillText(msg[0],x,y);
+      canvasBufferContext.fillText(msg[1].slice(0,messageIndex-msg[0].length),x,y+fontSize*1.2);
     }
+  }
+
+  var gameOverMsg = function(endTime){
+    var totalSecs = Math.floor(endTime / 1000);
+    var minutes = Math.floor(totalSecs / 60);
+    var seconds = totalSecs % 60;
+    var timeString = (minutes > 9 ? minutes : "0" + minutes) + ":" + (seconds > 9 ? seconds : "0" + seconds);
+    return ["All colonists eliminated. Justice: Served","You survived for " +timeString+"."];
   }
 
 }

@@ -28,7 +28,7 @@ Pathfinder = function() {
     return ret;
   }
 
-  var validSpace = function(nX,nY,grid){
+  this.validSpace = function(nX,nY,grid){
     var valid = true;
     for(var x=nX;x<nX+size.x;x+=config.gridInterval){
       for(var y=nY;y<nY+size.y;y+=config.gridInterval){
@@ -56,10 +56,16 @@ Pathfinder = function() {
     var openNodes = {};
     var closedNodes = {};
     var curNode = new Node(sX,sY);
-    var dX = destX - (destX % size.x);
-    var dY = destY - (destY % size.y);
-    dY = collapseY(dX,dY,terrain);
-
+    var dX = destX - (destX % config.gridInterval);
+    var dY = destY - (destY % config.gridInterval);
+    //find natural height
+    for(var nY = dY; nY > dY-(size.y*2); nY -= config.gridInterval){
+      if(this.validSpace(dX,nY,terrain)){
+        dY = nY;
+        break;
+      }
+    }
+    dY = this.collapseY(dX,dY,terrain);
 
     var search = true;
     var validPath = false;
@@ -67,7 +73,7 @@ Pathfinder = function() {
     while(search){
       //check + add above to open if height below maxJump
       var nY = curNode.y-config.gridInterval;
-      if(curNode.height < maxJump && validSpace(curNode.x,nY,terrain)){
+      if(curNode.height < maxJump && this.validSpace(curNode.x,nY,terrain)){
         var next = new Node(curNode.x,nY,curNode,estimateDistance(curNode.x,nY,dX,dY));
         if(!nodeExists(next,closedNodes)){
           if(nodeExists(next,openNodes)){
@@ -83,9 +89,9 @@ Pathfinder = function() {
       for(i in dirs){
         var offset = dirs[i] * config.gridInterval;
         var nX = curNode.x + offset;
-        if(validSpace(nX,curNode.y,terrain)){
-          var nY = collapseY(nX,curNode.y,terrain);
-          if(validSpace(nX,nY,terrain)){
+        if(this.validSpace(nX,curNode.y,terrain)){
+          var nY = this.collapseY(nX,curNode.y,terrain);
+          if(this.validSpace(nX,nY,terrain)){
             var next = new Node(nX,nY,curNode,estimateDistance(nX,nY,dX,dY));
             if(!nodeExists(next,closedNodes)){
               if(nodeExists(next,openNodes)){
@@ -116,9 +122,9 @@ Pathfinder = function() {
     return validPath ? buildPath(curNode) : [];
   }
 
-  var collapseY = function(x,y,map){
+  this.collapseY = function(x,y,map){
     for(cY = y+config.gridInterval;cY < config.mapHeight;cY += config.gridInterval){
-      if(!validSpace(x,cY,map)){
+      if(!this.validSpace(x,cY,map)){
         return cY - config.gridInterval;
       }
     }

@@ -1,5 +1,5 @@
 var SceneUtils = function (bg){
-  var bgs = bg ? bg : [{},{},{}];
+  this.bgs = bg ? bg : [{},{},{}];
   var bgColors = [[20,10,100],[40,20,150],[100,50,200]];
 
   this.generateTerrain = function(){
@@ -24,19 +24,46 @@ var SceneUtils = function (bg){
       }
       var yMin = last + dY;
       for(var y=config.mapHeight;y>=yMin;y-=terrainInterval){
-         var tile = new tiles.TerrainTile(x,y);
+         var tile = new tiles.TerrainTile(x,y,'soil');
+         if(y < yMin+terrainInterval){
+           tile.topLayer = true;
+           if(Math.random() < 0.1){
+             tile.plant = new Plant(tile.position);
+           }
+         }
          tiles.addTile(tile,tMap,false);
       }
       if(x % (config.gridInterval * 4) == 0){
-        bgs[0][x] = yMin - ((Math.random() * 50) + 200);
-        bgs[1][x] = yMin - ((Math.random() * 50) + 100);
+        this.bgs[0][x] = yMin - ((Math.random() * 50) + 200);
+        this.bgs[1][x] = yMin - ((Math.random() * 50) + 100);
       }
       if(x % (config.gridInterval * 2) == 0){
-        bgs[2][x] = yMin - 50;
+        this.bgs[2][x] = yMin - 50;
       }
       last = yMin;
     }
-    return [tMap,bgs];
+
+    generateOre(tMap);
+    return tMap;
+  }
+
+  var generateOre = function(tMap){
+    for(var i = 0; i < 1000; i ++){
+      var x = Math.floor(Math.random() * (config.mapWidth/config.terrainInterval)) * config.terrainInterval;
+      var y = (config.mapHeight/2) + (Math.floor(Math.random() * (config.mapHeight/2/config.terrainInterval)) * config.terrainInterval);
+      if(tMap[x] && tMap[x][y]){
+        var oreVeinLength = Math.random() * 10;
+        for(var z = 0; z < oreVeinLength; z++){
+          var tile = new tiles.TerrainTile(x,y,'ore');
+          tiles.addTile(tile,tMap);
+          if(Math.random() > 0.5){
+            x += (Math.random() > 0.5) ? config.terrainInterval : -config.terrainInterval;
+          }else{
+            y += (Math.random() > 0.5) ? config.terrainInterval : -config.terrainInterval;
+          }
+        }
+      }
+    }
   }
 
   this.drawBG = function(camera,clockCycle,canvasBufferContext){
@@ -44,12 +71,12 @@ var SceneUtils = function (bg){
     var xRatio = config.canvasWidth / config.cX;
     var yRatio = config.canvasHeight / config.cY;
     var parallax = 4;
-    for(b in bgs){
+    for(b in this.bgs){
       var camX = camera.xOff / parallax;
       var camY = camera.yOff;
-      var bg = bgs[b];
+      var bg = this.bgs[b];
       var bgC = bgColors[b];
-      canvasBufferContext.fillStyle = "rgba("+bgC[0]+","+bgC[1]+","+bgC[2]+",1.0)";
+      canvasBufferContext.fillStyle = "rgba("+bgC[0]+","+bgC[1]+","+bgC[2]+",0.5)";
       canvasBufferContext.beginPath();
       canvasBufferContext.lineWidth="2";
       canvasBufferContext.strokeStyle="rgba(0,250,0,1.0)";

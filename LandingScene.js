@@ -1,8 +1,9 @@
 var LandingScene = function (strs,nam,aud){
   this.heroName = nam;
-  var sceneUtils = new SceneUtils();
-  this.stars = strs ? strs : sceneUtils.generateStars(10000);
-  this.terrain = sceneUtils.generateTerrain();
+  this.sceneUtils = new SceneUtils();
+  this.stars = strs ? strs : this.sceneUtils.generateStars(10000);
+  var terrainMap = this.sceneUtils.generateTerrain();
+  this.terrain = new Terrain(terrainMap);
   var camera = new Camera(config.mapWidth/2,0);
   var mousePos;
   var clockCycle = 0;
@@ -17,7 +18,10 @@ var LandingScene = function (strs,nam,aud){
 
   this.update = function(mPos){
     camera.focusOn(this.ship.position);
-    this.ship.update(this.terrain[0]);
+    this.ship.update(this.terrain.terrain);
+    if(this.ship.altitude < 3000){
+      this.audio.play("landing2");
+    }
     this.count += 1;
   }
 
@@ -116,8 +120,8 @@ var LandingScene = function (strs,nam,aud){
     }else{
       if(this.ship.destroyed){
         this.endScene(false);
-      }else if(true){
-      //}else if(this.ship.landed){
+      //}else if(true){
+      }else if(this.ship.landed){
         this.endScene(true);
       }
     }
@@ -125,6 +129,7 @@ var LandingScene = function (strs,nam,aud){
 
   this.endScene = function(landed){
     this.audio.stop('landing1');
+    this.audio.stop('landing2');
     if(landed){
       document.GameRunner.endScene("landing");
     }else{
@@ -133,10 +138,10 @@ var LandingScene = function (strs,nam,aud){
   }
 
   this.draw = function(canvasBufferContext){
-    sceneUtils.drawStars(this.stars, camera, clockCycle, canvasBufferContext);
-    sceneUtils.drawBG(camera,clockCycle,canvasBufferContext);
+    this.sceneUtils.drawStars(this.stars, camera, clockCycle, canvasBufferContext);
+    this.sceneUtils.drawBG(camera,clockCycle,canvasBufferContext);
     this.ship.draw(camera,canvasBufferContext);
-    this.drawMap(canvasBufferContext,this.count);
+    this.terrain.draw(canvasBufferContext,camera,this.count);
     this.drawFuel(canvasBufferContext);
     if(this.count < 500){
       startIndex = this.drawText(startMsg,canvasBufferContext,startIndex);
@@ -144,20 +149,6 @@ var LandingScene = function (strs,nam,aud){
       landIndex = this.drawText(crashMsg,canvasBufferContext,landIndex);
     }else if(this.ship.landed){
       landIndex = this.drawText(landedMsg(this.ship),canvasBufferContext,landIndex);
-    }
-  }
-
-  this.drawMap = function(canvasBufferContext,count){
-    if(this.terrain[0]){
-      for(var x=camera.xOff-(camera.xOff%config.gridInterval);x<camera.xOff+config.cX;x+=config.gridInterval){
-        if(this.terrain[0][x]){
-          for(var y=(camera.yOff-(camera.yOff%config.gridInterval));y<camera.yOff+config.cY;y+=config.gridInterval){
-            if(this.terrain[0][x][y]){
-              this.terrain[0][x][y].draw(camera,canvasBufferContext,count);
-            }
-          }
-        }
-      }
     }
   }
 
