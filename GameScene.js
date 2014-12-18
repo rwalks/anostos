@@ -33,8 +33,12 @@ var GameScene = function (strs,trn,shp,nam,bg){
 
   }
   //starting resources
-  humans[0].inventory.addItem('oxygen',80);
+  humans[0].inventory.addItem('oxygen',50);
   humans[0].inventory.addItem('metal',150);
+  humans[1].inventory.addItem('oxygen',50);
+  humans[1].inventory.addItem('metal',20);
+  humans[2].inventory.addItem('oxygen',50);
+  humans[2].inventory.addItem('metal',20);
 
   var gui = new Gui();
 
