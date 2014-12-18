@@ -15,7 +15,7 @@ Inventory = function() {
     if(this.allowedResources == true){
       return true;
     }
-    for(r in this.allowedResources){
+    for(var r in this.allowedResources){
       if(this.allowedResources[r] == resource){
         return true;
       }
@@ -28,7 +28,7 @@ Inventory = function() {
   }
 
   this.addItem = function(itemName,count){
-    var inventoryRemaining = this.maxInventory - this.count();
+    var inventoryRemaining = this.spaceRemaining();
     inventoryRemaining = inventoryRemaining < 0 ? 0 : inventoryRemaining;
     var invAdd = Math.min(inventoryRemaining,count);
     if(this.resourceAllowed(itemName) && invAdd > 0){
@@ -68,8 +68,8 @@ Inventory = function() {
 
   this.count = function(){
     var invCount = 0;
-    for(i in this.inv){
-      invCount += this.inv[i];
+    for(var it in this.inv){
+      invCount += this.inv[it];
     }
     return invCount;
   }
@@ -80,6 +80,10 @@ Inventory = function() {
 
   this.full = function(){
     return this.count() >= this.maxInventory;
+  }
+
+  this.empty = function(){
+    return this.count() == 0;
   }
 
 

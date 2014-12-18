@@ -12,6 +12,9 @@ Gui = function() {
   this.inventoryOffset = 0;
   this.tradeOffset = 0;
 
+  var timeElapsed;
+  var powerStats;
+
   this.buildings = {
   "construction":[new Block('soil'),new Block('metal'),new Door()],
   "power":[new StorageBuild('power'),new GeneratorBuild('solar')],
@@ -26,7 +29,11 @@ Gui = function() {
     switch(type){
       case "resources":
         pos.x = (config.canvasWidth / 2.5) - (config.canvasWidth/13.9);
-        pos.y = config.canvasHeight * (5/6);
+        pos.y = config.canvasHeight * (5.25/6);
+        break;
+      case "timer":
+        pos.x = (config.canvasWidth / 2.5) - (config.canvasWidth/13.9);
+        pos.y = config.canvasHeight * (5.5/6);
         break;
       case "target":
         pos.x = config.canvasWidth / 2.5;
@@ -115,7 +122,7 @@ Gui = function() {
             this.target.inventory.removeItem(resource,1);
           }else if(x >= xSize * 0.85 && x < xSize){
             //trade
-            if(this.target.targetObj.inventory.addItem(resource,1)){
+            if(this.target.lastTarget.inventory.addItem(resource,1)){
               this.target.inventory.removeItem(resource,1);
             }
           }
@@ -123,7 +130,7 @@ Gui = function() {
       }else{
         this.inventoryOffset += (Object.keys(this.target.inventory.inv).length > 6) ? 1 : 0;
       }
-    }else if(target == "trade" && this.target && this.target.targetObj && this.target.targetObj.inventory){
+    }else if(target == "trade" && this.target && this.target.lastTarget && this.target.lastTarget.inventory){
       var x = clickPos.x - this.position('trade').x;
       var y = clickPos.y - this.position('trade').y;
       var xSize = this.size('trade').x;
@@ -143,21 +150,21 @@ Gui = function() {
       }else if(y <= objY){
         //clicking on a trade square
         var tradeIndex = Math.floor(6*((y - tArrowY) / (objY - tArrowY))) + this.tradeOffset;
-        var resource = Object.keys(this.target.targetObj.inventory.inv)[tradeIndex];
+        var resource = Object.keys(this.target.lastTarget.inventory.inv)[tradeIndex];
         if(resource){
           if(x >= xSize * 0.7 && x < xSize * 0.85){
             //delete
-            this.target.targetObj.inventory.removeItem(resource,1);
+            this.target.lastTarget.inventory.removeItem(resource,1);
           }else if(x >= xSize * 0.85 && x < xSize){
             //trade
             if(this.target.inventory.addItem(resource,1)){
-              this.target.targetObj.inventory.removeItem(resource,1);
+              this.target.lastTarget.inventory.removeItem(resource,1);
             }
           }
         }
 
       }else{
-        this.tradeOffset += (Object.keys(this.target.targetObj.inventory.inv).length > 6) ? 1 : 0;
+        this.tradeOffset += (Object.keys(this.target.lastTarget.inventory.inv).length > 6) ? 1 : 0;
       }
     }else if(target == "target"){
       if(this.target && this.target.actions){
@@ -176,12 +183,13 @@ Gui = function() {
     }
   }
 
-  this.update = function(target,humans,resources,buildTarget,uiMode){
+  this.update = function(target,humans,buildTarget,uiMode,deltaT,powStats){
     this.target = target;
     this.roster = humans;
-    this.resources = resources;
     this.buildTarget = buildTarget;
     this.uiMode = uiMode;
+    timeElapsed = deltaT;
+    powerStats = powStats;
   }
 
   this.size = function(type){
@@ -189,7 +197,11 @@ Gui = function() {
     switch(type){
       case "resources":
         size.x = config.canvasWidth / 14;
-        size.y = config.canvasHeight / 6;
+        size.y = config.canvasHeight / 6 / 4;
+        break;
+      case "timer":
+        size.x = config.canvasWidth / 14;
+        size.y = config.canvasHeight / 6 / 4;
         break;
       case "target":
         size.x = config.canvasWidth / 3;
@@ -256,6 +268,46 @@ Gui = function() {
     this.drawResources(this.size("resources"),this.position("resources"),canvasBufferContext);
     this.drawTarget(this.size("target"),this.position("target"),canvasBufferContext);
     this.drawRoster(this.size("roster"),this.position("roster"),canvasBufferContext);
+    this.drawTimer(this.size("timer"),this.position("timer"),canvasBufferContext);
+  }
+
+  this.drawTimer = function(size,pos,canvasBufferContext){
+    canvasBufferContext.beginPath();
+    canvasBufferContext.lineWidth=Math.floor(config.xRatio)+"";
+    canvasBufferContext.fillStyle = "rgba(150,0,200,0.9)";
+    canvasBufferContext.strokeStyle="rgba(200,0,250,1.0)";
+    canvasBufferContext.rect(pos.x,pos.y,size.x,size.y);
+    canvasBufferContext.fill();
+    canvasBufferContext.stroke();
+    var xBuf = Math.floor(config.xRatio) * 2;
+    var yBuf = Math.floor(config.yRatio) * 2;
+    var xIndex = pos.x + xBuf;
+    var yIndex = pos.y + yBuf;
+    var xSize = size.x-(2*xBuf);
+    var ySize = size.y-(2*yBuf);
+    canvasBufferContext.beginPath();
+    canvasBufferContext.lineWidth=Math.floor(config.xRatio)+"";
+    canvasBufferContext.fillStyle = "rgba(20,0,50,0.9)";
+    canvasBufferContext.strokeStyle="rgba(20,0,75,1.0)";
+    canvasBufferContext.rect(xIndex,yIndex,xSize,ySize);
+    canvasBufferContext.fill();
+    if(timeElapsed){
+      var totalSecs = Math.floor(timeElapsed / 1000);
+      var minutes = Math.floor(totalSecs / 60);
+      var seconds = totalSecs % 60;
+      var secondString = seconds > 9 ? seconds : "0"+seconds;
+      var minuteString = (minutes > 9 ? minutes : "0"+minutes) + ":";
+
+      var fontSize = Math.min(config.xRatio * 10, config.yRatio*10);
+      var x = pos.x + (size.x * 0.2);
+      var y = pos.y + (size.y * 0.65);
+      canvasBufferContext.font = fontSize + 'px Courier';
+      canvasBufferContext.fillStyle = "rgba(100,190,250,0.8)";
+      canvasBufferContext.fillText(minuteString,x,y);
+      x = pos.x + (size.x * 0.55);
+      canvasBufferContext.fillText(secondString,x,y);
+    }
+
   }
 
   this.drawGrid = function(camera,canvasBufferContext){
@@ -288,60 +340,25 @@ Gui = function() {
     //resources
     var xBuf = Math.floor(config.xRatio) * 2;
     var yBuf = Math.floor(config.yRatio) * 2;
-    if(this.resources){
-      var x = pos.x + xBuf;
-      var y = pos.y + yBuf;
-      var xSize = size.x - (xBuf*2);
-      var ySize = (size.y/Object.keys(this.resources).length) - (2*yBuf);
-      for(r in this.resources){
-        canvasBufferContext.beginPath();
-        canvasBufferContext.lineWidth=Math.floor(config.xRatio)+"";
-        canvasBufferContext.fillStyle = "rgba(20,0,50,0.9)";
-        canvasBufferContext.strokeStyle="rgba(20,0,75,1.0)";
-        canvasBufferContext.rect(x,y,xSize,ySize);
-        canvasBufferContext.fill();
-        canvasBufferContext.stroke();
-        //draw icon
-        switch(r){
-          case "power":
-            canvasBufferContext.beginPath();
-            canvasBufferContext.fillStyle = "rgba(250,250,0,0.9)";
-            canvasBufferContext.rect(x+xBuf,y+yBuf,xSize/8,ySize-(2*yBuf));
-            canvasBufferContext.fill();
-            break;
-          case "oxygen":
-            canvasBufferContext.beginPath();
-            canvasBufferContext.fillStyle = "rgba(250,250,250,0.9)";
-            canvasBufferContext.rect(x+xBuf,y+yBuf,xSize/8,ySize-(2*yBuf));
-            canvasBufferContext.fill();
-            break;
-          case "water":
-            canvasBufferContext.beginPath();
-            canvasBufferContext.fillStyle = "rgba(0,0,250,0.9)";
-            canvasBufferContext.rect(x+xBuf,y+yBuf,xSize/8,ySize-(2*yBuf));
-            canvasBufferContext.fill();
-            break;
-          case "soil":
-            canvasBufferContext.beginPath();
-            canvasBufferContext.fillStyle = "rgba(20,250,100,0.9)";
-            canvasBufferContext.rect(x+xBuf,y+yBuf,xSize/8,ySize-(2*yBuf));
-            canvasBufferContext.fill();
-            break;
-          case "metal":
-            canvasBufferContext.beginPath();
-            canvasBufferContext.fillStyle = "rgba(100,100,100,0.9)";
-            canvasBufferContext.rect(x+xBuf,y+yBuf,xSize/8,ySize-(2*yBuf));
-            canvasBufferContext.fill();
-            break;
-        }
-        var rString = this.resources[r][0]+"/"+this.resources[r][1];
-        var fontSize = xSize / rString.length;
-        canvasBufferContext.font = fontSize + 'px Courier';
-        canvasBufferContext.fillStyle = "rgba(50,250,200,0.9)";
-        canvasBufferContext.fillText(this.resources[r][0]+"/"+this.resources[r][1],x+(xBuf*6),y+fontSize);
+    var xIndex = pos.x + xBuf;
+    var yIndex = pos.y + yBuf;
+    var xSize = size.x-(2*xBuf);
+    var ySize = size.y-(2*yBuf);
+    canvasBufferContext.beginPath();
+    canvasBufferContext.lineWidth=Math.floor(config.xRatio)+"";
+    canvasBufferContext.fillStyle = "rgba(20,0,50,0.9)";
+    canvasBufferContext.strokeStyle="rgba(20,0,75,1.0)";
+    canvasBufferContext.rect(xIndex,yIndex,xSize,ySize);
+    canvasBufferContext.fill();
+    if(powerStats){
 
-        y += ySize + (2*yBuf);
-      }
+      var fontSize = Math.min(config.xRatio * 7, config.yRatio*7);
+      var x = pos.x + (size.x * 0.1);
+      var y = pos.y + (size.y * 0.65);
+      powerString = "Power: " + powerStats.power;
+      canvasBufferContext.font = fontSize + 'px Courier';
+      canvasBufferContext.fillStyle = powerStats.maxPower ? "rgba(250,190,150,0.8)" : "rgba(100,190,250,0.8)";
+      canvasBufferContext.fillText(powerString,x,y);
     }
   }
 
@@ -384,8 +401,31 @@ Gui = function() {
       var fontSize = size.y / 10;
       canvasBufferContext.font = fontSize + 'px Courier';
       canvasBufferContext.fillStyle = "rgba(50,250,200,0.9)";
-      canvasBufferContext.fillText(this.target.name[0]+" "+this.target.name[1],xIndex+xBuf,yIndex+fontSize+yBuf);
-      canvasBufferContext.fillText("Position: "+Math.floor(this.target.position.x)+", "+Math.floor(this.target.position.y),xIndex+xBuf,yIndex+(fontSize+yBuf)*2);
+      var yText = yIndex + fontSize + yBuf;
+      canvasBufferContext.fillText(this.target.name[0]+" "+this.target.name[1],xIndex+xBuf,yText);
+      yText += fontSize + yBuf;
+      canvasBufferContext.fillText("Position: "+Math.floor(this.target.position.x)+", "+Math.floor(this.target.position.y),xIndex+xBuf,yText);
+      yText += fontSize + yBuf;
+      if(this.target.genInput && this.target.genOutput){
+        var inputString = [];
+        for(i in this.target.genInput){
+          inputString.push(i + '-'+this.target.genInput[i]);
+        }
+        inputString = inputString.join(",");
+        canvasBufferContext.fillText("Input: "+inputString,xIndex+xBuf,yText);
+        yText += fontSize + yBuf;
+        var outputString = [];
+        for(i in this.target.genOutput){
+          outputString.push(i + '-'+this.target.genOutput[i]);
+        }
+        outputString = outputString.join(",");
+        canvasBufferContext.fillText("Output: "+outputString,xIndex+xBuf,yText);
+        yText += fontSize + yBuf;
+      }
+      if(this.target.powerReq){
+        canvasBufferContext.fillText("Power: "+this.target.powerReq,xIndex+xBuf,yText);
+        yText += fontSize + yBuf;
+      }
     }
     //draw action buttons
     xIndex += (xSize + (xBuf *1.5));
@@ -890,9 +930,9 @@ Gui = function() {
       canvasBufferContext.rect(x,y,xSize,ySize);
       canvasBufferContext.fill();
       canvasBufferContext.stroke();
-      if(this.target.targetObj && this.target.targetObj.inventory){
-        var invKey = Object.keys(this.target.targetObj.inventory.inv)[i];
-        var invCount = this.target.targetObj.inventory.inv[invKey];
+      if(this.target.lastTarget && this.target.lastTarget.inventory){
+        var invKey = Object.keys(this.target.lastTarget.inventory.inv)[i];
+        var invCount = this.target.lastTarget.inventory.inv[invKey];
         if(invCount){
       //    invItem.drawTargetPortrait(x,y,xSize/4,ySize,canvasBufferContext);
           var fontSize = ySize / 4;

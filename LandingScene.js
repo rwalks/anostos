@@ -120,8 +120,8 @@ var LandingScene = function (strs,nam,aud){
     }else{
       if(this.ship.destroyed){
         this.endScene(false);
-      }else if(true){
-      //}else if(this.ship.landed){
+      //}else if(true){
+      }else if(this.ship.landed){
         this.endScene(true);
       }
     }

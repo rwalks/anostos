@@ -9,6 +9,9 @@ Terrain = function(trMap) {
   var airtightWalls = {};
   var containers = {};
   var generators = {};
+  var powerBuildings = {};
+
+  this.powerStats = {'power':0,'maxPower':true};
 //
   var updateCount = 0;
   var resourceUpdateInterval = 5;
@@ -37,9 +40,13 @@ Terrain = function(trMap) {
         airtightWalls[tile.position.x] = airtightWalls[tile.position.x] ? airtightWalls[tile.position.x] : {};
         airtightWalls[tile.position.x][tile.position.y] = true;
       }
+      var powerType = tile.resourceAffinities && tile.resourceAffinities[0] == 'power';
       if(tile.type == 'door'){
         doors[tile.position.x] = doors[tile.position.x] ? doors[tile.position.x] : {};
         doors[tile.position.x][tile.position.y] = true;
+      }else if(powerType){
+        powerBuildings[tile.position.x] = powerBuildings[tile.position.x] ? powerBuildings[tile.position.x] : {};
+        powerBuildings[tile.position.x][tile.position.y] = true;
       }else if(tile.type == 'container'){
         containers[tile.position.x] = containers[tile.position.x] ? containers[tile.position.x] : {};
         containers[tile.position.x][tile.position.y] = true;
@@ -124,15 +131,58 @@ Terrain = function(trMap) {
   }
 
   this.updateBuildings = function(){
+    this.updatePower();
     for(r in resourceNetworks){
-      resourceNetworks[r].update(true);
+      resourceNetworks[r].update(this.powerStats,true);
     }
     for(r in resourceNetworks){
-      resourceNetworks[r].update(false);
+      resourceNetworks[r].update(this.powerStats,false);
     }
     for(r in rooms){
       rooms[r].update();
     }
+  }
+
+  this.updatePower = function(){
+    var capacity = 0;
+    var yield = 0;
+    for(var x in powerBuildings){
+      for(var y in powerBuildings[x]){
+        var pBuild = this.terrain[x][y];
+        if(pBuild){
+          switch(pBuild.type){
+            case "container":
+              capacity += pBuild.powerCapacity;
+              break;
+            case "generator":
+              if(pBuild.solar){
+                if(checkSolar(pBuild,this.terrain)){
+                  yield += pBuild.powerYield;
+                }
+              }else{
+                yield += pBuild.powerYield;
+              }
+              break;
+          }
+        }
+      }
+    }
+    this.powerStats.power += yield;
+    if(this.powerStats.power >= capacity){
+      this.powerStats.power = capacity;
+      this.powerStats.maxPower = true;
+    }else{
+      this.powerStats.maxPower = false;
+    }
+  }
+
+  var checkSolar = function(build,terrainMap){
+    for(var y = build.position.y-config.gridInterval; y > (build.position.y - 500); y -= config.gridInterval){
+      if(terrainMap[build.position.x] && terrainMap[build.position.x][y]){
+        return false;
+      }
+    }
+    return true;
   }
 
   this.updateResourceNetwork = function(obj,markedContainers){

@@ -66,6 +66,87 @@ Block = function(type,pos) {
   }
 }
 
+Corpse = function(pos,inventory){
+  this.inventory = inventory ? inventory : new Inventory();
+  this.size = {'x':1*config.gridInterval,'y':1*config.gridInterval};
+  this.name = ["Dessicated","Remains"];
+  this.position = pos ? pos : {'x':0,'y':0};
+  this.type = "corpse";
+  this.actions = ["inventory"];
+  this.interact = 'inventory';
+
+  this.update = function(terrain){
+    var gravY = this.position.y + this.size.y + config.gravity;
+    var tY = gravY - (gravY % config.gridInterval);
+    var tX = this.position.x - (this.position.x % config.gridInterval);
+    if(terrain.terrain[tX] && terrain.terrain[tX][tY]){
+   //   this.position.y = tY - this.size.y;
+    }else{
+      this.position.y = gravY;
+    }
+  }
+
+  this.draw = function(camera,canvasBufferContext,count){
+    var x = (this.position.x-camera.xOff)*config.xRatio;
+    var y = (this.position.y-camera.yOff)*config.yRatio;
+    this.drawBlock(x,y,canvasBufferContext);
+  }
+
+  this.drawBlock = function(x,y,canvasBufferContext,scl){
+    var scale = scl ? scl : 1;
+    var oX = x;
+    var oY = y;
+    var lX = this.size.x*config.xRatio*scale;
+    var lY = this.size.y*config.yRatio*scale;
+    var capRGB = "rgba(10,10,10,0.5)";
+    canvasBufferContext.strokeStyle= "rgba(140,140,140,1.0)";
+    //topcap
+    canvasBufferContext.beginPath();
+    canvasBufferContext.lineWidth=Math.floor(config.xRatio)+"";
+    canvasBufferContext.fillStyle = capRGB;
+    canvasBufferContext.moveTo(oX,oY+lY*0.1);
+    var points = [[lX*0.1,0],[lX*0.4,0],[lX*0.5,lY*0.1],[lX*0.6,0],[lX*0.9,0],[lX,lY*0.1],[lX,lY*0.4],[lX*0.9,lY*0.5],
+                  [lX,lY*0.6],[lX,lY*0.9],[lX*0.9,lY],[lX*0.6,lY],
+                  [lX*0.5,lY*0.9],[lX*0.4,lY],[lX*0.1,lY],[0,lY*0.9],
+                  [0,lY*0.6],[lX*0.1,lY*0.5],[0,lY*0.4],[0,lY*0.1]];
+    for(p in points){
+      canvasBufferContext.lineTo(oX+points[p][0],oY+points[p][1]);
+    }
+    canvasBufferContext.fill();
+    canvasBufferContext.stroke();
+    //topChamber
+    canvasBufferContext.beginPath();
+    canvasBufferContext.lineWidth=Math.floor(config.xRatio)+"";
+    var dr = Math.floor(Math.random() * 50);
+    var da = Math.floor(Math.random() * 0.1) + 0.9;
+    var rgbaString = "rgba("+(220+dr)+","+(220+dr)+","+(220+dr)+","+da+")";
+    canvasBufferContext.fillStyle = rgbaString;
+    canvasBufferContext.moveTo(oX+(lX*0.8),oY+(lY*0.5));
+    var points = [[lX*0.2,lY*0.5],[lX*0.2,lY*0.3],[lX*0.5,lY*0.15],[lX*0.8,lY*0.3],[lX*0.8,lY*0.5]];
+    for(p in points){
+      canvasBufferContext.lineTo(oX+points[p][0],oY+points[p][1]);
+    }
+    canvasBufferContext.fill();
+    canvasBufferContext.stroke();
+  }
+
+  this.drawTargetPortrait = function(oX,oY,xSize,ySize,canvasBufferContext){
+    var scale = (xSize*0.4) / (this.size.x*config.xRatio);
+    this.drawBlock(oX+(xSize*0.3),oY+(ySize*0.2),canvasBufferContext,scale);
+  }
+
+  this.click = function(coords,terrain){
+    return;
+  }
+
+  this.pointWithin = function(x,y){
+    return (x > this.position.x && x < (this.position.x + this.size.x) &&
+            y > this.position.y && y < (this.position.y + this.size.y));
+  }
+
+
+}
+
 Door = function(pos) {
 
   var fName = 'Hatch';

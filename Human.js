@@ -11,8 +11,8 @@ Human = function(x,y,name) {
   var maxSpeed = {'x':3,'y':10};
   var walkAccel = config.gridInterval/2;
   var count = 0;
-  this.target;
   this.targetObj;
+  this.lastTarget;
   this.path = [];
   this.onGround = false;
   this.direction = true;
@@ -23,6 +23,7 @@ Human = function(x,y,name) {
 
   this.inventory = new Inventory();
   this.action = false;
+  this.interact = 'inventory';
 
   this.dead = false;
 
@@ -103,48 +104,43 @@ Human = function(x,y,name) {
       //apply move
       this.position.x += this.velocity.x;
       this.position.y += this.velocity.y;
-      if(this.action == 'build' && this.targetObj){
-        var targCoords = [this.targetObj.position.x,this.targetObj.position.y];
-        //var range = config.gridInterval * (Math.max(this.targetObj.size.x,this.targetObj.size.y));
-        var range = config.gridInterval * 3;
-      }else if(this.target){
-        var targCoords = [this.target.x,this.target.y];
-        var range = config.gridInterval * 3;
-      }
-      if(this.target && nodeDistance(targCoords,this.position) < range){
-        var ret;
-        switch(this.action){
-          case 'build':
-            if(this.targetObj && this.inventory.purchase(this.targetObj.cost)){
-              ret = {'action':'build','obj':this.targetObj};
-              this.path = [];
-              this.target = false;
-            }
-            break;
-          case 'delete':
-            if(this.targetObj){
+      if(this.targetObj){
+        var targCoords = [this.targetObj.position.x+(this.targetObj.size.x/2),this.targetObj.position.y+(this.targetObj.size.y/2)];
+        if(this.action == 'build'){
+          var range = config.gridInterval * 3;
+        }else{
+          var range = config.gridInterval * 3;
+        }
+        var center = {'x':this.position.x+(this.size.x/2),'y':this.position.y+(this.size.y/2)};
+        if(nodeDistance(targCoords,center) < range){
+          var ret;
+          switch(this.action){
+            case 'build':
+              if(this.inventory.purchase(this.targetObj.cost)){
+                ret = {'action':'build','obj':this.targetObj};
+                this.path = [];
+                this.targetObj = false;
+              }
+              break;
+            case 'delete':
               var targ = terrain.getTile(this.targetObj.position.x,this.targetObj.position.y);
               if(targ && targ == this.targetObj){
                 this.salvage(this.targetObj);
                 ret = {'action':'delete','obj':targ};
                 this.path = [];
-                this.target = false;
+                this.targetObj = false;
               }
-            }
-            break;
-          default:
-            var targ = terrain.getTile(this.target.x,this.target.y);
-            if(targ && targ.interact == 'inventory'){
-              ret = {'action':'inventory','obj':targ};
-              this.path = [];
-              this.target = false;
-            }
-            break;
+              break;
+            default:
+              if(this.targetObj.interact == 'inventory'){
+                ret = {'action':'inventory','obj':targ};
+                this.path = [];
+                this.targetObj = false;
+              }
+              break;
+          }
+          return ret;
         }
-
-        return ret;
-
-
       }
     }
   }
@@ -249,17 +245,19 @@ Human = function(x,y,name) {
 
   this.click = function(coords,terrain,action,obj){
     this.action = false;
-    this.target = false;
     this.targetObj = false;
+    this.lastTarget = false;
     var terMap = terrain.terrain;
     if(!obj){
       this.path = pathfinder.findPath(this.position.x,this.position.y,coords.x,coords.y,terMap);
     }else if(obj){
       //find spot adjacent to obj
-      var minX = obj.position.x - this.size.x;
-      var maxX = obj.position.x + obj.size.x + this.size.x;
-      var minY = obj.position.y - this.size.y;
-      var maxY = obj.position.y + obj.size.y + this.size.y;
+      var oX = obj.position.x - (obj.position.x % config.gridInterval);
+      var oY = obj.position.y - (obj.position.y % config.gridInterval);
+      var minX = oX - this.size.x;
+      var maxX = oX + obj.size.x + this.size.x;
+      var minY = oY - this.size.y;
+      var maxY = oY + obj.size.y + this.size.y;
       var found = false;
       for(var x = 0; x <= ((maxX-minX) / config.gridInterval); x++){
         for(var y = 0; y <= ((maxY-minY)/ config.gridInterval); y++){
@@ -278,8 +276,8 @@ Human = function(x,y,name) {
     }
     if(this.path.length > 0){
       this.action = action;
-      this.target = coords;
       this.targetObj = obj;
+      this.lastTarget = obj;
     }
     return;
   }

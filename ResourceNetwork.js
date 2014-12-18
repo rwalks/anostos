@@ -9,7 +9,7 @@ ResourceNetwork = function(rms,gens,conts,nodes,aff) {
   var oxFlow = 5;
 
 
-  this.update = function(phaseOne){
+  this.update = function(powerStats,phaseOne){
     var objs = phaseOne ? this.containers : this.generators;
     for(b in objs){
       var build = objs[b];
@@ -39,12 +39,15 @@ ResourceNetwork = function(rms,gens,conts,nodes,aff) {
           for(res in build.genOutput){
             var addCount = build.genOutput[res] - build.inventory.itemCount(res);
             if(addCount > 0){
-              build.inventory.addItem(res,addCount);
-              genDone = true;
+              if(powerStats.power >= build.powerReq){
+                build.inventory.addItem(res,addCount);
+                genDone = true;
+              }
             }
           }
           if(genDone){
             //remove input cost
+            powerStats.power -= build.powerReq;
             for(res in build.genInput){
               build.inventory.removeItem(res,build.genInput[res]);
             }
@@ -53,10 +56,10 @@ ResourceNetwork = function(rms,gens,conts,nodes,aff) {
         //push to containers
         for(c in this.containers){
           var cont = this.containers[c];
-          for(i in build.inventory.inv){
-            var itemCount = Math.min(cont.inventory.spaceRemaining(),build.inventory.inv[i]);
-            if(cont.inventory.addItem(i,itemCount)){
-              build.inventory.removeItem(i,itemCount);
+          for(var item in build.inventory.inv){
+            var itemCount = Math.min(cont.inventory.spaceRemaining(),build.inventory.inv[item]);
+            if(cont.inventory.addItem(item,itemCount)){
+              build.inventory.removeItem(item,itemCount);
             }
           }
         }

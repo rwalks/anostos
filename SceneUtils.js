@@ -25,6 +25,12 @@ var SceneUtils = function (bg){
       var yMin = last + dY;
       for(var y=config.mapHeight;y>=yMin;y-=terrainInterval){
          var tile = new tiles.TerrainTile(x,y,'soil');
+         if(y < yMin+terrainInterval){
+           tile.topLayer = true;
+           if(Math.random() < 0.1){
+             tile.plant = new Plant(tile.position);
+           }
+         }
          tiles.addTile(tile,tMap,false);
       }
       if(x % (config.gridInterval * 4) == 0){

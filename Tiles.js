@@ -43,6 +43,8 @@ Tiles = function() {
     this.lastDrawn = -1;
     this.type = "construction";
     var fillStyle; var strokeStyle;
+    this.topLayer = false;
+    this.plant = false;
     switch(type){
       case "soil":
         this.name = ["Soil",""];
@@ -60,6 +62,9 @@ Tiles = function() {
     this.draw = function(camera,canvasBufferContext,count){
       //draw less often
       if(count > this.lastDrawn || Math.abs(count - this.lastDrawn) > 1){
+        if(this.plant){
+          this.plant.draw(camera,canvasBufferContext);
+        }
         this.lastDrawn = count;
         canvasBufferContext.beginPath();
         canvasBufferContext.lineWidth=Math.floor(config.xRatio)+"";
@@ -72,6 +77,18 @@ Tiles = function() {
         canvasBufferContext.rect(originX,originY,lX,lY);
         canvasBufferContext.fill();
         canvasBufferContext.stroke();
+        if(this.topLayer){
+          canvasBufferContext.fillStyle = "rgba(100,0,100,1.0)";
+          canvasBufferContext.strokeStyle = "rgba(250,0,250,1.0)";
+          canvasBufferContext.beginPath();
+          canvasBufferContext.moveTo(originX,originY);
+          var points = [[lX,0],[lX,lY*0.4],[lX*0.9,lY*0.2],[lX*0.8,lY*0.4],[lX*0.7,lY*0.2],[lX*0.6,lY*0.4],[lX*0.5,lY*0.2],[lX*0.4,lY*0.4],[lX*0.3,lY*0.2],[lX*0.2,lY*0.4],[lX*0.1,lY*0.2],[0,lY*0.4],[0,0]];
+          for(var p in points){
+            canvasBufferContext.lineTo(originX+points[p][0],originY+points[p][1]);
+          }
+          canvasBufferContext.fill();
+          canvasBufferContext.stroke();
+        }
       }
     }
 
