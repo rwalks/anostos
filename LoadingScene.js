@@ -53,7 +53,9 @@ var LoadingScene = function (){
       if(sceneTimer > creditDuration){
         sceneTimer = 0;
         creditMode = false;
-        shipMode = true;
+    //    shipMode = true;
+        titleMode = true;
+        this.audio.play("spookyPlanet");
       }
     }else if(titleMode){
       if(clockCycle <= 0){
