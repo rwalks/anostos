@@ -15,18 +15,34 @@ var LandingScene = function (strs,nam,aud){
   var startMsg = ["Welcome to Anostos. Attempt landing using the arrow keys.", "We don't have much fuel.."];
   var startIndex = 0;
   var landIndex = 0;
+  var gamePaused = false;
+  var lastPaused = false;
 
   this.update = function(mPos){
-    camera.focusOn(this.ship.position);
-    this.ship.update(this.terrain.terrain);
-    if(this.ship.altitude < 3000){
-      this.audio.play("landing2");
+    if(!gamePaused){
+      camera.focusOn(this.ship.position);
+      this.ship.update(this.terrain.terrain);
+      if(this.ship.altitude < 3000){
+        this.audio.play("landing2");
+      }
+      this.count += 1;
     }
-    this.count += 1;
   }
 
   this.keyPress = function(keyCode,keyDown){
     switch(keyCode){
+      case 27:
+        if(keyDown){
+          gamePaused = true;
+        }else{
+          if(lastPaused){
+            gamePaused = false;
+            lastPaused = false;
+          }else{
+            lastPaused = true;
+          }
+        }
+        break;
       case 37:
         this.ship.rotate(false,keyDown);
         break;
@@ -120,8 +136,8 @@ var LandingScene = function (strs,nam,aud){
     }else{
       if(this.ship.destroyed){
         this.endScene(false);
-      //}else if(true){
-      }else if(this.ship.landed){
+      }else if(true){
+    //  }else if(this.ship.landed){
         this.endScene(true);
       }
     }
@@ -142,13 +158,17 @@ var LandingScene = function (strs,nam,aud){
     this.sceneUtils.drawBG(camera,clockCycle,canvasBufferContext);
     this.ship.draw(camera,canvasBufferContext);
     this.terrain.draw(canvasBufferContext,camera,this.count);
-    this.drawFuel(canvasBufferContext);
-    if(this.count < 500){
-      startIndex = this.drawText(startMsg,canvasBufferContext,startIndex);
-    }else if(this.ship.destroyed){
-      landIndex = this.drawText(crashMsg,canvasBufferContext,landIndex);
-    }else if(this.ship.landed){
-      landIndex = this.drawText(landedMsg(this.ship),canvasBufferContext,landIndex);
+    if(gamePaused){
+      this.sceneUtils.drawPause(canvasBufferContext);
+    }else{
+      this.drawFuel(canvasBufferContext);
+      if(this.count < 500){
+        startIndex = this.drawText(startMsg,canvasBufferContext,startIndex);
+      }else if(this.ship.destroyed){
+        landIndex = this.drawText(crashMsg,canvasBufferContext,landIndex);
+      }else if(this.ship.landed){
+        landIndex = this.drawText(landedMsg(this.ship),canvasBufferContext,landIndex);
+      }
     }
   }
 

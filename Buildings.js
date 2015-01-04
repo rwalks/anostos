@@ -46,8 +46,8 @@ StorageBuild = function(type,pos) {
   }
   this.name = [fName,lName];
   this.position = pos ? pos : {'x':x,'y':y};
-  this.collision = function(){return true;}
-  this.pathable = false;
+  this.collision = function(){return false;}
+  this.pathable = true;
   this.lastDrawn = -1;
   this.type = "container";
   this.draw = function(camera,canvasBufferContext,count){
@@ -400,20 +400,20 @@ GeneratorBuild = function(type,pos) {
       fName = 'Nuclear';
       lName = 'Generator';
       break;
-    case 'water':
+    case 'soil':
       fName = 'Soil';
       lName = 'Evaporator';
       this.size = {'x':4*config.gridInterval,'y':2*config.gridInterval};
       this.cost = {'metal':16};
-      this.resourceAffinities = ['water','dry'];
-      this.inventory.allowedResources = ['water','soil'];
+      this.resourceAffinities = ['oxygen','dry'];
+      this.inventory.allowedResources = ['oxygen','soil'];
       this.genInput = {'soil':10};
-      this.genOutput = {'water':10};
-      this.powerReq = 1;
+      this.genOutput = {'oxygen':1};
+      this.powerReq = 2;
       break;
     case 'oxygen':
-      fName = 'Water';
-      lName = 'Splitter';
+      fName = 'Atmospheric';
+      lName = 'O2 Condensor';
       this.size = {'x':2*config.gridInterval,'y':2*config.gridInterval};
       this.cost = {'metal':16};
       this.resourceAffinities = ['water','oxygen'];
@@ -444,8 +444,8 @@ GeneratorBuild = function(type,pos) {
   }
   this.name = [fName,lName];
   this.position = pos ? pos : {'x':0,'y':0};
-  this.collision = function(){return true;}
-  this.pathable = false;
+  this.collision = function(){return false;}
+  this.pathable = true;
   this.lastDrawn = -1;
   this.type = "generator";
 

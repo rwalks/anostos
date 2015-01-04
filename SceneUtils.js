@@ -146,6 +146,25 @@ var SceneUtils = function (bg){
     }
   }
 
+  this.drawPause = function(canvasBufferContext){
+    //dark mask
+    canvasBufferContext.fillStyle = "rgba(0,0,0,0.5)";
+    canvasBufferContext.beginPath();
+    canvasBufferContext.rect(0,0,config.canvasWidth,config.canvasHeight);
+    canvasBufferContext.fill();
+    //flashing text
+    var dr = Math.floor(Math.random() * 150);
+    var dg = Math.floor(Math.random() * 150);
+    var db = Math.floor(Math.random() * 150);
+    var da = Math.floor(Math.random() * 0.2) + 0.8;
+    var rgbStr = "rgba("+(100+dr)+","+(100+dg)+","+(100+db)+","+da+")";
+    canvasBufferContext.fillStyle = rgbStr;
+    var fontSize = Math.min(config.xRatio * 10, config.yRatio*10);
+    canvasBufferContext.font = fontSize+"px Courier";
+    canvasBufferContext.fillText("SIMULATION SUSPENDED",config.canvasWidth*0.45,config.canvasHeight*0.45);
+    canvasBufferContext.fillText("ESC TO RESUME",config.canvasWidth*0.48,config.canvasHeight*0.52);
+  }
+
   var rdbaString;
   var xColor = {
     'b': Math.floor(Math.random() * 250),

@@ -9,11 +9,24 @@ ResourceNetwork = function(rms,gens,conts,nodes,aff) {
   var oxFlow = 5;
 
 
+
   this.update = function(powerStats,phaseOne){
     var objs = phaseOne ? this.containers : this.generators;
     for(b in objs){
       var build = objs[b];
       if(phaseOne){
+        if(affinity == 'oxygen'){
+          for(r in this.rooms){
+            var room = this.rooms[r];
+            var oxAmount = Math.min(oxFlow,room.maxOxygen - room.oxygen);
+            if(oxAmount > 0){
+              var contOx = Math.min(oxAmount,build.inventory.itemCount('oxygen'));
+              build.inventory.removeItem('oxygen',contOx);
+              room.oxygen += contOx;
+            }
+
+          }
+        }
         for(g in this.generators){
           var gen = this.generators[g];
           for(res in gen.genInput){
@@ -63,17 +76,17 @@ ResourceNetwork = function(rms,gens,conts,nodes,aff) {
             }
           }
         }
-      }
-      if(affinity == 'oxygen'){
-        for(r in this.rooms){
-          var room = this.rooms[r];
-          var oxAmount = Math.min(oxFlow,room.maxOxygen - room.oxygen);
-          if(oxAmount > 0){
-            var contOx = Math.min(oxAmount,build.inventory.itemCount('oxygen'));
-            build.inventory.removeItem('oxygen',contOx);
-            room.oxygen += contOx;
-          }
+        if(affinity == 'oxygen'){
+          for(r in this.rooms){
+            var room = this.rooms[r];
+            var oxAmount = Math.min(oxFlow,room.maxOxygen - room.oxygen);
+            if(oxAmount > 0){
+              var contOx = Math.min(oxAmount,build.inventory.itemCount('oxygen'));
+              build.inventory.removeItem('oxygen',contOx);
+              room.oxygen += contOx;
+            }
 
+          }
         }
       }
     }

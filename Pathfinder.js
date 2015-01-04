@@ -109,6 +109,9 @@ Pathfinder = function() {
         search = false;
       }else{
         curNode = findCheapestNode(openNodes);
+        if(!curNode){
+          return [];
+        }
         delete openNodes[curNode.x][curNode.y];
         if(Object.keys(openNodes[curNode.x]).length < 1){delete openNodes[curNode.x];}
         addNode(curNode,closedNodes);

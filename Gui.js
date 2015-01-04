@@ -18,8 +18,8 @@ Gui = function() {
   this.buildings = {
   "construction":[new Block('soil'),new Block('metal'),new Door()],
   "power":[new StorageBuild('power'),new GeneratorBuild('solar')],
-  "oxygen":[new StorageBuild('oxygen'),new GeneratorBuild('oxygen'),new ConveyorBuild('vent')],
-  "water":[new StorageBuild('water'),new GeneratorBuild('water'),new ConveyorBuild('pipe')],
+  "oxygen":[new StorageBuild('oxygen'),new GeneratorBuild('oxygen'),new ConveyorBuild('vent'),new GeneratorBuild('soil')],
+  "water":[new StorageBuild('water'),new ConveyorBuild('pipe')],
   "earth":[new StorageBuild('dry'),new GeneratorBuild('metal'),new ConveyorBuild('dry')],
   "other":[]
   };
@@ -409,7 +409,7 @@ Gui = function() {
       if(this.target.genInput && this.target.genOutput){
         var inputString = [];
         for(i in this.target.genInput){
-          inputString.push(i + '-'+this.target.genInput[i]);
+          inputString.push(i + ' '+this.target.genInput[i]);
         }
         inputString = inputString.join(",");
         canvasBufferContext.fillText("Input: "+inputString,xIndex+xBuf,yText);

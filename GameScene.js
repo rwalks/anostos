@@ -18,10 +18,13 @@ var GameScene = function (strs,trn,shp,nam,bg){
 
   var focusTarget;
   var buildTarget;
+  var followTarget = false;
 
   var startTime = new Date();
   var timeElapsed;
   var gameOver = false;
+  var gamePaused = false;
+  var lastPaused = false;
   var messageIndex = 0;
 
   for(var i=0;i<3;i++){
@@ -46,55 +49,102 @@ var GameScene = function (strs,trn,shp,nam,bg){
 
   this.terrain = function(){return terrain;}
 
-  this.keyPress = function(keyCode,keyDown){
 
+  this.keyPress = function(keyCode,keyDown){
+    switch(keyCode){
+      case 27:
+        if(keyDown){
+          gamePaused = true;
+        }else{
+          if(lastPaused){
+            gamePaused = false;
+            lastPaused = false;
+          }else{
+            lastPaused = true;
+          }
+        }
+        break;
+      case 16:
+        //shift
+        if(keyDown){
+          focusNextHuman(false);
+        }
+        break;
+      case 17:
+        //cntrl
+        if(keyDown){
+          focusNextHuman(true);
+        }
+        break;
+      case 32:
+        //spacebar - might not work in ie9?
+        followTarget = keyDown;
+        break;
+      case 37:
+        camera.setMove('left',keyDown);
+        break;
+      case 39:
+        camera.setMove('right',keyDown);
+        break;
+      case 38:
+        camera.setMove('up',keyDown);
+        break;
+      case 40:
+        camera.setMove('down',keyDown);
+        break;
+    }
   }
 
   this.update = function(mPos){
-    var currentTime = new Date();
-    timeElapsed = currentTime - startTime;
-    mousePos = mPos;
-    camera.update(mousePos);
-    var regen = [];
-    for (h in humans){
-      var ret = humans[h].update(terrain);
-      if(ret){
-        switch(ret.action){
-          case 'delete':
-            var obj = ret.obj;
-            regen = terrain.removeTile(obj);
-            break;
-          case 'build':
-            var obj = ret.obj;
-            if(terrain.isClear(obj,humans)){
-              regen = terrain.addTile(obj);
-            }
-            break;
-          case 'inventory':
-            this.uiMode = 'trade';
-            break;
-          case 'die':
-            this.addCorpse(humans[h]);
-            humans.splice(h,1);
-            if(humans.length < 1){
-              messageIndex = 0;
-              gameOver = timeElapsed;
-            }
-            break;
+    if(!gamePaused){
+      var currentTime = new Date();
+      timeElapsed = currentTime - startTime;
+      mousePos = mPos;
+      if(followTarget && focusTarget){
+        camera.focusOn(focusTarget.position);
+      }
+      camera.update(mousePos);
+      var regen = [];
+      for (h in humans){
+        var ret = humans[h].update(terrain);
+        if(ret){
+          switch(ret.action){
+            case 'delete':
+              var obj = ret.obj;
+              regen = terrain.removeTile(obj);
+              break;
+            case 'build':
+              var obj = ret.obj;
+              if(terrain.isClear(obj,humans)){
+                regen = terrain.addTile(obj);
+              }
+              break;
+            case 'inventory':
+              this.uiMode = 'trade';
+              break;
+            case 'die':
+              this.addCorpse(humans[h]);
+              humans.splice(h,1);
+              if(humans.length < 1){
+                messageIndex = 0;
+                gameOver = timeElapsed;
+              }
+              break;
+          }
         }
       }
-    }
-    for(c in corpses){
-      corpses[c].update(terrain);
-      if(corpses[c].inventory && corpses[c].inventory.empty()){
-        corpses.splice(c,1);
+      for(c in corpses){
+        corpses[c].update(terrain);
+        if(corpses[c].inventory && corpses[c].inventory.empty()){
+          corpses.splice(c,1);
+        }
       }
-    }
-    terrain.update(humans);
-    gui.update(focusTarget,humans,buildTarget,this.uiMode,timeElapsed,terrain.powerStats);
-    for(r in regen){
-      if(regen[r] == 'rooms'){
-        terrain.regenBuildings();
+      terrain.update(humans);
+      gui.update(focusTarget,humans,buildTarget,this.uiMode,timeElapsed,terrain.powerStats);
+      for(r in regen){
+        if(regen[r] == 'rooms'){
+          terrain.regenBuildings();
+        }
       }
     }
     this.count = (this.count > 100) ? 0 : this.count + 1;
@@ -217,22 +267,45 @@ var GameScene = function (strs,trn,shp,nam,bg){
         humans[h].draw(camera,canvasBufferContext);
       }
     }
-    if(this.uiMode == "build" && buildTarget){
-      var bPos = clickToCoord(mousePos,true);
-      var obj = buildTarget.clone(bPos);
-      var clear = terrain.isClear(obj,humans);
-      drawBuildCursor(obj,canvasBufferContext,clear);
-    }else if(this.uiMode == "delete"){
-      var bPos = clickToCoord(mousePos,true);
-      if(terrain.getTile(bPos.x,bPos.y)){
-        drawBuildCursor(terrain.getTile(bPos.x,bPos.y),canvasBufferContext,false);
+    if(gamePaused){
+      sceneUtils.drawPause(canvasBufferContext);
+    }else{
+      if(this.uiMode == "build" && buildTarget){
+        var bPos = clickToCoord(mousePos,true);
+        var obj = buildTarget.clone(bPos);
+        var clear = terrain.isClear(obj,humans);
+        drawBuildCursor(obj,canvasBufferContext,clear);
+      }else if(this.uiMode == "delete"){
+        var bPos = clickToCoord(mousePos,true);
+        if(terrain.getTile(bPos.x,bPos.y)){
+          drawBuildCursor(terrain.getTile(bPos.x,bPos.y),canvasBufferContext,false);
+        }
+      }
+      if(gameOver){
+        this.drawText(gameOverMsg(gameOver),canvasBufferContext);
+      }else{
+        gui.draw(camera,canvasBufferContext);
       }
     }
-    if(gameOver){
-      this.drawText(gameOverMsg(gameOver),canvasBufferContext);
-    }else{
-      gui.draw(camera,canvasBufferContext);
+  }
+
+  var focusNextHuman = function(advance){
+    if(!focusTarget && humans.length){
+      focusTarget = humans[0];
+    }else if(focusTarget && focusTarget.type == 'human'){
+      for(var h in humans){
+        if(humans[h] == focusTarget){
+          if(advance){
+            var next = parseInt(h)+1;
+            focusTarget = humans[next] ? humans[next] : humans[0];
+          }else{
+            focusTarget = (h-1 < 0) ? humans[humans.length-1] : humans[h-1];
+          }
+          break;
+        }
+      }
     }
+
   }
 
   this.addCorpse = function(corpse){
