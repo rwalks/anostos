@@ -12,7 +12,7 @@ HiveWorker = function(x,y,hive) {
   this.hive = hive;
 
   this.lastHarvested;
-  this.burrowStrength = 5;
+  this.burrowStrength = 2;
 
   this.findTarget = function(terrain,humans){
     //search for source of metal within range: buildings or ore
@@ -84,10 +84,10 @@ HiveWorker = function(x,y,hive) {
             this.targetObj.cost['metal'] || this.targetObj.cost['ore']){
           this.lastHarvested = this.targetObj;
           if(this.targetObj.cost['ore']){
-            this.inventory.addItem('ore',this.targetObj.cost['ore']);
+            this.inventory.addItem('ore',2);
           }
           if(this.targetObj.cost['metal']){
-            this.inventory.addItem('metal',this.targetObj.cost['metal']);
+            this.inventory.addItem('metal',1);
           }
           this.targetObj = this.hive ? this.hive : false;
           this.path = this.targetObj ? pathfinder.findPath(this.position.x,this.position.y,this.hive.position.x,this.hive.position.y,terrain.terrain,2,this.size,true,false) : [];
