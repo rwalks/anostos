@@ -33,7 +33,7 @@ Inventory = function() {
     var invAdd = Math.min(inventoryRemaining,count);
     if(this.resourceAllowed(itemName) && invAdd > 0){
       this.inv[itemName] = this.inv[itemName] ? this.inv[itemName] + invAdd : invAdd;
-      return true;
+      return invAdd;
     }
     return false;
   }

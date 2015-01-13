@@ -30,12 +30,16 @@
   <script src="ResourceNetwork.js" type="text/javascript"></script>
   <script src="ResourceNetworkFinder.js" type="text/javascript"></script>
   <script src="Plant.js" type="text/javascript"></script>
+  <script src="Alien.js" type="text/javascript"></script>
+  <script src="HiveAliens.js" type="text/javascript"></script>
+  <script src="BuildingArt.js" type="text/javascript"></script>
 
   <script>
     "use strict";
     var config = new Config();
     var tiles = new Tiles();
     var pathfinder = new Pathfinder();
+    var bArt = new BuildingArt();
 
     $(document).keydown(function(e) {
       if(e.keyCode == 32) {

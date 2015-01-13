@@ -1,4 +1,4 @@
-Terrain = function(trMap) {
+Terrain = function(trMap,sSpawns) {
 
   this.terrain = trMap ? trMap : {};
 //construct holders
@@ -16,14 +16,14 @@ Terrain = function(trMap) {
   var updateCount = 0;
   var resourceUpdateInterval = 5;
   var roomFinder = new Roomfinder();
+  this.surfaceSpawns = sSpawns ? sSpawns : [];
 
   this.getRooms = function(){
     return rooms;
   }
 
   this.addTile = function(tile,remove){
-    var regen = [];
-    regen.push('rooms');
+    var regen = true;
     if(remove){
       if(tile.airtight){
         delete airtightWalls[tile.position.x][tile.position.y];

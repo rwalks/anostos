@@ -12,6 +12,7 @@ var GameScene = function (strs,trn,shp,nam,bg){
   var camDX = 0;
   var camDY = 0;
   var humans = [];
+  var aliens = [];
   var corpses = [];
   var resources= new Resources();
   this.count = 0;
@@ -42,6 +43,15 @@ var GameScene = function (strs,trn,shp,nam,bg){
   humans[1].inventory.addItem('metal',20);
   humans[2].inventory.addItem('oxygen',50);
   humans[2].inventory.addItem('metal',20);
+
+  //add surface spawns
+  for(var sp in terrain.surfaceSpawns){
+    var spPos = terrain.surfaceSpawns[sp]
+    var nest = new HiveNest(spPos.x,spPos.y-(config.gridInterval*1));
+    nest.inventory.addItem('metal',1);
+    aliens.push(nest);
+  }
+  camera.focusOn(aliens[0].position);
 
   var gui = new Gui();
 
@@ -104,34 +114,14 @@ var GameScene = function (strs,trn,shp,nam,bg){
         camera.focusOn(focusTarget.position);
       }
       camera.update(mousePos);
-      var regen = [];
+      var regen = false;
       for (h in humans){
         var ret = humans[h].update(terrain);
-        if(ret){
-          switch(ret.action){
-            case 'delete':
-              var obj = ret.obj;
-              regen = terrain.removeTile(obj);
-              break;
-            case 'build':
-              var obj = ret.obj;
-              if(terrain.isClear(obj,humans)){
-                regen = terrain.addTile(obj);
-              }
-              break;
-            case 'inventory':
-              this.uiMode = 'trade';
-              break;
-            case 'die':
-              this.addCorpse(humans[h]);
-              humans.splice(h,1);
-              if(humans.length < 1){
-                messageIndex = 0;
-                gameOver = timeElapsed;
-              }
-              break;
-          }
-        }
+        regen = this.handleHumanUpdate(ret,h) || regen;
+      }
+      for (a in aliens){
+        var ret = aliens[a].update(terrain,humans);
+        regen = this.handleAlienUpdate(ret,a) || regen;
       }
       for(c in corpses){
         corpses[c].update(terrain);
@@ -141,13 +131,61 @@ var GameScene = function (strs,trn,shp,nam,bg){
       }
       terrain.update(humans);
       gui.update(focusTarget,humans,buildTarget,this.uiMode,timeElapsed,terrain.powerStats);
-      for(r in regen){
-        if(regen[r] == 'rooms'){
-          terrain.regenBuildings();
-        }
+      if(regen){
+        terrain.regenBuildings();
       }
     }
     this.count = (this.count > 100) ? 0 : this.count + 1;
+  }
+
+  this.handleHumanUpdate = function(ret,hIndex){
+    var reg = false;
+    if(ret){
+      switch(ret.action){
+        case 'delete':
+          var obj = ret.obj;
+          reg = terrain.removeTile(obj);
+          break;
+        case 'build':
+          var obj = ret.obj;
+          if(terrain.isClear(obj,humans)){
+            reg = terrain.addTile(obj);
+          }
+          break;
+        case 'inventory':
+          this.uiMode = 'trade';
+          break;
+        case 'die':
+          this.addCorpse(humans[hIndex]);
+          humans.splice(hIndex,1);
+          if(humans.length < 1){
+            messageIndex = 0;
+            gameOver = timeElapsed;
+          }
+          break;
+      }
+    }
+    return reg;
+  }
+
+  this.handleAlienUpdate = function(ret,aIndex){
+    var reg = false;
+    if(ret){
+      switch(ret.action){
+        case 'spawn':
+          aliens.push(ret.obj);
+          break;
+        case 'delete':
+          var obj = ret.obj;
+          reg = terrain.removeTile(obj);
+          break;
+        case 'die':
+          this.addCorpse(aliens[aIndex]);
+          aliens.splice(aIndex,1);
+          break;
+      }
+    }
+    return reg;
   }
 
   this.click = function(clickPos,rightClick){
@@ -155,17 +193,16 @@ var GameScene = function (strs,trn,shp,nam,bg){
       if(this.uiMode == 'select' && focusTarget){
         var coords = clickToCoord(clickPos,false);
         var obj = false;
-        for(h in humans){
-          if(humans[h].pointWithin(coords.x,coords.y)){
-            obj = humans[h];
-          }
-        }
-        if(!obj){
-          for(c in corpses){
-            if(corpses[c].pointWithin(coords.x,coords.y)){
-              obj = corpses[c];
+        var clickObjs = [aliens,humans,corpses];
+        for(var typ in clickObjs){
+          var objArray = clickObjs[typ];
+          for(var o in objArray){
+            if(objArray[o].pointWithin(coords.x,coords.y)){
+              obj = objArray[o];
+              break;
             }
           }
+          if(obj){break;}
         }
         var coords = clickToCoord(clickPos,true);
         obj = !obj ? terrain.getTile(coords.x,coords.y) : obj;
@@ -198,25 +235,23 @@ var GameScene = function (strs,trn,shp,nam,bg){
       }else{
         switch(this.uiMode){
           case "select":
-            for(h in humans){
-              if(humans[h].pointWithin(x,y)){
-                focusTarget = humans[h];
-                targetFound = true;
-              }
-            }
-            if(!targetFound){
-              for(c in corpses){
-                if(corpses[c].pointWithin(x,y)){
-                  focusTarget = corpses[c];
-                  targetFound = true;
+            var obj = false;
+            var clickObjs = [humans,aliens,corpses];
+            for(var typ in clickObjs){
+              var objArray = clickObjs[typ];
+              for(var o in objArray){
+                if(objArray[o].pointWithin(x,y)){
+                  obj = objArray[o];
+                  focusTarget = obj;
+                  break;
                 }
               }
+              if(obj){break;}
             }
-            if(!targetFound){
+
+            if(!obj){
               var coords = clickToCoord(clickPos,true);
-              var x = coords.x;
-              var y = coords.y;
-              focusTarget = terrain.getTile(x,y);
+              focusTarget = terrain.getTile(coords.x,coords.y);
             }
             this.uiMode = "select";
             break;
@@ -257,14 +292,13 @@ var GameScene = function (strs,trn,shp,nam,bg){
       ship.draw(camera,canvasBufferContext);
     }
     terrain.draw(canvasBufferContext,camera,this.count);
-    for (c in corpses){
-      if(onScreen(corpses[c])){
-        corpses[c].draw(camera,canvasBufferContext);
-      }
-    }
-    for (h in humans){
-      if(onScreen(humans[h])){
-        humans[h].draw(camera,canvasBufferContext);
+    var objTypes = [humans,aliens,corpses];
+    for(var typ in objTypes){
+      var objs = objTypes[typ];
+      for (o in objs){
+        if(onScreen(objs[o])){
+          objs[o].draw(camera,canvasBufferContext);
+        }
       }
     }
     if(gamePaused){

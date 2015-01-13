@@ -2,8 +2,7 @@ var LandingScene = function (strs,nam,aud){
   this.heroName = nam;
   this.sceneUtils = new SceneUtils();
   this.stars = strs ? strs : this.sceneUtils.generateStars(10000);
-  var terrainMap = this.sceneUtils.generateTerrain();
-  this.terrain = new Terrain(terrainMap);
+  this.terrain = this.sceneUtils.generateTerrain();
   var camera = new Camera(config.mapWidth/2,0);
   var mousePos;
   var clockCycle = 0;

@@ -38,6 +38,10 @@ Tiles = function() {
     x = x - (x % this.size.x);
     y = y - (y % this.size.y);
     this.position = {'x':x,'y':y};
+
+    this.center = function(){
+      return {'x':this.position.x+(this.size.x*0.5),'y':this.position.y+(this.size.y*0.5)};
+    }
     this.collision = function(){return true;}
     this.pathable = false;
     this.lastDrawn = -1;
@@ -45,6 +49,7 @@ Tiles = function() {
     var fillStyle; var strokeStyle;
     this.topLayer = false;
     this.plant = false;
+    this.maxHealth = 100; this.currentHealth = 100;
     switch(type){
       case "soil":
         this.name = ["Soil",""];

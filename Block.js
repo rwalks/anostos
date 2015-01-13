@@ -7,6 +7,7 @@ Block = function(type,pos) {
   this.airtight = false;
   this.pathable = false;
   this.cost = {};
+  this.maxHealth = 100; this.currentHealth = 100;
   switch(type){
     case 'soil':
       fName = 'Soil';
@@ -26,6 +27,10 @@ Block = function(type,pos) {
   this.name = [fName,"Block"];
   this.size = {'x':1*config.gridInterval,'y':1*config.gridInterval};
   this.position = pos ? pos : {'x':x,'y':y};
+
+  this.center = function(){
+    return {'x':this.position.x+(this.size.x*0.5),'y':this.position.y+(this.size.y*0.5)};
+  }
   this.collision = function(){return true;}
   this.lastDrawn = -1;
   this.type = "block";
@@ -71,6 +76,10 @@ Corpse = function(pos,inventory){
   this.size = {'x':1*config.gridInterval,'y':1*config.gridInterval};
   this.name = ["Dessicated","Remains"];
   this.position = pos ? pos : {'x':0,'y':0};
+
+  this.center = function(){
+    return {'x':this.position.x+(this.size.x*0.5),'y':this.position.y+(this.size.y*0.5)};
+  }
   this.type = "corpse";
   this.actions = ["inventory"];
   this.interact = 'inventory';
@@ -157,6 +166,12 @@ Door = function(pos) {
   this.name = [fName,""];
   this.size = {'x':1*config.gridInterval,'y':2*config.gridInterval};
   this.position = pos ? pos : {'x':x,'y':y};
+
+  this.maxHealth = 100; this.currentHealth = 100;
+
+  this.center = function(){
+    return {'x':this.position.x+(this.size.x*0.5),'y':this.position.y+(this.size.y*0.5)};
+  }
   this.open = false;
   this.cost = {'metal': 4};
 

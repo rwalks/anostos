@@ -17,10 +17,10 @@ Gui = function() {
 
   this.buildings = {
   "construction":[new Block('soil'),new Block('metal'),new Door()],
-  "power":[new StorageBuild('power'),new GeneratorBuild('solar')],
-  "oxygen":[new StorageBuild('oxygen'),new GeneratorBuild('oxygen'),new ConveyorBuild('vent'),new GeneratorBuild('soil')],
-  "water":[new StorageBuild('water'),new ConveyorBuild('pipe')],
-  "earth":[new StorageBuild('dry'),new GeneratorBuild('metal'),new ConveyorBuild('dry')],
+  "power":[new ChemicalBattery(),new SolarPanel()],
+  "oxygen":[new OxygenTank(),new AirVent(),new SoilEvaporator(),new OxygenCondenser()],
+  "earth":[new DryStorage(),new SmeltingChamber(),new ConveyorTube()],
+  "water":[new WaterCistern(),new WaterPipe()],
   "other":[]
   };
 
@@ -113,7 +113,7 @@ Gui = function() {
       }else if(y <= tArrowY){
         this.inventoryOffset -= (this.inventoryOffset > 0) ? 1 : 0;
       }else if(y <= objY){
-        //clicking on an invetory square
+        //clicking on an inventory square
         var invIndex = Math.floor(6*((y - tArrowY) / (objY - tArrowY))) + this.inventoryOffset;
         var resource = Object.keys(this.target.inventory.inv)[invIndex];
         if(resource){
@@ -122,8 +122,19 @@ Gui = function() {
             this.target.inventory.removeItem(resource,1);
           }else if(x >= xSize * 0.85 && x < xSize){
             //trade
-            if(this.target.lastTarget.inventory.addItem(resource,1)){
-              this.target.inventory.removeItem(resource,1);
+            var tradeY = ((objY-tArrowY)/6);
+            if(y < tArrowY+(tradeY*invIndex)+(tradeY/2)){
+              //trade 1
+              if(this.target.lastTarget.inventory.addItem(resource,1)){
+                this.target.inventory.removeItem(resource,1);
+              }
+            }else{
+              //trade all
+              var maxInv = this.target.inventory.itemCount(resource);
+              var tansferAmount = this.target.lastTarget.inventory.addItem(resource,maxInv);
+              if(tansferAmount){
+                this.target.inventory.removeItem(resource,tansferAmount);
+              }
             }
           }
         }
@@ -157,8 +168,20 @@ Gui = function() {
             this.target.lastTarget.inventory.removeItem(resource,1);
           }else if(x >= xSize * 0.85 && x < xSize){
             //trade
-            if(this.target.inventory.addItem(resource,1)){
-              this.target.lastTarget.inventory.removeItem(resource,1);
+            var tradeY = ((objY-tArrowY)/6);
+            if(y < tArrowY+(tradeY*tradeIndex)+(tradeY/2)){
+              //tradeone
+              if(this.target.inventory.addItem(resource,1)){
+                this.target.lastTarget.inventory.removeItem(resource,1);
+              }
+            }else{
+              //tradeall
+              var maxInv = this.target.lastTarget.inventory.itemCount(resource);
+              var tansferAmount = this.target.inventory.addItem(resource,maxInv);
+              if(tansferAmount){
+                this.target.lastTarget.inventory.removeItem(resource,tansferAmount);
+              }
+
             }
           }
         }
@@ -833,7 +856,7 @@ Gui = function() {
         canvasBufferContext.beginPath();
         canvasBufferContext.fillStyle = "rgba(0,50,100,0.9)";
         canvasBufferContext.strokeStyle="rgba(0,50,175,1.0)";
-        canvasBufferContext.rect(x+(xSize*0.85),y,xSize*0.15,ySize);
+        canvasBufferContext.rect(x+(xSize*0.85),y,xSize*0.15,ySize/2);
         canvasBufferContext.fill();
         canvasBufferContext.stroke();
 
@@ -843,18 +866,51 @@ Gui = function() {
         canvasBufferContext.fillStyle="rgba("+aRed+","+aRed+","+aRed+","+tAlpha+")";
         canvasBufferContext.lineWidth=xBuf;
         canvasBufferContext.beginPath();
-        canvasBufferContext.moveTo(x + (xSize * 0.86), y + (ySize * 0.5));
-        canvasBufferContext.lineTo(x + (xSize * 0.99), y + (ySize * 0.5));
+        canvasBufferContext.moveTo(x + (xSize * 0.86), y + (ySize * 0.25));
+        canvasBufferContext.lineTo(x + (xSize * 0.99), y + (ySize * 0.25));
         canvasBufferContext.fill();
         canvasBufferContext.stroke();
         canvasBufferContext.beginPath();
-        canvasBufferContext.moveTo(x + (xSize * 0.99), y + (ySize * 0.5));
-        canvasBufferContext.lineTo(x + (xSize * 0.93), y + (ySize * 0.3));
+        canvasBufferContext.moveTo(x + (xSize * 0.99), y + (ySize * 0.25));
+        canvasBufferContext.lineTo(x + (xSize * 0.93), y + (ySize * 0.15));
         canvasBufferContext.fill();
         canvasBufferContext.stroke();
         canvasBufferContext.beginPath();
-        canvasBufferContext.moveTo(x + (xSize * 0.99), y + (ySize * 0.5));
-        canvasBufferContext.lineTo(x + (xSize * 0.93), y + (ySize * 0.7));
+        canvasBufferContext.moveTo(x + (xSize * 0.99), y + (ySize * 0.25));
+        canvasBufferContext.lineTo(x + (xSize * 0.93), y + (ySize * 0.35));
+        canvasBufferContext.fill();
+        canvasBufferContext.stroke();
+        //draw trade ALL
+        canvasBufferContext.beginPath();
+        canvasBufferContext.fillStyle = "rgba(0,50,100,0.9)";
+        canvasBufferContext.strokeStyle="rgba(0,50,175,1.0)";
+        canvasBufferContext.rect(x+(xSize*0.85),y+ySize*0.5,xSize*0.15,ySize/2);
+        canvasBufferContext.fill();
+        canvasBufferContext.stroke();
+
+        var tAlpha = ("trade" == this.uiMode) ? 1 : 0.5;
+        var aRed = ("trade" == this.uiMode) ? 250 : 20;
+        canvasBufferContext.strokeStyle="rgba("+aRed+","+aRed+","+aRed+","+tAlpha+")";
+        canvasBufferContext.fillStyle="rgba("+aRed+","+aRed+","+aRed+","+tAlpha+")";
+        canvasBufferContext.lineWidth=xBuf;
+        canvasBufferContext.beginPath();
+        canvasBufferContext.moveTo(x + (xSize * 0.87), y + (ySize * 0.65));
+        canvasBufferContext.lineTo(x + (xSize * 0.87), y + (ySize * 0.85));
+        canvasBufferContext.fill();
+        canvasBufferContext.stroke();
+        canvasBufferContext.beginPath();
+        canvasBufferContext.moveTo(x + (xSize * 0.87), y + (ySize * 0.75));
+        canvasBufferContext.lineTo(x + (xSize * 0.99), y + (ySize * 0.75));
+        canvasBufferContext.fill();
+        canvasBufferContext.stroke();
+        canvasBufferContext.beginPath();
+        canvasBufferContext.moveTo(x + (xSize * 0.99), y + (ySize * 0.75));
+        canvasBufferContext.lineTo(x + (xSize * 0.93), y + (ySize * 0.65));
+        canvasBufferContext.fill();
+        canvasBufferContext.stroke();
+        canvasBufferContext.beginPath();
+        canvasBufferContext.moveTo(x + (xSize * 0.99), y + (ySize * 0.75));
+        canvasBufferContext.lineTo(x + (xSize * 0.93), y + (ySize * 0.85));
         canvasBufferContext.fill();
         canvasBufferContext.stroke();
       }
@@ -972,7 +1028,7 @@ Gui = function() {
           canvasBufferContext.beginPath();
           canvasBufferContext.fillStyle = "rgba("+aRed+",50,100,0.9)";
           canvasBufferContext.strokeStyle="rgba("+aRed+",50,175,1.0)";
-          canvasBufferContext.rect(x+(xSize*0.85),y,xSize*0.15,ySize);
+          canvasBufferContext.rect(x+(xSize*0.85),y,xSize*0.15,ySize/2);
           canvasBufferContext.fill();
           canvasBufferContext.stroke();
 
@@ -980,18 +1036,50 @@ Gui = function() {
           canvasBufferContext.fillStyle="rgba(250,250,250,1.0)";
           canvasBufferContext.lineWidth=xBuf;
           canvasBufferContext.beginPath();
-          canvasBufferContext.moveTo(x + (xSize * 0.86), y + (ySize * 0.5));
-          canvasBufferContext.lineTo(x + (xSize * 0.99), y + (ySize * 0.5));
+          canvasBufferContext.moveTo(x + (xSize * 0.86), y + (ySize * 0.25));
+          canvasBufferContext.lineTo(x + (xSize * 0.99), y + (ySize * 0.25));
           canvasBufferContext.fill();
           canvasBufferContext.stroke();
           canvasBufferContext.beginPath();
-          canvasBufferContext.moveTo(x + (xSize * 0.99), y + (ySize * 0.5));
-          canvasBufferContext.lineTo(x + (xSize * 0.93), y + (ySize * 0.3));
+          canvasBufferContext.moveTo(x + (xSize * 0.99), y + (ySize * 0.25));
+          canvasBufferContext.lineTo(x + (xSize * 0.93), y + (ySize * 0.15));
           canvasBufferContext.fill();
           canvasBufferContext.stroke();
           canvasBufferContext.beginPath();
-          canvasBufferContext.moveTo(x + (xSize * 0.99), y + (ySize * 0.5));
-          canvasBufferContext.lineTo(x + (xSize * 0.93), y + (ySize * 0.7));
+          canvasBufferContext.moveTo(x + (xSize * 0.99), y + (ySize * 0.25));
+          canvasBufferContext.lineTo(x + (xSize * 0.93), y + (ySize * 0.35));
+          canvasBufferContext.fill();
+          canvasBufferContext.stroke();
+          //draw trade all arrow
+          var aRed = ("trade" == this.uiMode) ? 0 : 200;
+          canvasBufferContext.beginPath();
+          canvasBufferContext.fillStyle = "rgba("+aRed+",50,100,0.9)";
+          canvasBufferContext.strokeStyle="rgba("+aRed+",50,175,1.0)";
+          canvasBufferContext.rect(x+(xSize*0.85),y+ySize/2,xSize*0.15,ySize/2);
+          canvasBufferContext.fill();
+          canvasBufferContext.stroke();
+
+          canvasBufferContext.strokeStyle="rgba(250,250,250,1.0)";
+          canvasBufferContext.fillStyle="rgba(250,250,250,1.0)";
+          canvasBufferContext.lineWidth=xBuf;
+          canvasBufferContext.beginPath();
+          canvasBufferContext.moveTo(x + (xSize * 0.87), y + (ySize * 0.65));
+          canvasBufferContext.lineTo(x + (xSize * 0.87), y + (ySize * 0.85));
+          canvasBufferContext.fill();
+          canvasBufferContext.stroke();
+          canvasBufferContext.beginPath();
+          canvasBufferContext.moveTo(x + (xSize * 0.87), y + (ySize * 0.75));
+          canvasBufferContext.lineTo(x + (xSize * 0.99), y + (ySize * 0.75));
+          canvasBufferContext.fill();
+          canvasBufferContext.stroke();
+          canvasBufferContext.beginPath();
+          canvasBufferContext.moveTo(x + (xSize * 0.99), y + (ySize * 0.75));
+          canvasBufferContext.lineTo(x + (xSize * 0.93), y + (ySize * 0.65));
+          canvasBufferContext.fill();
+          canvasBufferContext.stroke();
+          canvasBufferContext.beginPath();
+          canvasBufferContext.moveTo(x + (xSize * 0.99), y + (ySize * 0.75));
+          canvasBufferContext.lineTo(x + (xSize * 0.93), y + (ySize * 0.85));
           canvasBufferContext.fill();
           canvasBufferContext.stroke();
         }

@@ -5,6 +5,7 @@ var SceneUtils = function (bg){
   this.generateTerrain = function(){
     var terrainInterval = config.terrainInterval;
     var tMap = {};
+    var surfaceSpawns = [];
     var mid = config.mapHeight*0.7;
     var last = mid;
     for(var x=0;x<=config.mapWidth;x+=terrainInterval){
@@ -27,7 +28,10 @@ var SceneUtils = function (bg){
          var tile = new tiles.TerrainTile(x,y,'soil');
          if(y < yMin+terrainInterval){
            tile.topLayer = true;
-           if(Math.random() < 0.1){
+           var randAction = Math.random();
+           if(Math.random() < 0.01){
+             surfaceSpawns.push(tile.position);
+           }else if(Math.random() < 0.1){
              tile.plant = new Plant(tile.position);
            }
          }
@@ -44,7 +48,7 @@ var SceneUtils = function (bg){
     }
 
     generateOre(tMap);
-    return tMap;
+    return new Terrain(tMap,surfaceSpawns);
   }
 
   var generateOre = function(tMap){

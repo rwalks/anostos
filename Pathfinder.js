@@ -1,7 +1,5 @@
 Pathfinder = function() {
 
-  var size = {'x':1*config.gridInterval,'y':2*config.gridInterval};
-
   var buildPath = function(node){
     var path = [];
     var current = node;
@@ -28,44 +26,61 @@ Pathfinder = function() {
     return ret;
   }
 
-  this.validSpace = function(nX,nY,grid){
+  this.validSpace = function(nX,nY,grid,size,climber,digger){
     var valid = true;
-    for(var x=nX;x<nX+size.x;x+=config.gridInterval){
-      for(var y=nY;y<nY+size.y;y+=config.gridInterval){
-        if(grid[x] && grid[x][y] && !grid[x][y].pathable){
-          valid = false;
-          break;
+    var grip = false;
+    var iX = climber ? nX - config.gridInterval : nX;
+    var iY = climber ? nY - config.gridInterval : nY;
+    var mX = climber ? nX + size.x + config.gridInterval : nX + size.x;
+    var mY = climber ? nY + size.y + config.gridInterval : nY + size.y;
+    for(var x=iX;x<mX;x+=config.gridInterval){
+      for(var y=iY;y<mY;y+=config.gridInterval){
+        if(x < nX+size.x && x >= nX && y < nY+size.y && y >= nY){
+          if(!digger && grid[x] && grid[x][y]){
+            if(!grid[x][y].pathable){
+              valid = false;
+              break;
+            }
+          }
+        }else if(climber && grid[x] && grid[x][y]){
+          grip = grip || !grid[x][y].pathable;
         }
       }
       if(!valid){break;}
     }
+    if(climber && !grip){
+      valid = false;
+    }
     return valid;
   }
 
-  var estimateDistance = function(x,y,dX,dY){
+  var estimateDistance = function(x,y,dX,dY,size){
     var e = Math.abs((dX - x) / size.x);
     e += Math.abs((dY - y) / size.y);
     return e;
   }
 
 
-  this.findPath = function(sX,sY,destX,destY,terrain){
+  this.findPath = function(sX,sY,destX,destY,terrain,jump,siz,climber,digger){
     sX = sX - (sX % config.gridInterval);
     sY = sY - (sY % config.gridInterval);
-    var maxJump = 6;
+    var maxJump = jump ? jump : 6;
     var openNodes = {};
     var closedNodes = {};
     var curNode = new Node(sX,sY);
     var dX = destX - (destX % config.gridInterval);
     var dY = destY - (destY % config.gridInterval);
+    var size = siz ? siz : {'x':1*config.gridInterval,'y':2*config.gridInterval};
     //find natural height
-    for(var nY = dY; nY > dY-(size.y*2); nY -= config.gridInterval){
-      if(this.validSpace(dX,nY,terrain)){
-        dY = nY;
-        break;
+    if(!digger){
+      for(var nY = dY; nY > dY-(size.y*2); nY -= config.gridInterval){
+        if(this.validSpace(dX,nY,terrain,size,climber,digger)){
+          dY = nY;
+          break;
+        }
       }
+      dY = this.collapseY(dX,dY,terrain,size,climber,digger);
     }
-    dY = this.collapseY(dX,dY,terrain);
 
     var search = true;
     var validPath = false;
@@ -73,8 +88,23 @@ Pathfinder = function() {
     while(search){
       //check + add above to open if height below maxJump
       var nY = curNode.y-config.gridInterval;
-      if(curNode.height < maxJump && this.validSpace(curNode.x,nY,terrain)){
-        var next = new Node(curNode.x,nY,curNode,estimateDistance(curNode.x,nY,dX,dY));
+      var validHeight = climber ? true : (curNode.height < maxJump);
+      if(validHeight && this.validSpace(curNode.x,nY,terrain,size,climber,digger)){
+        var next = new Node(curNode.x,nY,curNode,estimateDistance(curNode.x,nY,dX,dY,size));
+        if(!nodeExists(next,closedNodes)){
+          if(nodeExists(next,openNodes)){
+            if(next.eCost() < openNodes[next.x][next.y].eCost()){
+              openNodes[next.x][next.y] = next;
+            }
+          }else{
+            addNode(next,openNodes);
+          }
+        }
+      }
+      //check below
+      var nY = curNode.y+size.y;
+      if(this.validSpace(curNode.x,nY,terrain,size,climber,digger)){
+        var next = new Node(curNode.x,nY,curNode,estimateDistance(curNode.x,nY,dX,dY,size));
         if(!nodeExists(next,closedNodes)){
           if(nodeExists(next,openNodes)){
             if(next.eCost() < openNodes[next.x][next.y].eCost()){
@@ -87,12 +117,12 @@ Pathfinder = function() {
       }
       //check left + right, collapse to terrain, add to open
       for(i in dirs){
-        var offset = dirs[i] * config.gridInterval;
+        var offset = dirs[i] * size.x;
         var nX = curNode.x + offset;
-        if(this.validSpace(nX,curNode.y,terrain)){
-          var nY = this.collapseY(nX,curNode.y,terrain);
-          if(this.validSpace(nX,nY,terrain)){
-            var next = new Node(nX,nY,curNode,estimateDistance(nX,nY,dX,dY));
+        if(this.validSpace(nX,curNode.y,terrain,size,climber,digger)){
+          var nY = digger ? nY : this.collapseY(nX,curNode.y,terrain,size,climber,digger);
+          if(this.validSpace(nX,nY,terrain,size,climber,digger)){
+            var next = new Node(nX,nY,curNode,estimateDistance(nX,nY,dX,dY,size));
             if(!nodeExists(next,closedNodes)){
               if(nodeExists(next,openNodes)){
                 if(next.eCost() < openNodes[next.x][next.y].eCost()){
@@ -105,7 +135,8 @@ Pathfinder = function() {
           }
         }
       }
-      if(Object.keys(openNodes).length < 1){
+      //stop searching if no open nodes or digger with too many open nodes
+      if(Object.keys(openNodes).length < 1 || (digger && Object.keys(closedNodes).length > 50)){
         search = false;
       }else{
         curNode = findCheapestNode(openNodes);
@@ -125,9 +156,9 @@ Pathfinder = function() {
     return validPath ? buildPath(curNode) : [];
   }
 
-  this.collapseY = function(x,y,map){
+  this.collapseY = function(x,y,map,size,climber,digger){
     for(cY = y+config.gridInterval;cY < config.mapHeight;cY += config.gridInterval){
-      if(!this.validSpace(x,cY,map)){
+      if(!this.validSpace(x,cY,map,size,climber,digger)){
         return cY - config.gridInterval;
       }
     }

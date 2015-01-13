@@ -263,7 +263,7 @@ Human = function(x,y,name) {
         for(var y = 0; y <= ((maxY-minY)/ config.gridInterval); y++){
           var tX = (this.position.x > obj.position.x) ? (minX + (x*config.gridInterval)) : (maxX - (x*config.gridInterval));
           var tY = (this.position.y < obj.position.y) ? (minY + (y*config.gridInterval)) : (maxY - (y*config.gridInterval));
-          if(pathfinder.validSpace(tX,tY,terMap)){
+          if(pathfinder.validSpace(tX,tY,terMap,this.size)){
             this.path = pathfinder.findPath(this.position.x,this.position.y,tX,tY,terMap);
             if(this.path.length > 0){
               found = true;
