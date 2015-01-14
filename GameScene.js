@@ -50,6 +50,7 @@ var GameScene = function (strs,trn,shp,nam,bg){
     var nest = new HiveNest(spPos.x,spPos.y-(config.gridInterval*1));
     nest.inventory.addItem('metal',1);
     aliens.push(nest);
+    break;
   }
   camera.focusOn(aliens[0].position);
 
@@ -144,6 +145,10 @@ var GameScene = function (strs,trn,shp,nam,bg){
       switch(ret.action){
         case 'delete':
           var obj = ret.obj;
+          var containerType = obj.type != 'construction' && obj.type != 'block';
+          if(containerType && obj.inventory && !obj.inventory.empty()){
+            this.addCorpse(obj);
+          }
           reg = terrain.removeTile(obj);
           break;
         case 'build':

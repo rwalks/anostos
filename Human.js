@@ -42,19 +42,26 @@ Human = function(x,y,name) {
   this.lineColor = "rgba("+r+","+g+","+b+",1.0)";
 
   this.salvage = function(obj){
-    var inv = this.targetObj.inventory ? this.targetObj.inventory.inv : false;
+    if(obj.cost['rock']){
+      return false;
+    }
+    var inv = obj.inventory ? obj.inventory.inv : false;
     if(inv){
       for(i in inv){
-        this.inventory.addItem(i,inv[i]);
+        var take = this.inventory.addItem(i,inv[i]);
+        if(take){
+          obj.inventory.removeItem(i,take);
+        }
       }
     }
 
-    inv = this.targetObj.cost;
+    inv = obj.cost;
     if(inv){
       for(i in inv){
         this.inventory.addItem(i,Math.floor(inv[i]/2));
       }
     }
+    return true;
   }
 
 
@@ -125,8 +132,9 @@ Human = function(x,y,name) {
             case 'delete':
               var targ = terrain.getTile(this.targetObj.position.x,this.targetObj.position.y);
               if(targ && targ == this.targetObj){
-                this.salvage(this.targetObj);
-                ret = {'action':'delete','obj':targ};
+                if(this.salvage(this.targetObj)){
+                  ret = {'action':'delete','obj':targ};
+                }
                 this.path = [];
                 this.targetObj = false;
               }
@@ -230,7 +238,7 @@ Human = function(x,y,name) {
   this.draw = function(camera,canvasContext){
     var animate = Math.abs(this.velocity.x) > 0.1;
     drawHuman(this.position.x,this.position.y,canvasContext,camera,this.direction,animate,this.fillColor,this.lineColor);
-    //drawPath(this.path,canvasContext,camera);
+    drawPath(this.path,canvasContext,camera);
   }
 
   this.wound = function(damage){
@@ -249,7 +257,7 @@ Human = function(x,y,name) {
     this.lastTarget = false;
     var terMap = terrain.terrain;
     if(!obj){
-      this.path = pathfinder.findPath(this.position.x,this.position.y,coords.x,coords.y,terMap);
+      this.path = pathfinder.findPath(this.position.x,this.position.y,coords.x,coords.y,terMap,6,this.size,false,false);
     }else if(obj){
       //find spot adjacent to obj
       var oX = obj.position.x - (obj.position.x % config.gridInterval);
@@ -263,8 +271,8 @@ Human = function(x,y,name) {
         for(var y = 0; y <= ((maxY-minY)/ config.gridInterval); y++){
           var tX = (this.position.x > obj.position.x) ? (minX + (x*config.gridInterval)) : (maxX - (x*config.gridInterval));
           var tY = (this.position.y < obj.position.y) ? (minY + (y*config.gridInterval)) : (maxY - (y*config.gridInterval));
-          if(pathfinder.validSpace(tX,tY,terMap,this.size)){
-            this.path = pathfinder.findPath(this.position.x,this.position.y,tX,tY,terMap);
+          if(pathfinder.validSpace(tX,tY,terMap,this.size,false,false)){
+            this.path = pathfinder.findPath(this.position.x,this.position.y,tX,tY,terMap,6,this.size,false,false);
             if(this.path.length > 0){
               found = true;
               break;

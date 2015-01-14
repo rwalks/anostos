@@ -24,6 +24,8 @@ var SceneUtils = function (bg){
          //dY = 0;
       }
       var yMin = last + dY;
+      var rockChance = 0.99;
+      var colHeight = (config.mapHeight - yMin);
       for(var y=config.mapHeight;y>=yMin;y-=terrainInterval){
          var tile = new tiles.TerrainTile(x,y,'soil');
          if(y < yMin+terrainInterval){
@@ -47,6 +49,7 @@ var SceneUtils = function (bg){
       last = yMin;
     }
 
+    generateRock(tMap);
     generateOre(tMap);
     return new Terrain(tMap,surfaceSpawns);
   }
@@ -66,6 +69,25 @@ var SceneUtils = function (bg){
             y += (Math.random() > 0.5) ? config.terrainInterval : -config.terrainInterval;
           }
         }
+      }
+    }
+  }
+
+  var generateRock = function(tMap){
+    var lastMin = config.mapHeight * 0.9;
+    var yMax = config.mapHeight;
+    var towerDuration = 0;
+    var towerHeight = 0;
+    for(var x = 0; x < config.mapWidth; x += config.terrainInterval){
+      if(Math.random() < 0.01){
+        towerDuration = Math.random() * 20;
+        towerHeight = Math.random() * config.mapHeight * 0.1;
+      }
+      var deltaH = (Math.random() * config.mapHeight * 0.01) - (config.mapHeight*0.005);
+      lastMin = lastMin - deltaH;
+      for(var y = yMax; y > (lastMin - towerHeight); y -= config.terrainInterval){
+        var tile = new tiles.TerrainTile(x,y,'rock');
+        tiles.addTile(tile,tMap);
       }
     }
   }

@@ -36,8 +36,9 @@ Pathfinder = function() {
     for(var x=iX;x<mX;x+=config.gridInterval){
       for(var y=iY;y<mY;y+=config.gridInterval){
         if(x < nX+size.x && x >= nX && y < nY+size.y && y >= nY){
-          if(!digger && grid[x] && grid[x][y]){
-            if(!grid[x][y].pathable){
+          if(grid[x] && grid[x][y]){
+            var invalidDig = grid[x][y].cost['rock'];
+            if((!digger && !grid[x][y].pathable) || (digger && invalidDig)){
               valid = false;
               break;
             }
@@ -71,6 +72,7 @@ Pathfinder = function() {
     var dX = destX - (destX % config.gridInterval);
     var dY = destY - (destY % config.gridInterval);
     var size = siz ? siz : {'x':1*config.gridInterval,'y':2*config.gridInterval};
+    size = climber ? minimumSize(size) : size;
     //find natural height
     if(!digger){
       for(var nY = dY; nY > dY-(size.y*2); nY -= config.gridInterval){
@@ -136,7 +138,7 @@ Pathfinder = function() {
         }
       }
       //stop searching if no open nodes or digger with too many open nodes
-      if(Object.keys(openNodes).length < 1 || (digger && Object.keys(closedNodes).length > 50)){
+      if(Object.keys(openNodes).length < 1 || (digger && Object.keys(closedNodes).length > 50) || (climber && Object.keys(closedNodes).length > 500)){
         search = false;
       }else{
         curNode = findCheapestNode(openNodes);
@@ -157,9 +159,9 @@ Pathfinder = function() {
   }
 
   this.collapseY = function(x,y,map,size,climber,digger){
-    for(cY = y+config.gridInterval;cY < config.mapHeight;cY += config.gridInterval){
+    for(var cY = y+size.y;cY < config.mapHeight;cY += size.y){
       if(!this.validSpace(x,cY,map,size,climber,digger)){
-        return cY - config.gridInterval;
+        return cY - size.y;
       }
     }
   }
@@ -171,6 +173,11 @@ Pathfinder = function() {
   var addNode = function(node,nodeMap){
     nodeMap[node.x] = nodeMap[node.x] ? nodeMap[node.x] : {};
     nodeMap[node.x][node.y] = node;
+  }
+
+  var minimumSize = function(size){
+    var min = Math.min(size.x,size.y);
+    return {'x':min,'y':min};
   }
 }
 

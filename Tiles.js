@@ -63,6 +63,12 @@ Tiles = function() {
         fillStyle = "rgba(110,100,130,1.0)";
         strokeStyle = "rgba(210,200,230,1.0)";
         break;
+      case "rock":
+        this.name = ["Rock",""];
+        this.cost = {'rock': 8};
+        fillStyle = "rgba(0,20,50,0.7)";
+        strokeStyle = "rgba(0,40,100,1.0)";
+        break;
     }
     this.draw = function(camera,canvasBufferContext,count){
       //draw less often

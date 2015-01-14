@@ -1,44 +1,26 @@
-HiveAlienArt = function() {
-  this.maxFuel = 100;
+AlienArt = function() {
 
-  this.leftLanded = false;
-  this.rightLanded = false;
+  this.drawHiveWorker = function(ox,oy,obj,canvasBufferContext,scale){
 
-  this.explosions = [];
+      var size = obj.size;
+      var theta = obj.theta;
+      var scale = scale ? scale : 1;
+      var xFlip = obj.xFlip ? -1 : 1;
+      var yFlip = obj.yFlip ? -1 : 1;
+      var lX = size.x*config.xRatio*scale;
+      var lY = size.y*config.yRatio*scale;
 
-  var lX = config.gridInterval * 2;
-  var lY = config.gridInterval * 2;
-  var shipGeometry = [[lX,lY],[lX,lY*1.5],[lX*1.5,lY],[lX,0],[lX,-lY],[0,-2*lY],
-                      [-lX,-lY],[-lX,0],[-lX*1.5,lY],[-lX*1.5.lY*1.5],[-lX,lY*1.5],[-lX,lY],[0,lY]];
-  this.damaged = false;
-  this.destroyed = false;
-  this.landed = false;
-  this.altitude = 9999;
+      var geometry = [[-lX,-lY*0.5],[lX,-lY*0.5],[lX,lY*0.5],[-lX,lY*0.5]];
 
-
-  this.rotate = function(right,keyDown){
-    if(keyDown){
-      this.deltaR += right ? 0.05 : -0.05;
-    }else{
-      this.deltaR = (right && this.deltaR > 0) ? 0 : this.deltaR;
-      this.deltaR = (!right && this.deltaR < 0) ? 0 : this.deltaR;
-    }
-    this.deltaR = (this.deltaR > 0.1) ? 0.1 : this.deltaR;
-    this.deltaR = (this.deltaR < -0.1) ? -0.1 : this.deltaR;
-  }
-
-  this.draw = function(camera,canvasBufferContext){
-    if(!this.destroyed){
-      var xRatio = config.canvasWidth / config.cX;
-      var yRatio = config.canvasHeight / config.cY;
       canvasBufferContext.beginPath();
       canvasBufferContext.lineWidth=Math.floor(config.xRatio)+"";
-      canvasBufferContext.fillStyle = "rgba(200,200,200,0.6)";
-      canvasBufferContext.strokeStyle="rgba(250,250,250,0.8)";
-      for(i in shipGeometry){
-        var points = rotate(shipGeometry[i][0],shipGeometry[i][1],this.theta);
-        var x = (this.position.x+points[0]-camera.xOff)*xRatio;
-        var y = (this.position.y+points[1]-camera.yOff)*yRatio;
+      canvasBufferContext.fillStyle = "rgba(0,200,0,0.6)";
+      canvasBufferContext.strokeStyle="rgba(0,250,0,0.8)";
+      var firstPoint = false;
+      for(i in geometry){
+        var points = rotate(geometry[i][0],geometry[i][1],theta);
+        var x = (ox+(points[0] * xFlip));
+        var y = (oy+(points[1] * yFlip));
         if(i == 0){
           canvasBufferContext.moveTo(x,y);
           firstPoint = [x,y];
@@ -51,27 +33,29 @@ HiveAlienArt = function() {
       }
       canvasBufferContext.stroke();
       canvasBufferContext.fill();
-      //draw window
-      var rad = config.gridInterval/2 * xRatio;
-      var windows = [[0,-rad],[0,rad/2]];
-      for(i in windows){
-        var points = rotate(windows[i][0],windows[i][1],this.theta);
-        var x = (this.position.x+points[0]-camera.xOff)*xRatio;
-        var y = (this.position.y+points[1]-camera.yOff)*yRatio;
-        canvasBufferContext.fillStyle = "rgba(0,0,200,0.6)";
-        canvasBufferContext.strokeStyle="rgba(50,50,250,0.8)";
-        canvasBufferContext.beginPath();
-        canvasBufferContext.arc(x,y,rad,0,2*Math.PI,false);
-        canvasBufferContext.fill();
-        canvasBufferContext.stroke();
+
+      var geometry = [[lX/2,-lY*0.5],[lX,-lY*0.5],[lX,0],[lX/2,0]];
+      canvasBufferContext.beginPath();
+      canvasBufferContext.lineWidth=Math.floor(config.xRatio)+"";
+      canvasBufferContext.fillStyle = "rgba(200,0,0,0.6)";
+      canvasBufferContext.strokeStyle="rgba(250,0,0,0.8)";
+      var firstPoint = false;
+      for(i in geometry){
+        var points = rotate(geometry[i][0],geometry[i][1],theta);
+        var x = (ox+(points[0] * xFlip));
+        var y = (oy+(points[1] * yFlip));
+        if(i == 0){
+          canvasBufferContext.moveTo(x,y);
+          firstPoint = [x,y];
+        }else{
+          canvasBufferContext.lineTo(x,y);
+        }
       }
-      if(this.throttle.x || this.throttle.y){
-        this.drawExhaust(camera,canvasBufferContext);
+      if(firstPoint){
+        canvasBufferContext.lineTo(firstPoint[0],firstPoint[1]);
       }
-    }
-    for(e in this.explosions){
-      this.explosions[e].draw(camera,canvasBufferContext);
-    }
+      canvasBufferContext.stroke();
+      canvasBufferContext.fill();
   }
 
   var rotate = function(x,y,theta){

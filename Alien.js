@@ -7,6 +7,7 @@ Alien = function(x,y) {
   this.targetObj;
   this.path = [];
   this.onGround = false;
+  this.groundContact = {'left':false,'right':false,'up':false,'down':false};
   this.direction = true;
 
   this.inventory = new Inventory();
@@ -24,8 +25,23 @@ Alien = function(x,y) {
   //class specific functions
   this.findTarget = function(humans){}
   this.interactTarget = function(terrain){}
-  this.draw = function(camera,canvasContext){}
-  this.drawTargetPortrait = function(x,y,xSize,ySize,canvasBufferContext){}
+
+  this.draw = function(camera,canvasContext){
+    var cent = this.center();
+    var x = (cent.x-camera.xOff)*config.xRatio;
+    var y = (cent.y-camera.yOff)*config.yRatio;
+    this.drawAlien(x,y,canvasContext,1);
+    //this.drawPath(this.path,canvasContext,camera);
+  }
+
+  this.drawTargetPortrait = function(oX,oY,xSize,ySize,canvasBufferContext){
+    var scale = (xSize*0.4) / (this.size.x*config.xRatio);
+    this.drawAlien(oX+(xSize*0.3),oY+(ySize*0.2),canvasBufferContext,scale);
+  }
+
+  this.drawAlien = function(x,y,buffer,scale){};
+
+  this.classUpdate = function(){};
 
   this.center = function(){
     return {'x':this.position.x+(this.size.x*0.5),'y':this.position.y+(this.size.y*0.5)};
@@ -37,11 +53,11 @@ Alien = function(x,y) {
     if(this.counter > 100){ this.counter = 0; }
 
     if(this.currentHealth <= 0 && !this.dead){
-      ret = this.deathAction();
+      ret = this.die();
     }
     if(!this.dead){
       if(this.path.length){
-        this.followPath();
+        this.followPath(terrain);
       }
       if(this.targetObj){
         ret = this.interactTarget(terrain);
@@ -51,6 +67,8 @@ Alien = function(x,y) {
       this.applyForces();
       this.terrainCollide(terrain.terrain);
       this.applyMove();
+      this.checkBoundaries();
+      this.classUpdate();
     }
     return ret;
   }
@@ -58,6 +76,32 @@ Alien = function(x,y) {
   this.applyMove = function(){
     this.position.x += this.velocity.x;
     this.position.y += this.velocity.y;
+  }
+
+  this.checkBoundaries = function(){
+    var outside = false;
+
+    if(this.position.x < 0){
+      this.position.x = 1;
+      outside = true;
+    }else if(this.position.x > config.mapWidth){
+      this.position.x = config.mapWidth;
+      outside = true;
+    }
+
+    if(this.position.y < 0){
+      //let them fly...
+    }else if(this.position.y > config.mapHeight){
+      this.position.y = config.mapHeight
+      outside = true;
+    }
+
+    if(outside){
+      if(this.targetObj){
+        this.targetObj = false;
+        this.path = [];
+      }
+    }
   }
 
   this.applyForces = function(){
@@ -75,25 +119,20 @@ Alien = function(x,y) {
     }
   }
 
-  this.deathAction = function(){
+  this.die = function(){
     this.dead = true;
+    this.deathAction();
     return {'action':'die'};
   }
 
-  this.followPath = function(){
+  this.deathAction = function(){};
+
+  this.followPath = function(terrain){
     var nextNode = this.path[this.path.length-1];
-    var straightPath = false;
-    if(this.path.length > 1){
-      if((this.position.x > nextNode[0] && this.position.x > this.path[this.path.length-2][0]) ||
-         (this.position.x < nextNode[0] && this.position.x < this.path[this.path.length-2][0])){
-          straightPath = true;
-      }
-    }
-    if(nextNode){
+
+    if(nextNode && this.validNode(nextNode,terrain)){
       //pop next node if close enough OR over it OR under it
-      if((Math.abs(this.nodeDistance(nextNode,this.position)) < config.gridInterval/6) ||
-        (Math.abs(nextNode[0] - this.position.x) < config.gridInterval) &&
-         (nextNode[1] > this.position.y) && !this.onGround && straightPath){
+      if((Math.abs(this.nodeDistance(nextNode,this.position)) < config.gridInterval/6)){
         this.path.pop();
         nextNode = this.path[this.path.length-1];
       }
@@ -104,15 +143,20 @@ Alien = function(x,y) {
       }else if(nextNode && nextNode[0] < this.position.x){
         var d = nextNode[0] - this.position.x;
         this.velocity.x += Math.max(-this.moveAccel,d);
-      }else{
-        this.velocity.x = 0;
       }
+      //top bottom
       if(nextNode && nextNode[1] < this.position.y){
         this.velocity.y += -this.moveAccel*1.2;
       }else if(nextNode && nextNode[1] > this.position.y){
         this.velocity.y += this.moveAccel*1.2;
       }
+    }else{
+      this.path = [];
     }
+  }
+
+  this.validNode = function(node,terrain){
+    return true;
   }
 
   this.nodeDistance = function(node,pos){
@@ -127,6 +171,7 @@ Alien = function(x,y) {
     var fX = this.position.x + this.velocity.x;
     var fY = this.position.y + this.velocity.y;
     var collide = false;
+    this.groundContact = resetGroundContact();
 
     var rightX = fX + this.size.x;
     var rightY = fY + (this.size.y/2);
@@ -135,6 +180,7 @@ Alien = function(x,y) {
     if(terrain[rightX] && terrain[rightX][rightY] && terrain[rightX][rightY].collision()){
       this.velocity.x -= ((fX + this.size.x) - rightX);
       collide = true;
+      this.groundContact.right = true;
     }
     var leftX = fX;
     var leftY = fY + (this.size.y/2);
@@ -143,6 +189,7 @@ Alien = function(x,y) {
     if(terrain[leftX] && terrain[leftX][leftY] && terrain[leftX][leftY].collision()){
       this.velocity.x += ((leftX+config.gridInterval) - fX);
       collide = true;
+      this.groundContact.left = true;
     }
     var botX = fX + (this.size.x / 2);
     var botY = fY + this.size.y;
@@ -151,6 +198,7 @@ Alien = function(x,y) {
     if(terrain[botX] && terrain[botX][botY] && terrain[botX][botY].collision()){
       this.velocity.y -= ((fY+this.size.y) - botY);
       collide = true;
+      this.groundContact.down = true;
     }
     var topX = fX + (this.size.x / 2);
     var topY = fY;
@@ -159,6 +207,7 @@ Alien = function(x,y) {
     if(terrain[topX] && terrain[topX][topY] && terrain[topX][topY].collision()){
       this.velocity.y += ((topY+config.gridInterval) - fY);
       collide = true;
+      this.groundContact.up = true;
     }
     //diags
     var diags = [[0,0],[1,0],[1,1],[0,1]];
@@ -181,6 +230,9 @@ Alien = function(x,y) {
     }
   }
 
+  var resetGroundContact = function(){
+    return {'left':false,'right':false,'up':false,'down':false};
+  }
 
   this.wound = function(damage){
     var dam = Math.min(damage,this.currentHealth);
