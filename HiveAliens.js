@@ -4,40 +4,56 @@ HiveAlien = function(x,y,size,id,hive) {
   this.id = id ? id : 0;
 
   this.theta = 0;
+  this.thetaTarget = 0;
+  this.thetaDelta = 0.2;
+
   this.size = size ? size : this.size;
   this.hive = hive ? hive : false;
   this.xFlip = false;
-  this.yFlip = false;
 
   var originalSize = {'x':this.size.x,'y':this.size.y};
 
   this.classUpdate = function(){
     this.setRotTransform();
+    this.seekTargetTheta();
+    this.moving = (this.velocity.x || this.velocity.y);
   }
 
   this.setRotTransform = function(){
     var tolerance = config.gridInterval / 5;
+    if(this.groundContact.left){
+      //this.theta = Math.PI * 0.5;
+      this.thetaTarget = Math.PI * 0.5;
+      this.xFlip = (this.velocity.y > tolerance) ? false : this.xFlip;
+      this.xFlip = (this.velocity.y < -tolerance) ? true : this.xFlip;
+    }else if(this.groundContact.right){
+      this.thetaTarget = Math.PI * 1.5;
+      //this.theta = Math.PI * 1.5;
+      this.xFlip = (this.velocity.y > tolerance) ? true : this.xFlip;
+      this.xFlip = (this.velocity.y < -tolerance) ? false : this.xFlip;
+    }
     if(this.groundContact.down){
-      this.theta = 0;
+      //this.theta = 0;
+      this.thetaTarget = 0;
       this.xFlip = (this.velocity.x > tolerance) ? false : this.xFlip;
       this.xFlip = (this.velocity.x < -tolerance) ? true : this.xFlip;
-      this.yFlip = false;
     }else if(this.groundContact.up){
-      this.theta = Math.PI;
+      //this.theta = Math.PI;
+      this.thetaTarget = Math.PI;
       this.xFlip = (this.velocity.x > tolerance) ? true : this.xFlip;
       this.xFlip = (this.velocity.x < -tolerance) ? false : this.xFlip;
-      this.yFlip = false;
-    }else if(this.groundContact.left){
-      this.theta = Math.PI * 0.5;
-      this.yFlip = (this.velocity.y > tolerance) ? true : this.yFlip;
-      this.yFlip = (this.velocity.y < -tolerance) ? false : this.yFlip;
-      this.xFlip = false;
-    }else if(this.groundContact.right){
-      this.theta = Math.PI * 1.5;
-      this.yFlip = (this.velocity.y > tolerance) ? true : this.yFlip;
-      this.yFlip = (this.velocity.y < -tolerance) ? false : this.yFlip;
-      this.xFlip = false;
     }
+  }
+
+  this.seekTargetTheta = function(){
+    this.theta = this.theta < 0 ? (Math.PI*2)+this.theta : this.theta % (Math.PI * 2);
+    var deltaT = this.thetaDelta;
+    var thetaDistance = Math.abs(this.thetaTarget - this.theta);
+    deltaT = Math.min(deltaT,thetaDistance);
+    //find rotation direction
+    var rotMod = this.thetaTarget > this.theta ? deltaT : -deltaT;
+    var rotDir = thetaDistance > Math.PI ? -1 : 1;
+    this.theta += (rotMod * rotDir);
   }
 
   this.pathHome = function(terrain){
@@ -48,16 +64,37 @@ HiveAlien = function(x,y,size,id,hive) {
     }
   }
 
+  this.applyForces = function(){
+    //no gravity for skittering bugs
+    if(this.onGround){
+      //friction
+      this.velocity.x = this.velocity.x * 0.9;
+      this.velocity.y = this.velocity.y * 0.9;
+    }else{
+      this.velocity.y += config.gravity;
+      this.velocity.x = this.velocity.x * 0.9;
+    }
+  }
+
+
   this.deathAction = function(){
     if(this.hive && this.id){
       this.hive.removeSpawn(this.id);
     }
   }
 
+  this.randomMove = function(){
+    if(this.groundContact.up || this.groundContact.down){
+      this.velocity.x += (Math.random() * this.maxVelocity * 2) - this.maxVelocity;
+    }else if(this.groundContact.left || this.groundContact.right){
+      this.velocity.y += (Math.random() * this.maxVelocity * 2) - this.maxVelocity;
+    }
+  }
+
   this.validNode = function(node,terrain){
   //  var digger = (this.targetObj && this.targetObj.type != 'spawn');
   //  return pathfinder.validSpace(node[0],node[1],terrain.terrain,this.size,true,digger);
-  return true;
+    return true;
   }
 
 }
@@ -75,6 +112,9 @@ HiveWorker = function(x,y,hive,id) {
   this.maxV = config.gridInterval/4;
 //specific vars
   this.type = 'passive';
+
+  this.biting = false;
+  this.biteLength = 31;
 
   this.lastHarvested;
   this.burrowStrength = 2;
@@ -103,14 +143,17 @@ HiveWorker = function(x,y,hive,id) {
     }
     if(!this.targetObj){
       //no metal, random dest
-      var magRand = Math.floor(Math.random() * 15) * config.gridInterval;
-      var xRand = Math.floor(Math.random()*(magRand*2))-magRand;
-      var yRand = Math.floor(Math.random()*(magRand*1.5))-(magRand*0.5);
+      var maxMagnitude = 15 * config.gridInterval;
+      var xRand = Math.floor(Math.random()*(maxMagnitude*2))-maxMagnitude;
+      var yRand = Math.floor(Math.random()*(maxMagnitude*1.5))-(maxMagnitude*0.5);
       var rX = oX + xRand; rX = rX - (rX % config.gridInterval);
       var rY = oY + yRand; rY = rY - (rY % config.gridInterval);
       if(terrain.terrain[rX] && terrain.terrain[rX][rY]){
-        if(!terrain.terrain[rX][rY].topLayer){
+        var validTarget = !terrain.terrain[rX][rY].topLayer && !terrain.terrain[rX][rY].cost['rock'];
+        if(validTarget){
           this.targetObj = terrain.terrain[rX][rY];
+        }else{
+          this.randomMove();
         }
       }
     }
@@ -168,46 +211,55 @@ HiveWorker = function(x,y,hive,id) {
           this.path = [];
         }
       }else{
-        //eat dirt
-        if(Math.abs(this.velocity.x) > Math.abs(this.velocity.y)){
-          var nextX = (this.velocity.x > 0) ? (this.position.x+this.size.x) + this.velocity.x : this.position.x + this.velocity.x;
-          var nextY = this.position.y;
-        }else{
-          var nextX = this.position.x;
-          var nextY = (this.velocity.y > 0) ? (this.position.y+this.size.y) + this.velocity.y : this.position.y + this.velocity.y;
-        }
-        nextX = nextX - (nextX % config.gridInterval);
-        nextY = nextY - (nextY % config.gridInterval);
-        //damage all dirt tiles in desired position;
-        var blockingTiles = [];
-        for(var nx = nextX; nx < (nextX+this.size.x); nx += config.gridInterval){
-          for(var ny = nextY; ny < (nextY+this.size.y); ny += config.gridInterval){
-            if(terrain.terrain[nx] && terrain.terrain[nx][ny]){
-              blockingTiles.push(terrain.terrain[nx][ny]);
-            }
+        if(this.stuck){
+          //eat dirt
+          if(Math.abs(this.velocity.x) > Math.abs(this.velocity.y)){
+            var nextX = (this.velocity.x > 0) ? (this.position.x+this.size.x) + this.velocity.x : this.position.x + this.velocity.x;
+            var nextY = this.position.y;
+          }else{
+            var nextX = this.position.x;
+            var nextY = (this.velocity.y > 0) ? (this.position.y+this.size.y) + this.velocity.y : this.position.y + this.velocity.y;
           }
-        }
-        var randAction = Math.random();
-        if(blockingTiles.length){
-          for(var t in blockingTiles){
-            var til = blockingTiles[t];
-            if(til.cost['soil']){
-              til.currentHealth -= this.burrowStrength;
-              if(til.currentHealth <= 0){
-                terrain.removeTile(til);
+          nextX = nextX - (nextX % config.gridInterval);
+          nextY = nextY - (nextY % config.gridInterval);
+          //damage all dirt tiles in desired position;
+          var blockingTiles = [];
+          for(var nx = nextX; nx < (nextX+this.size.x); nx += config.gridInterval){
+            for(var ny = nextY; ny < (nextY+this.size.y); ny += config.gridInterval){
+              if(terrain.terrain[nx] && terrain.terrain[nx][ny]){
+                blockingTiles.push(terrain.terrain[nx][ny]);
               }
-            }else if(til.cost['metal'] || til.cost['ore']){
-              this.targetObj = til;
-              this.path = pathfinder.findPath(this.position.x,this.position.y,this.targetObj.position.x,this.targetObj.position.y,terrain.terrain,2,this.size,true,true);
-            }else{
-              this.targetObj = false;
             }
           }
-        }else if(randAction < 0.0005){
-          this.pathHome(terrain);
-        }else if(randAction < 0.001){
-          this.targetObj = false;
-          this.path = [];
+          var randAction = Math.random();
+          this.biting = (this.counter % this.biteLength) == 0 ? false : this.biting;
+          if(blockingTiles.length){
+            this.biting = true;
+            for(var t in blockingTiles){
+              var til = blockingTiles[t];
+              if(til.cost['soil']){
+                til.currentHealth -= this.burrowStrength;
+                if(til.currentHealth <= 0){
+                  terrain.removeTile(til);
+                }
+              }else if(til.cost['metal'] || til.cost['ore']){
+                this.targetObj = til;
+                this.path = pathfinder.findPath(this.position.x,this.position.y,this.targetObj.position.x,this.targetObj.position.y,terrain.terrain,2,this.size,true,true);
+              }else if(til.cost['rock']){
+                this.targetObj = false;
+                this.path = [];
+              }else{
+                this.targetObj = false;
+              }
+            }
+          }else if(randAction < 0.0005){
+            this.pathHome(terrain);
+          }else if(randAction < 0.001){
+            this.targetObj = false;
+            this.path = [];
+          }
+        }else{
+        //carry on then
         }
       }
 
@@ -219,7 +271,7 @@ HiveWorker = function(x,y,hive,id) {
   }
 
   this.drawAlien = function(x,y,canvasBufferContext,scale){
-    alienArt.drawHiveWorker(x,y,this,canvasBufferContext,scale);
+    alienArt.drawHiveWorker(x,y,this,canvasBufferContext,scale,this.counter);
   }
 
 }
@@ -271,7 +323,7 @@ HiveNest = function(x,y) {
       }
     }
     //burrow if unpathable
-    if(!this.pathable()){
+    if(!this.pathable() && Object.keys(this.spawn).length){
       var oX = this.position.x;
       var oY = this.position.y + this.size.y;
       oX = oX - (oX % config.gridInterval);

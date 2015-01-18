@@ -66,8 +66,8 @@ Tiles = function() {
       case "rock":
         this.name = ["Rock",""];
         this.cost = {'rock': 8};
-        fillStyle = "rgba(0,20,50,0.7)";
-        strokeStyle = "rgba(0,40,100,1.0)";
+        fillStyle = "rgba(10,100,100,1.0)";
+        strokeStyle = "rgba(20,150,150,1.0)";
         break;
     }
     this.draw = function(camera,canvasBufferContext,count){

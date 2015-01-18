@@ -50,9 +50,9 @@ var GameScene = function (strs,trn,shp,nam,bg){
     var nest = new HiveNest(spPos.x,spPos.y-(config.gridInterval*1));
     nest.inventory.addItem('metal',1);
     aliens.push(nest);
-    break;
+    //break;
   }
-  camera.focusOn(aliens[0].position);
+  //camera.focusOn(aliens[0].position);
 
   var gui = new Gui();
 
