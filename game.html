@@ -1,39 +1,42 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Project Patagon</title>
-  
+  <title>ANOSTOS</title>
   <link rel="stylesheet" type="text/css" href="patagon.css" />
-  <script src="Config.js" type="text/javascript"></script>
   <script src="javascript/jquery-1.11.1.min.js" type="text/javascript"></script>
-  <script src="GameRunner.js" type="text/javascript"></script>
-  <script src="SceneUtils.js" type="text/javascript"></script>
-  <script src="LoadingScene.js" type="text/javascript"></script>
-  <script src="Camera.js" type="text/javascript"></script>
-  <script src="Title.js" type="text/javascript"></script>
-  <script src="GameScene.js" type="text/javascript"></script>
-  <script src="Human.js" type="text/javascript"></script>
-  <script src="Tiles.js" type="text/javascript"></script>
-  <script src="Pathfinder.js" type="text/javascript"></script>
-  <script src="Gui.js" type="text/javascript"></script>
-  <script src="Resources.js" type="text/javascript"></script>
-  <script src="Block.js" type="text/javascript"></script>
-  <script src="Buildings.js" type="text/javascript"></script>
-  <script src="LandingScene.js" type="text/javascript"></script>
-  <script src="Ship.js" type="text/javascript"></script>
-  <script src="Explosion.js" type="text/javascript"></script>
-  <script src="AudioLoader.js" type="text/javascript"></script>
-  <script src="Roomfinder.js" type="text/javascript"></script>
-  <script src="Room.js" type="text/javascript"></script>
-  <script src="Inventory.js" type="text/javascript"></script>
-  <script src="Terrain.js" type="text/javascript"></script>
-  <script src="ResourceNetwork.js" type="text/javascript"></script>
-  <script src="ResourceNetworkFinder.js" type="text/javascript"></script>
-  <script src="Plant.js" type="text/javascript"></script>
-  <script src="Alien.js" type="text/javascript"></script>
-  <script src="HiveAliens.js" type="text/javascript"></script>
-  <script src="AlienArt.js" type="text/javascript"></script>
-  <script src="BuildingArt.js" type="text/javascript"></script>
+  //logic
+  <script src="javascript/logic/Config.js" type="text/javascript"></script>
+  <script src="javascript/logic/GameRunner.js" type="text/javascript"></script>
+  <script src="javascript/logic/SceneUtils.js" type="text/javascript"></script>
+  <script src="javascript/logic/Pathfinder.js" type="text/javascript"></script>
+  <script src="javascript/logic/Gui.js" type="text/javascript"></script>
+  <script src="javascript/logic/AudioLoader.js" type="text/javascript"></script>
+  <script src="javascript/logic/Roomfinder.js" type="text/javascript"></script>
+  <script src="javascript/logic/Terrain.js" type="text/javascript"></script>
+  <script src="javascript/logic/ResourceNetworkFinder.js" type="text/javascript"></script>
+  //models
+  <script src="javascript/models/Camera.js" type="text/javascript"></script>
+  <script src="javascript/models/Human.js" type="text/javascript"></script>
+  <script src="javascript/models/Tiles.js" type="text/javascript"></script>
+  <script src="javascript/models/Block.js" type="text/javascript"></script>
+  <script src="javascript/models/Buildings.js" type="text/javascript"></script>
+  <script src="javascript/models/Ship.js" type="text/javascript"></script>
+  <script src="javascript/models/Room.js" type="text/javascript"></script>
+  <script src="javascript/models/Inventory.js" type="text/javascript"></script>
+  <script src="javascript/models/ResourceNetwork.js" type="text/javascript"></script>
+  <script src="javascript/models/Alien.js" type="text/javascript"></script>
+  <script src="javascript/models/HiveAliens.js" type="text/javascript"></script>
+  //scenes
+  <script src="javascript/scenes/LoadingScene.js" type="text/javascript"></script>
+  <script src="javascript/scenes/GameScene.js" type="text/javascript"></script>
+  <script src="javascript/scenes/LandingScene.js" type="text/javascript"></script>
+  //art
+  <script src="javascript/art/Title.js" type="text/javascript"></script>
+  <script src="javascript/art/Explosion.js" type="text/javascript"></script>
+  <script src="javascript/art/Plant.js" type="text/javascript"></script>
+  <script src="javascript/art/AlienArt.js" type="text/javascript"></script>
+  <script src="javascript/art/BuildingArt.js" type="text/javascript"></script>
+  <script src="javascript/art/ShipArt.js" type="text/javascript"></script>
 
   <script>
     "use strict";
@@ -43,11 +46,6 @@
     var bArt = new BuildingArt();
     var alienArt = new AlienArt();
 
-    $(document).keydown(function(e) {
-      if(e.keyCode == 32) {
-        return false;
-      }
-    });
     document.oncontextmenu = function() {return false;};
     $(function() {
       $('#canvas').mousedown(function(e) {

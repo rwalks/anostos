@@ -236,6 +236,8 @@ HiveWorker = function(x,y,hive,id) {
           this.biting = (this.counter % this.biteLength) == 0 ? false : this.biting;
           if(blockingTiles.length){
             this.biting = true;
+            this.velocity.x = 0;
+            this.velocity.y = 0;
             for(var t in blockingTiles){
               var til = blockingTiles[t];
               if(til.cost['soil']){

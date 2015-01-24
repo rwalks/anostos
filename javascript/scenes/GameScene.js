@@ -1,7 +1,7 @@
 var GameScene = function (strs,trn,shp,nam,bg){
   var heroName = nam;
   var sceneUtils = new SceneUtils(bg);
-  var stars = strs ? strs : sceneUtils.generateStars(10000);
+  var stars = strs ? strs : sceneUtils.generateStars();
   var terrain = trn ? trn : new Terrain();
   var ship = shp;
   var camera = new Camera(5000,6500);
@@ -14,7 +14,6 @@ var GameScene = function (strs,trn,shp,nam,bg){
   var humans = [];
   var aliens = [];
   var corpses = [];
-  var resources= new Resources();
   this.count = 0;
 
   var focusTarget;
@@ -27,6 +26,9 @@ var GameScene = function (strs,trn,shp,nam,bg){
   var gamePaused = false;
   var lastPaused = false;
   var messageIndex = 0;
+
+  var debugMode = false;
+  var debugLock = false;
 
   for(var i=0;i<3;i++){
     var x = (Math.random()*(config.gridInterval*6))-(config.gridInterval*3) + ship.position.x;
@@ -63,6 +65,9 @@ var GameScene = function (strs,trn,shp,nam,bg){
 
   this.keyPress = function(keyCode,keyDown){
     switch(keyCode){
+      case 8:
+        debugMode = !debugMode;
+        break;
       case 27:
         if(keyDown){
           gamePaused = true;
@@ -89,6 +94,9 @@ var GameScene = function (strs,trn,shp,nam,bg){
         break;
       case 32:
         //spacebar - might not work in ie9?
+        if(debugMode && keyDown){
+          debugLock = false;
+        }
         followTarget = keyDown;
         break;
       case 37:
@@ -107,7 +115,7 @@ var GameScene = function (strs,trn,shp,nam,bg){
   }
 
   this.update = function(mPos){
-    if(!gamePaused){
+    if(!gamePaused && !debugLock){
       var currentTime = new Date();
       timeElapsed = currentTime - startTime;
       mousePos = mPos;
@@ -137,6 +145,7 @@ var GameScene = function (strs,trn,shp,nam,bg){
       }
     }
     this.count = (this.count > 100) ? 0 : this.count + 1;
+    debugLock = debugMode ? true : false;
   }
 
   this.handleHumanUpdate = function(ret,hIndex){

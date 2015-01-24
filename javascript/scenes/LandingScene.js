@@ -1,7 +1,7 @@
 var LandingScene = function (strs,nam,aud){
   this.heroName = nam;
   this.sceneUtils = new SceneUtils();
-  this.stars = strs ? strs : this.sceneUtils.generateStars(10000);
+  this.stars = strs ? strs : this.sceneUtils.generateStars();
   this.terrain = this.sceneUtils.generateTerrain();
   var camera = new Camera(config.mapWidth/2,0);
   var mousePos;
@@ -10,15 +10,18 @@ var LandingScene = function (strs,nam,aud){
   this.count = 0;
   this.audio = aud;
   this.audio.play('landing1');
-  this.ship = new Ship(config.mapWidth/2,0,this.audio);
+  this.ship = new Ship(config.mapWidth/2,4000,this.audio);
   var startMsg = ["Welcome to Anostos. Attempt landing using the arrow keys.", "We don't have much fuel.."];
   var startIndex = 0;
   var landIndex = 0;
   var gamePaused = false;
   var lastPaused = false;
+  var debugMode = false;
+  var debugLock = false;
+
 
   this.update = function(mPos){
-    if(!gamePaused){
+    if(!gamePaused && !debugLock){
       camera.focusOn(this.ship.position);
       this.ship.update(this.terrain.terrain);
       if(this.ship.altitude < 3000){
@@ -26,10 +29,14 @@ var LandingScene = function (strs,nam,aud){
       }
       this.count += 1;
     }
+    debugLock = debugMode ? true : false;
   }
 
   this.keyPress = function(keyCode,keyDown){
     switch(keyCode){
+      case 8:
+        debugMode = !debugMode;
+        break;
       case 27:
         if(keyDown){
           gamePaused = true;
@@ -135,8 +142,8 @@ var LandingScene = function (strs,nam,aud){
     }else{
       if(this.ship.destroyed){
         this.endScene(false);
-      }else if(true){
-    //  }else if(this.ship.landed){
+    //  }else if(true){
+      }else if(this.ship.landed){
         this.endScene(true);
       }
     }

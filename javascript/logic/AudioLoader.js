@@ -25,9 +25,9 @@ var AudioLoader = function (){
   }
 
   this.play = function(id,reload){
-    if(reload && window.chrome){ files[id].copies[files[id].index].load(); }
-    files[id].copies[files[id].index].play();
-    files[id].index = (files[id].index + 1) % files[id].copies.length;
+  //  if(reload && window.chrome){ files[id].copies[files[id].index].load(); }
+  //  files[id].copies[files[id].index].play();
+  //  files[id].index = (files[id].index + 1) % files[id].copies.length;
   }
 
   this.stop = function(id){
