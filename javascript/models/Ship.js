@@ -130,7 +130,7 @@ Ship = function(x,y,aud) {
       var maxForce = 1.5;
       var contactFriction = 2.0;
       if(gearType){
-        maxForce = 2.8;
+        maxForce = 5.0;
       }
       for(var i in geo){
         if(geo[i]){
@@ -147,48 +147,58 @@ Ship = function(x,y,aud) {
             var tX = vX - (vX % config.gridInterval);
             var tY = vY - (vY % config.gridInterval);
             if(terrain[tX]&&terrain[tX][tY]){
-
               if(oX > this.position.x){
                 this.rightContact = true;
               }else if(oX < this.position.x){
                 this.leftContact = true;
               }
               var dX = 0; var dY = 0;
-              var rise = vY - oY;
-              var run = vX - oX;
-
               if(this.velocity.x){
-                dX = (this.velocity.x > 0) ? vX - tX : (tX + config.gridInterval) - vX;
+                if(this.velocity.x > 0 && tX != vX){
+                  dX = tX - vX;
+                }else if(tX + config.gridInterval != vX){
+                  dX = tX + config.gridInterval - vX;
+                }
               }
               if(this.velocity.y){
-                dY = (this.velocity.y > 0) ? vY - tY : (tY + config.gridInterval) - vY;
+                if(this.velocity.y > 0 && tY != vY){
+                  dY = tY - vY;
+                }else if(tY + config.gridInterval != vY){
+                  dY = tY + config.gridInterval - vY;
+                }
               }
-              if(rise && run){
-                if(dY <= dX){
+/*
+              if(this.velocity.x && this.velocity.y){
+                var rise = this.velocity.y;
+                var run = this.velocity.x;
+                if(dY < dX){
                   dX = (dY/rise)*run;
-                }else{
-                  dY = (dX/run)*rise;
+                }else if(dX < dY){
+                  dY = (dX/rise)*run;
                 }
               }
+              */
               var forceToStop = dX + dY;
-              if(forceToStop > 0){
-                var validForce = forceToStop < maxForce;
-                if(!validForce){
-                  //crash
-                  if(!gearType){
-                    if(geo[i][1] <= lY){
-                      this.destroyed = this.damaged ? true : this.destroyed;
-                      this.damaged = true;
-                    }
+              console.log(this.velocity.x + ' :v: ' + this.velocity.y);
+              console.log(dX + ' : ' + dY);
+              var absV = Math.abs(this.velocity.x) + Math.abs(this.velocity.y);
+              var validForce = absV < maxForce;
+              validForce = true;
+              if(!validForce){
+                //crash
+                if(!gearType){
+                  if(geo[i][1] <= lY){
+                    this.destroyed = this.damaged ? true : this.destroyed;
+                    this.damaged = true;
                   }
-                  crashed = true;
-                  this.explosions.push(new Explosion(vX,vY));
-                  audio.play('explosion2');
-                }else{
-                  //no crash
-                  this.velocity.y += this.velocity.y > 0 ? -dY : dY;
-                  this.velocity.x += this.velocity.x > 0 ? -dX : dX;
                 }
+                crashed = true;
+                this.explosions.push(new Explosion(vX,vY));
+                audio.play('explosion2');
+              }else{
+                //no crash
+                this.velocity.y += dY;
+                this.velocity.x += dX;
               }
             }
           }
@@ -198,10 +208,8 @@ Ship = function(x,y,aud) {
         }
       }
       if(this.leftContact || this.rightContact){
-        this.velocity.x = 0.8 * this.velocity.x;
-        this.velocity.y = 0.8 * this.velocity.y;
-        this.deltaR += this.rightContact ? -0.001 : 0;
-        this.deltaR += this.leftContact ? 0.001 : 0;
+        //this.deltaR += this.rightContact ? -0.001 : 0;
+        //this.deltaR += this.leftContact ? 0.001 : 0;
       }
     }
 

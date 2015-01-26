@@ -1,8 +1,8 @@
 ShipArt = function() {
 
-  var hullColors = ["rgba(0,100,200,0.8)","rgba(0,150,250,1.0)"];
-  var engineColors = ["rgba(100,100,150,0.8)","rgba(150,150,200,1.0)"];
-  var gearColors = ["rgba(50,50,50,0.8)","rgba(100,100,100,1.0)"];
+  var hullColors = ["rgba(0,100,200,0.9)","rgba(0,150,250,0.9)"];
+  var engineColors = ["rgba(100,100,150,1.0)","rgba(150,150,200,1.0)"];
+  var gearColors = ["rgba(50,50,50,0.9)","rgba(100,100,100,1.0)"];
   var shipColors = {'hull':hullColors,'leftEngine':engineColors,'rightEngine':engineColors,'leftGear':gearColors,'rightGear':gearColors};
 
   var exhaustMap = {};
@@ -137,8 +137,8 @@ ShipArt = function() {
       var points = rotate(windows[i][0],windows[i][1],theta);
       var x = (position.x+points[0]-camera.xOff)*config.xRatio;
       var y = (position.y+points[1]-camera.yOff)*config.yRatio;
-      canvasBufferContext.fillStyle = "rgba(0,0,200,0.6)";
-      canvasBufferContext.strokeStyle="rgba(50,50,250,0.8)";
+      canvasBufferContext.fillStyle = "rgba(0,0,200,0.9)";
+      canvasBufferContext.strokeStyle="rgba(50,50,250,1.0)";
       canvasBufferContext.beginPath();
       canvasBufferContext.arc(x,y,rad,0,2*Math.PI,false);
       canvasBufferContext.fill();
