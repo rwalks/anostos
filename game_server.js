@@ -38,7 +38,7 @@ function handler (req, res) {
         filePath = indexPath;
     }
     res.setHeader("Content-Type",contentType);
-   // res.setHeader("Cache-Control","public,max-age=666666");
+    res.setHeader("Cache-Control","public,max-age=66666");
     path.exists(filePath, function(exists){
       if(exists){
         fs.readFile(filePath, function(error,content){

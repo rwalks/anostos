@@ -47,7 +47,47 @@ var Config = function (){
 
   this.test = 0;
 
-  this.distance = function(obj1, obj2) {
+  this.distance = function(p1, p2) {
+    return Math.sqrt(Math.pow(p2[0] - p1[0],2)+Math.pow(p2[1]-p1[1],2));
+  }
+
+  this.objectDistance = function(obj1, obj2) {
     return Math.sqrt(Math.pow((obj2.position.x - obj1.position.x),2)+Math.pow((obj2.position.y-obj1.position.y),2));
+  }
+
+  this.intersect = function(p0,p1,p2,p3){
+    var s10X = p1[0] - p0[0];
+    var s10Y = p1[1] - p0[1];
+    var s32X = p3[0] - p2[0];
+    var s32Y = p3[1] - p2[1];
+
+    var denom = s10X * s32Y - s32X * s10Y;
+    if(denom == 0){
+      return false;
+    }
+    var denomPos = denom > 0;
+
+    var s02X = p0[0] - p2[0];
+    var s02Y = p0[1] - p2[1];
+
+    var sNum = s10X * s02Y - s10Y * s02X;
+    if((sNum < 0) == denomPos){
+      return false;
+    }
+
+    var tNum = s32X * s02Y - s32Y * s02X;
+    if((tNum < 0) == denomPos){
+      return false;
+    }
+
+    if((sNum > denom) == denomPos || (tNum > denom) == denomPos){
+      return false;
+    }
+
+    //collision if this far
+    var t = tNum / denom;
+    var iX = p0[0] + (t * s10X);
+    var iY = p0[1] + (t * s10Y);
+    return [iX,iY];
   }
 }

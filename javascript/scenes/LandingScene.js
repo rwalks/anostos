@@ -10,7 +10,7 @@ var LandingScene = function (strs,nam,aud){
   this.count = 0;
   this.audio = aud;
   this.audio.play('landing1');
-  this.ship = new Ship(config.mapWidth/2,4000,this.audio);
+  this.ship = new Ship(config.mapWidth/2,6000,this.audio);
   var startMsg = ["Welcome to Anostos. Attempt landing using the arrow keys.", "We don't have much fuel.."];
   var startIndex = 0;
   var landIndex = 0;
@@ -23,7 +23,7 @@ var LandingScene = function (strs,nam,aud){
   this.update = function(mPos){
     if(!gamePaused && !debugLock){
       camera.focusOn(this.ship.position);
-      this.ship.update(this.terrain.terrain);
+      this.ship.update(this.terrain);
       if(this.ship.altitude < 3000){
         this.audio.play("landing2");
       }

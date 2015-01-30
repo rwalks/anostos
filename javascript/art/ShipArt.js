@@ -12,6 +12,8 @@ ShipArt = function() {
 
   this.drawExhaust = function(camera,ship,lX,lY,canvasBufferContext){
     var position = ship.position;
+    //position.x = parseFloat(position.x.toFixed(1));
+    //position.y = parseFloat(position.y.toFixed(1));
     var theta = ship.theta;
     var engineActive = ship.engineActive;
     var coolDown = ship.coolDown;

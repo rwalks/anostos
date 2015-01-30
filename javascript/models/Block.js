@@ -185,7 +185,7 @@ Door = function(pos) {
   this.update = function(humans){
     var closeHuman = false;
     for(h in humans){
-      if(config.distance(humans[h],this) <= config.gridInterval*1.1){
+      if(config.objectDistance(humans[h],this) <= config.gridInterval*1.1){
         closeHuman = true;
       }
     }
