@@ -14,6 +14,7 @@ Ship = function(x,y,aud) {
 
   this.deltaR = 0;
   this.theta = 0;
+  this.manualRotateState = 0;
   this.acceleration = 0.07;
   this.currentFuel = 100;
   this.maxFuel = 100;
@@ -23,9 +24,7 @@ Ship = function(x,y,aud) {
   this.contact = {};
   this.contact.up = false; this.contact.down = false;
   this.contact.left = false; this.contact.right = false;
-  this.onGround = false;
 
-  var frictionLimit = 1.5;
   var maxSkidDepth = config.gridInterval/5;
 
   this.engineActive = false;
@@ -72,10 +71,6 @@ Ship = function(x,y,aud) {
 
       //apply forces
       this.velocity.y += this.gravity;
-      if(!this.onGround){
-        //air friction;
-        this.velocity.x = this.velocity.x * 0.99;
-      }
 
       var validFuel = this.currentFuel >= fuelUse;
       this.engineActive = (this.throttle && validFuel);
@@ -143,7 +138,6 @@ Ship = function(x,y,aud) {
   this.terrainCollide = function(terrain){
     this.contact.left = false; this.contact.right = false;
     var rotForce = 0;
-    this.onGround = false;
     for(var part in this.shipGeometry){
       var geo = this.shipGeometry[part];
       var gearType = (part == 'rightGear' || part == 'leftGear');
@@ -154,150 +148,71 @@ Ship = function(x,y,aud) {
       }
       for(var i in geo){
         if(geo[i]){
+          //roundVelocity
+          this.velocity.x = (Math.abs(this.velocity.x) < 0.0001) ? 0 : this.velocity.x;
+          this.velocity.y = (Math.abs(this.velocity.y) < 0.0001) ? 0 : this.velocity.y;
           var crashed = false;
-          //old rot
-          var oRotPoint = rotate(geo[i][0],geo[i][1],this.theta);
-          var oRotX = this.position.x + oRotPoint[0];
-          var oRotY = this.position.y + oRotPoint[1];
-          var vRotX = oRotX + this.velocity.x;
-          var vRotY = oRotY + this.velocity.y;
-          //new theta
-          var rotation = this.theta + this.deltaR;
-          var points = rotate(geo[i][0],geo[i][1],rotation);
-          var oX = this.position.x + points[0];
-          var oY = this.position.y + points[1];
-          var vX = oX + this.velocity.x;
-          var vY = oY + this.velocity.y;
-          if(vX > config.mapWidth || vX < 0){
-            this.velocity.x = this.velocity.x * -1;
-            this.theta = this.theta * -1;
-          }else{
-            var tX = vX - (vX % config.gridInterval);
-            var tY = vY - (vY % config.gridInterval);
-            var rightOfCenter = (oX > this.position.x);
-            var leftOfCenter = (oX < this.position.x);
-            if(terrain.getTile(tX,tY)){
-              this.onGround = true;
-              var dX = 0; var dY = 0;
-              //handle behavior crossing into tile
-              var originWithin = (oX > tX && oX < (tX + config.gridInterval)) &&
-                                 (oY > tY && oY < (tY + config.gridInterval));
-              var moving = this.velocity.x && this.velocity.y && !originWithin;
-              var tRotX = vRotX - (vRotX % config.gridInterval);
-              var tRotY = vRotY - (vRotY % config.gridInterval);
-              var rotOriginWithin = (oRotX > tX && oRotX < (tX + config.gridInterval)) &&
-                                 (oRotY > tY && oRotY < (tY + config.gridInterval));
-
-              var rotating = this.deltaR && !rotOriginWithin;
-              if(rotating || moving){
-                var o1;var o2;
-                if(rotating){
-                  o1 = oRotX; o2 = oRotY;
-                }else{
-                  o1 = oX; o2 = oY;
-                }
-                var ret = this.findTilePenetration(rotating,tX,tY,o1,o2,vX,vY);
-                dX = ret ? ret[0] : dX;
-                dY = ret ? ret[1] : dY;
-                var diagStr = rotating ? 'rotate: ' : 'translate: ';
-              }else if(this.velocity.x){
-                if(this.velocity.x > 0){
-                  dX = Math.max(tX - vX,-this.gravity*2);
-                }else{
-                  dX = Math.min(tX + config.gridInterval - vX,this.gravity*2);
-                }
-              }else if(this.velocity.y){
-                if(this.position.y <= tY && this.velocity.y > 0){
-                  dY = Math.max(tY - vY,-this.gravity*4);
-                }else{
-                  dY = Math.min(tY + config.gridInterval - vY,this.gravity*2);
-                }
-              }else{
-              //point within tile or collision bug
-                var dYTop = tY - vY;
-                var dYBot = (tY+config.gridInterval) - vY;
-                var dYMin = (Math.abs(dYTop) <= Math.abs(dYBot)) ? dYTop : dYBot;
-                var dXL = tX - vX;
-                var dXR = (tX+config.gridInterval) - vX;
-                var dXMin = (Math.abs(dXL) <= Math.abs(dXR)) ? dXL : dXR;
-                if(dYMin <= dXMin){
-                  dY = dYMin;
-                  dX = -this.velocity.x;
-                }else{
-                  dX = dXMin;
-                  dY = -this.velocity.y;
-                }
-              }
-              if(dX || dY){
-                //create triangle between pos, vPoint, and adjusted pos
-                //to find dTheta
-                var pos = [this.position.x,this.position.y];
-                var aPoint = [vX,vY];
-                var bPoint = [vX+dX,vY+dY];
-                var aLen = config.distance(pos,aPoint);
-                var bLen = config.distance(pos,bPoint);
-                var cLen = config.distance(aPoint,bPoint);
-                var dTheta = Math.acos((Math.pow(bLen,2) + Math.pow(aLen,2) - Math.pow(cLen,2)) / (2 * aLen * bLen));
-                //degs to rads
-                dTheta = dTheta * (Math.PI / 180);
-                if(dTheta){
-                  var adjustRot = false;
-                  if(rightOfCenter && !this.contact.left){
-                    this.deltaR += dTheta;
-                    adjustRot = true;
-                  }else if(leftOfCenter && !this.contact.right){
-                    this.deltaR += dTheta;
-                    adjustRot = true;
-                  }
-                  if(adjustRot){
-                    //find new dest, adjust dX / dY
-                    var newRot = this.theta + this.deltaR;
-                    var points = rotate(geo[i][0],geo[i][1],newRot);
-                    var newOX = this.position.x + points[0];
-                    var newOY = this.position.y + points[1];
-                    var newVX = newOX + this.velocity.x;
-                    var newVY = newOY + this.velocity.y;
-                    dX = (vX + dX) - newVX;
-                    dY = (vY + dY) - newVY;
-                  }
-                }
-              }
-              //resolve deltas
-              if(this.velocity.y && (dY * this.velocity.y) < 0){
-                var deltaVY = (Math.abs(dY) > this.velocity.y) ? -this.velocity.y : dY;
-                this.velocity.y += deltaVY;
-                dY -= deltaVY;
-              }
-              if(this.velocity.x && (dX * this.velocity.x) < 0){
-                var deltaVX = (Math.abs(dX) > this.velocity.x) ? -this.velocity.x : dX;
-                this.velocity.x += deltaVX;
-                dX -= deltaVX;
-              }
-              var maxD = (Math.abs(dX) + Math.abs(dY)) / 1;
-              dX = maxD > 1 ? dX / maxD : dX;
-              dY = maxD > 1 ? dY / maxD : dY;
-              this.position.y += dY;
-              this.position.x += dX;
-              //contact points
-              this.contact.right = rightOfCenter || this.contact.right;
-              this.contact.left = leftOfCenter || this.contact.left;
+          if(this.velocity.x || this.velocity.y){
+            var rotation = this.theta;
+            var points = rotate(geo[i][0],geo[i][1],rotation);
+            var oX = this.position.x + points[0];
+            var oY = this.position.y + points[1];
+            rotation += this.deltaR;
+            points = rotate(geo[i][0],geo[i][1],rotation);
+            var vX = this.position.x + points[0] + this.velocity.x;
+            var vY = this.position.y + points[1] + this.velocity.y;
+            if(vX > config.mapWidth || vX < 0){
+              this.velocity.x = this.velocity.x * -1;
+              this.theta = this.theta * -1;
             }else{
+              var tX = vX - (vX % config.gridInterval);
+              var tY = vY - (vY % config.gridInterval);
+              var rightC = (oX > this.position.x);
+              var leftC = (oX < this.position.x);
+              var upC = (oY > this.position.y);
+              var downC = (oY < this.position.y);
+              if(terrain.getTile(tX,tY)){
+                var dX = 0; var dY = 0;
+                var dTheta = 0; var collSide;
+                //handle edge behavior
+                var origOnEdge = pointOnTileEdge(oX,oY,tX,tY);
+                if(origOnEdge){
+                  dX = (origOnEdge == 'left' || origOnEdge == 'right')  ? -this.velocity.x : 0;
+                  dY = (origOnEdge == 'up' || origOnEdge == 'down') ? -this.velocity.y : 0;
+                  collSide = origOnEdge;
+                }else if(this.velocity.x && this.velocity.y){
+                  var ret = this.findTranslationPenetration(tX,tY,oX,oY,vX,vY);
+                  dX = ret[0];
+                  dY = ret[1];
+                  collSide = ret[2];
+                }else if(this.velocity.x){
+                  if(this.velocity.x > 0){
+                    dX = tX - vX;
+                    collSide = 'left';
+                  }else{
+                    dX = tX + config.gridInterval - vX;
+                    collSide = 'right';
+                  }
+                }else if(this.velocity.y){
+                  if(this.position.y <= tY && this.velocity.y > 0){
+                    dY = tY - vY;
+                    collSide = 'up';
+                  }else{
+                    dY = tY + config.gridInterval - vY;
+                    collSide = 'down';
+                  }
+                }
+                if(collSide && this.deltaR){
+                  dTheta = cancelEdgeTheta(collSide,this.deltaR,rightC,leftC,upC,downC);
+                }
+                this.deltaR += dTheta;
+                this.velocity.x += dX;
+                this.velocity.y += dY;
+              }
             }
-          }
-          if(crashed){
-            geo[i] = false;
           }
         }
       }
-    }
-    if(this.contact.left && this.velocity.y){
-      var dTheta = (!this.contact.right) ? 0.05 : 0;
-      dTheta = dTheta * (this.velocity.y > 0 ? 1 : -1);
-      this.deltaR += dTheta;
-    }else if(this.contact.right && this.velocity.y){
-      var dTheta = (!this.contact.left) ? -0.05 : 0;
-      dTheta = dTheta * (this.velocity.y > 0 ? 1 : -1);
-      this.deltaR += dTheta;
     }
     if(this.destroyed){
       for(var part in this.shipGeometry){
@@ -315,6 +230,55 @@ Ship = function(x,y,aud) {
     }
   }
 
+  var pointOnTileEdge = function(oX,oY,tX,tY){
+    var ret = false;
+    if(oY == tY){
+      ret = 'up';
+    }else if(oY == (tY + config.gridInterval)){
+      ret = 'down';
+    }else if(oX == tX){
+      ret = 'left';
+    }else if(oX == (tX + config.gridInterval)){
+      ret = 'right';
+    }
+    return ret;
+  }
+
+  var cancelEdgeTheta = function(side,deltaR,rightC,leftC,upC,downC){
+    var dT = 0;
+    switch(side){
+      case 'up':
+        if(rightC){
+          dT = (deltaR > 0) ? -deltaR : 0;
+        }else if(leftC){
+          dT = (deltaR < 0) ? -deltaR : 0;
+        }
+       break;
+      case 'down':
+        if(rightC){
+          dT = (deltaR < 0) ? -deltaR : 0;
+        }else if(leftC){
+          dT = (deltaR > 0) ? -deltaR : 0;
+        }
+       break;
+      case 'left':
+        if(upC){
+          dT = (deltaR > 0) ? -deltaR : 0;
+        }else if(downC){
+          dT = (deltaR < 0) ? -deltaR : 0;
+        }
+       break;
+      case 'right':
+        if(upC){
+          dT = (deltaR < 0) ? -deltaR : 0;
+        }else if(downC){
+          dT = (deltaR > 0) ? -deltaR : 0;
+        }
+       break;
+    }
+    return dT;
+  }
+
   var calculateFriction = function(d1,d2,maxDepth){
     var pen1 = Math.abs(d1);
     var pen2 = Math.abs(d2);
@@ -323,75 +287,59 @@ Ship = function(x,y,aud) {
     return d1 * Math.pow(penRatio,4);
   }
 
-  this.findTilePenetration = function(rot,tX,tY,oX,oY,vX,vY){
+  this.findRotationPenetration = function(tX,tY,oX,oY,vX,vY){
+    var inter = this.findTerrainIntersect(tX,tY,oX,oY,vX,vY);
+    if(inter){
+      var destPoint = [vX,vY];
+      var originPoint = [oX,oY];
+      var intPoint = [inter.intersect[0],inter.intersect[1]];
+      var oIntLen = config.distance(originPoint,intPoint);
+      var dIntLen = config.distance(intPoint,destPoint);
+      return oIntLen / dIntLen;
+    }
+  }
+
+  this.findTranslationPenetration = function(tX,tY,oX,oY,vX,vY){
     var dX = 0; var dY = 0;
     var interFound = false;
     var inter = this.findTerrainIntersect(tX,tY,oX,oY,vX,vY);
     if(inter){
-      if(inter.adjacent && !inter.horizontal){
-        interFound = true;
-        dY = calculateFriction(dY,dX,maxSkidDepth);
-        dX = -1 * (vX - oX);
-      }else if(inter.adjacent && inter.horizontal){
-        interFound = true;
-        dX = calculateFriction(dX,dY,maxSkidDepth);
-        dY = -1 * (vY - oY);
-      }else{
-        interFound = true;
-        dX = inter.intersect[0] - vX;
-        dY = inter.intersect[1] - vY;
-        if(inter.horizontal){
-          //slide horiz
-          dX = calculateFriction(dX,dY,maxSkidDepth);
-        }else{
-          //slide vert
-          dY = calculateFriction(dY,dX,maxSkidDepth);
-        }
-      }
+      interFound = true;
+      dX = inter.intersect[0] - vX;
+      dY = inter.intersect[1] - vY;
+      return [dX,dY,inter.side];
     }
-    return interFound ? [dX,dY] : false;
+    return false;
   }
 
   this.findTerrainIntersect = function(tX,tY,oX,oY,vX,vY){
     var ret = {};
     ret.intersect = false;
     var cubeSides = {
-      'u' : [[tX,tY],[tX+config.gridInterval,tY]],
-      'l' : [[tX,tY],[tX,tY+config.gridInterval]],
-      'r' : [[tX+config.gridInterval,tY],[tX+config.gridInterval,tY+config.gridInterval]],
-      'd' : [[tX,tY+config.gridInterval],[tX+config.gridInterval,tY+config.gridInterval]]
+      'up' : [[tX,tY],[tX+config.gridInterval,tY]],
+      'left' : [[tX,tY],[tX,tY+config.gridInterval]],
+      'right' : [[tX+config.gridInterval,tY],[tX+config.gridInterval,tY+config.gridInterval]],
+      'down' : [[tX,tY+config.gridInterval],[tX+config.gridInterval,tY+config.gridInterval]]
     };
-    var sides = (vY - this.position.y) > 0 ? ['u'] : ['d'];
-    sides.push((vX - this.position.x) > 0 ? ['l'] : ['r']);
+    var sides = (vY - oY) > 0 ? ['up'] : ['down'];
+    sides.push((vX - oX) > 0 ? 'left' : 'right');
     for(var s in sides){
       var side = cubeSides[sides[s]];
-      var horizSide = (sides[s] == 'u' || sides[s] == 'd');
-      if((oX == side[0][0] && !horizSide) || (oY == side[0][1] && horizSide)){
-        ret.intersect = [oX,oY];
-        ret.horizontal = horizSide;
-        ret.adjacent = true;
-      }else{
-        var inter = config.intersect([oX,oY],[vX,vY],side[0],side[1]);
-        if(inter){
-          ret.intersect = inter;
-          ret.horizontal = horizSide;
-          ret.adjacent = false;
-        }
+      var inter = config.intersect([oX,oY],[vX,vY],side[0],side[1]);
+      if(inter){
+        ret.intersect = inter;
+        ret.side = sides[s];
+        return ret;
       }
-      if(ret.intersect){ break; }
     }
-    if(ret.intersect){
-      return ret;
-    }else{
-      return false;
-    }
+    return false;
   }
 
   this.rotate = function(right,keyDown){
     if(keyDown){
       this.manualRotateState += right ? 1 : -1;
-      this.manualRotateState = (this.manualRotateState > 4) ? 4 : this.manualRotateState;
-      this.manualRotateState = (this.manualRotateState < -4) ? -4 : this.manualRotateState;
+      this.manualRotateState = (this.manualRotateState > 2) ? 2 : this.manualRotateState;
+      this.manualRotateState = (this.manualRotateState < -2) ? -2 : this.manualRotateState;
     }else{
       this.manualRotateState = 0;
     }

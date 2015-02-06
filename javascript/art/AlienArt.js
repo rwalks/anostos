@@ -19,29 +19,6 @@ AlienArt = function() {
       canvasBufferContext.closePath();
       canvasBufferContext.fill();
 
-      //draw backlegs
-      /*
-      canvasBufferContext.strokeStyle="rgba(0,0,100,0.8)";
-      var legOrigins = [[-lX*0.2,lY*0.1],[0,lY*0.1],[lX*0.2,lY*0.1]];
-      var legDests = [[-lX*0.2,lY*0.5],[0,lY*0.5],[lX*0.2,lY*0.5]];
-      var legAnimationOffset = 0;
-      if(obj.moving){
-        legAnimationOffset = (Math.sin(((counter+15) % obj.biteLength) / 5) * lX*0.4) - lX*0.05;
-      }
-      for(var i in legOrigins){
-        legOrigins[i][0] = legOrigins[i][0] * xFlip;
-        var srcPt = rotate(legOrigins[i][0],legOrigins[i][1],theta);
-        //animate here
-        legDests[i][0] += legAnimationOffset;
-        legDests[i][0] = legDests[i][0] * xFlip;
-        var destPt = rotate(legDests[i][0],legDests[i][1],theta);
-        canvasBufferContext.beginPath();
-        canvasBufferContext.moveTo(ox+srcPt[0],oy+srcPt[1]);
-        canvasBufferContext.lineTo(ox+destPt[0],oy+destPt[1]);
-        canvasBufferContext.stroke();
-      }
-      */
-
       var bodyGeo = [[lX*0.6,lY*0.1],[lX*0.55,lY*0.2],[0,lY*0.4],[-lX*0.6,lY*0.35],[-lX,lY*0.1],
                      [-lX*0.7,-lY*0.3],[0,-lY*0.5]];
       var headGeo = [[lX*0.4,-lY*0.3],[lX,-lY*0.1],[lX*0.7,lY*0.3],[lX*0.7,lY*0.2],[lX*0.2,lY*0.05]];
