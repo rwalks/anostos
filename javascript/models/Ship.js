@@ -21,8 +21,10 @@ Ship = function(x,y,aud) {
   this.maxSpeed = config.gridInterval * 0.99;
   var fuelUse = 0.2;
 
+  var pointTransTolerance = config.gridInterval / 5;
+  var pointRotTolerance = Math.PI / 1.5;
+
   this.contact = {};
-  this.contact.up = false; this.contact.down = false;
   this.contact.left = false; this.contact.right = false;
 
   var maxSkidDepth = config.gridInterval/5;
@@ -88,6 +90,7 @@ Ship = function(x,y,aud) {
         audio.stop("eng1");
       }
       this.setMaxVelocity();
+      this.handleLanding();
       this.terrainCollide(terrain);
 
       this.theta += this.deltaR;
@@ -113,6 +116,13 @@ Ship = function(x,y,aud) {
     this.coolDown = this.coolDown < 0 ? 0 : this.coolDown;
   }
 
+  this.handleLanding = function(){
+    if(this.contact.left){
+      this.deltaR += 0.01;
+    }else if(this.contact.right){
+      this.deltaR -= 0.01;
+    }
+  }
 
   this.setMaxVelocity = function(){
     //max velocities
@@ -137,21 +147,18 @@ Ship = function(x,y,aud) {
 
   this.terrainCollide = function(terrain){
     this.contact.left = false; this.contact.right = false;
+    this.landed = false;
     var rotForce = 0;
     for(var part in this.shipGeometry){
       var geo = this.shipGeometry[part];
       var gearType = (part == 'rightGear' || part == 'leftGear');
-      var maxForce = 1.5;
       var contactFriction = 2.0;
-      if(gearType){
-        maxForce = 5.0;
-      }
+      var crashed = [];
       for(var i in geo){
         if(geo[i]){
           //roundVelocity
           this.velocity.x = (Math.abs(this.velocity.x) < 0.0001) ? 0 : this.velocity.x;
           this.velocity.y = (Math.abs(this.velocity.y) < 0.0001) ? 0 : this.velocity.y;
-          var crashed = false;
           if(this.velocity.x || this.velocity.y){
             var rotation = this.theta;
             var points = rotate(geo[i][0],geo[i][1],rotation);
@@ -205,28 +212,44 @@ Ship = function(x,y,aud) {
                 if(collSide && this.deltaR){
                   dTheta = cancelEdgeTheta(collSide,this.deltaR,rightC,leftC,upC,downC);
                 }
+                if(dTheta > pointRotTolerance ||
+                  (Math.abs(dX) > pointTransTolerance) || (Math.abs(dY) > pointTransTolerance)){
+                    if(!gearType){
+                      this.destroyed = this.damaged ? true : this.destroyed;
+                      this.damaged = true;
+                    }
+                    crashed.push(i);
+                    this.explosions.push(new Explosion(vX,vY));
+                    audio.play('explosion2');
+                }
+
                 this.deltaR += dTheta;
-                this.velocity.x += dX;
-                this.velocity.y += dY;
+                if(dX){
+                  this.position.x += dX;
+                  this.velocity.x = this.velocity.x * 0.9;
+                }
+                if(dY){
+                  this.position.y += dY
+                  this.velocity.y = this.velocity.y * 0.9;
+                }
+                this.contact.left = leftC || this.contact.left;
+                this.contact.right = rightC || this.contact.right;
               }
             }
           }
         }
       }
-    }
-    if(this.destroyed){
-      for(var part in this.shipGeometry){
-        var geo = this.shipGeometry[part];
-        for(i in geo){
-          if(geo[i]){
-            var points = rotate(geo[i][0],geo[i][1],this.theta);
-            var tX = this.position.x + points[0] + this.velocity.x;
-            var tY = this.position.y + points[1] + this.velocity.y;
-            this.explosions.push(new Explosion(tX,tY));
-            audio.play('explosion1');
-          }
-        }
+      for(var p in crashed){
+        this.shipGeometry[part].splice(crashed[p],1);
       }
+    }
+    var majorMotion = (Math.abs(this.velocity.x) > 0.1 || Math.abs(this.velocity.y) > 0.1);
+    if((this.contact.left || this.contact.right) && (this.deltaR == 0) && !majorMotion){
+      this.landed = true;
+      console.log('landed');
+    }
+    if(crashed.length && this.destroyed){
+      this.destroyShip();
     }
   }
 
@@ -287,6 +310,21 @@ Ship = function(x,y,aud) {
     return d1 * Math.pow(penRatio,4);
   }
 
+  this.destroyShip = function(){
+    for(var part in this.shipGeometry){
+      var geo = this.shipGeometry[part];
+      for(i in geo){
+        if(geo[i]){
+          var points = rotate(geo[i][0],geo[i][1],this.theta);
+          var tX = this.position.x + points[0] + this.velocity.x;
+          var tY = this.position.y + points[1] + this.velocity.y;
+          this.explosions.push(new Explosion(tX,tY));
+          audio.play('explosion1');
+        }
+      }
+    }
+  }
+
   this.findRotationPenetration = function(tX,tY,oX,oY,vX,vY){
     var inter = this.findTerrainIntersect(tX,tY,oX,oY,vX,vY);
     if(inter){
@@ -301,13 +339,18 @@ Ship = function(x,y,aud) {
 
   this.findTranslationPenetration = function(tX,tY,oX,oY,vX,vY){
     var dX = 0; var dY = 0;
-    var interFound = false;
-    var inter = this.findTerrainIntersect(tX,tY,oX,oY,vX,vY);
-    if(inter){
-      interFound = true;
-      dX = inter.intersect[0] - vX;
-      dY = inter.intersect[1] - vY;
-      return [dX,dY,inter.side];
+
+    var otX = oX - (oX % config.gridInterval);
+    var otY = oY - (oY % config.gridInterval);
+    if(!(otX == tX && otY == tY)){
+      var interFound = false;
+      var inter = this.findTerrainIntersect(tX,tY,oX,oY,vX,vY);
+      if(inter){
+        interFound = true;
+        dX = inter.intersect[0] - vX;
+        dY = inter.intersect[1] - vY;
+        return [dX,dY,inter.side];
+      }
     }
     return false;
   }
