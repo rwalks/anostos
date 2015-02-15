@@ -8,7 +8,6 @@ Alien = function(x,y) {
   this.targetObj;
   this.path = [];
   this.onGround = false;
-  this.wasOnGround = false;
   this.groundContact = {'left':false,'right':false,'up':false,'down':false};
   this.direction = true;
 
@@ -72,7 +71,7 @@ Alien = function(x,y) {
       }
       this.applyForces();
       this.applyMaxVelocity();
-      this.terrainCollide(terrain.terrain);
+      this.terrainCollide(terrain);
       this.applyMove();
       this.checkBoundaries();
       this.checkStuck();
@@ -129,8 +128,6 @@ Alien = function(x,y) {
   this.applyForces = function(){
     //gravity
     this.velocity.y += config.gravity;
-    //friction
-    this.velocity.x = this.velocity.x * 0.9;
   }
 
   this.applyMaxVelocity = function(){
@@ -151,27 +148,26 @@ Alien = function(x,y) {
 
   this.followPath = function(terrain){
     var nextNode = this.path[this.path.length-1];
-    var accel = this.moveAccel;
 
+    if((Math.abs(this.nodeDistance(nextNode,this.position)) < config.gridInterval/6)){
+      this.path.pop();
+      nextNode = this.path[this.path.length-1];
+    }
     if(nextNode && this.validNode(nextNode,terrain)){
       //pop next node if close enough OR over it OR under it
-      if((Math.abs(this.nodeDistance(nextNode,this.position)) < config.gridInterval/6)){
-        this.path.pop();
-        nextNode = this.path[this.path.length-1];
-      }
       //left or right
-      if(nextNode && nextNode[0] > this.position.x){
-        var d = nextNode[0] - this.position.x;
-        this.velocity.x += Math.min(this.moveAccel,d);
-      }else if(nextNode && nextNode[0] < this.position.x){
-        var d = nextNode[0] - this.position.x;
-        this.velocity.x += Math.max(-this.moveAccel,d);
+      var dX = nextNode[0] - this.position.x;
+      if(nextNode[0] > this.position.x){
+        this.velocity.x += Math.min(this.moveAccel,dX);
+      }else if(nextNode[0] < this.position.x){
+        this.velocity.x += Math.max(-this.moveAccel,dX);
       }
       //top bottom
-      if(nextNode && nextNode[1] < this.position.y){
-        this.velocity.y += -this.moveAccel;
-      }else if(nextNode && nextNode[1] > this.position.y){
-        this.velocity.y += this.moveAccel;
+      var dY = nextNode[1] - this.position.y;
+      if(nextNode[1] < this.position.y){
+        this.velocity.y += Math.max(-this.moveAccel,dY);
+      }else if(nextNode[1] > this.position.y){
+        this.velocity.y += Math.min(this.moveAccel,dY);
       }
     }else{
       this.path = [];
@@ -191,60 +187,61 @@ Alien = function(x,y) {
   }
 
   this.terrainCollide = function(terrain){
-    var fX = this.position.x + this.velocity.x;
-    var fY = this.position.y + this.velocity.y;
     var collide = false;
-    this.wasOnGround = this.groundContact.down || this.groundContact.up;
     this.groundContact = resetGroundContact();
 
-    if(this.velocity.x > 0){
-      var rightX = fX + this.size.x;
-      var rightY = this.position.y + (this.size.y/2);
-      rightX = rightX - (rightX % config.gridInterval);
-      rightY = rightY - (rightY % config.gridInterval);
-      if(terrain[rightX] && terrain[rightX][rightY] && terrain[rightX][rightY].collision()){
-        this.velocity.x -= ((fX + this.size.x) - rightX);
-        collide = true;
-        this.groundContact.right = true;
+    if(this.velocity.x){
+      var posX = this.velocity.x > 0;
+      var oX = this.position.x + (posX ? this.size.x : 0 );
+      var vX = oX + this.velocity.x;
+      var tX = vX - (vX % config.gridInterval);
+      var tY = this.position.y - (this.position.y % config.gridInterval);
+      var dX = 0;
+      for(var y = tY; y < tY + this.size.y; y += config.gridInterval){
+        var til = terrain.getTile(tX,y);
+        if(til && til.collision()){
+          var oTilX = tX + (posX ? 0 : config.gridInterval);
+          var modX = vX - oTilX;
+          dX = (Math.abs(modX) > Math.abs(dX)) ? modX : dX;
+        }
       }
-    }else if(this.velocity.x < 0){
-      var leftX = fX;
-      var leftY = this.position.y + (this.size.y/2);
-      leftX = leftX - (leftX % config.gridInterval);
-      leftY = leftY - (leftY % config.gridInterval);
-      if(terrain[leftX] && terrain[leftX][leftY] && terrain[leftX][leftY].collision()){
-        this.velocity.x += ((leftX+config.gridInterval) - fX);
+      if(dX){
+        this.position.x -= dX;
         collide = true;
-        this.groundContact.left = true;
-      }
-    }
-    if(this.velocity.y > 0){
-      var botX = this.position.x + (this.size.x / 2);
-      var botY = fY + this.size.y;
-      botX = botX - (botX % config.gridInterval);
-      botY = botY - (botY % config.gridInterval);
-      if(terrain[botX] && terrain[botX][botY] && terrain[botX][botY].collision()){
-        this.velocity.y -= ((fY+this.size.y) - botY);
-        collide = true;
-        this.groundContact.down = true;
-      }
-    }else if(this.velocity.y < 0){
-      var topX = this.position.x + (this.size.x / 2);
-      var topY = fY;
-      topX = topX - (topX % config.gridInterval);
-      topY = topY - (topY % config.gridInterval);
-      if(terrain[topX] && terrain[topX][topY] && terrain[topX][topY].collision()){
-        this.velocity.y += ((topY+config.gridInterval) - fY);
-        collide = true;
-        this.groundContact.up = true;
+        if(posX){
+          this.groundContact.right = true;
+        }else{
+          this.groundContact.left = true;
+        }
       }
     }
 
-    if(collide){
-      this.onGround = true;
-    }else{
-      this.onGround = false;
+    if(this.velocity.y){
+      var posY = this.velocity.y > 0;
+      var oY = this.position.y + (posY ? this.size.y : 0 );
+      var vY = oY + this.velocity.y;
+      var tY = vY - (vY % config.gridInterval);
+      var tX = this.position.x - (this.position.x % config.gridInterval);
+      var dY = 0;
+      for(var x = tX; x < tX + this.size.x; x += config.gridInterval){
+        var til = terrain.getTile(x,tY);
+        if(til && til.collision()){
+          var oTilY = tY + (posY ? 0 : config.gridInterval);
+          var modY = vY - oTilY;
+          dY = (Math.abs(modY) > Math.abs(dY)) ? modY : dY;
+        }
+      }
+      if(dY){
+        this.position.y -= dY;
+        collide = true;
+        if(posY){
+          this.groundContact.down = true;
+        }else{
+          this.groundContact.up = true;
+        }
+      }
     }
+    this.onGround = collide;
   }
 
   var resetGroundContact = function(){
@@ -254,6 +251,19 @@ Alien = function(x,y) {
   this.wound = function(damage){
     var dam = Math.min(damage,this.currentHealth);
     this.currentHealth -= dam;
+  }
+
+  this.clearTerrain = function(terrainObj){
+    var lX = this.position.x + this.size.x;
+    var lY = this.position.y + this.size.y;
+    for(var x = this.position.x; x < lX; x += config.gridInterval){
+      for(var y = this.position.y; y < lY; y += config.gridInterval){
+        var til = terrainObj.getTile(x,y);
+        if(til){
+          terrainObj.removeTile(til);
+        }
+      }
+    }
   }
 
   this.pointWithin = function(x,y){
@@ -267,7 +277,13 @@ Alien = function(x,y) {
       var y = path[p][1];
       canvasBufferContext.beginPath();
       canvasBufferContext.lineWidth=Math.floor(config.xRatio)+"";
-      canvasBufferContext.fillStyle = "rgba(200,0,0,0.2)";
+      var fillRGB = "rgba(200,0,0,0.2)";
+      if(p == 0){
+        fillRGB = "rgba(0,200,0,0.8)";
+      }else if(p == (path.length - 1)){
+        fillRGB = "rgba(0,0,200,0.8)";
+      }
+      canvasBufferContext.fillStyle = fillRGB;
       canvasBufferContext.strokeStyle="rgba(250,0,0,0.5)";
       var originX = (x-camera.xOff)*config.xRatio;
       var originY = (y-camera.yOff)*config.yRatio;

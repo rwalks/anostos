@@ -41,30 +41,6 @@ Human = function(x,y,name) {
   b = (b >= g && b >= r) ? 250 : 0;
   this.lineColor = "rgba("+r+","+g+","+b+",1.0)";
 
-  this.salvage = function(obj){
-    if(obj.cost['rock']){
-      return false;
-    }
-    var inv = obj.inventory ? obj.inventory.inv : false;
-    if(inv){
-      for(i in inv){
-        var take = this.inventory.addItem(i,inv[i]);
-        if(take){
-          obj.inventory.removeItem(i,take);
-        }
-      }
-    }
-
-    inv = obj.cost;
-    if(inv){
-      for(i in inv){
-        this.inventory.addItem(i,Math.floor(inv[i]/2));
-      }
-    }
-    return true;
-  }
-
-
   this.update = function(terrain){
     count += 1;
     if(count > 100){ count = 0; }
@@ -74,7 +50,7 @@ Human = function(x,y,name) {
       return {'action':'die'};
     }
     if(!this.dead){
-      var room = terrain.inARoom(this.position.x,this.position.y,terrain.getRooms());
+      var room = terrain.inARoom(this.position.x,this.position.y,terrain.rooms);
       spaceSuit = !(room && room.oxygen > 0);
       if(count % 10 == 0){
         //check room + oxygen;
@@ -123,18 +99,14 @@ Human = function(x,y,name) {
           var ret;
           switch(this.action){
             case 'build':
-              if(this.inventory.purchase(this.targetObj.cost)){
-                ret = {'action':'build','obj':this.targetObj};
-                this.path = [];
-                this.targetObj = false;
-              }
+              ret = {'action':'build','obj':this.targetObj};
+              this.path = [];
+              this.targetObj = false;
               break;
             case 'delete':
               var targ = terrain.getTile(this.targetObj.position.x,this.targetObj.position.y);
               if(targ && targ == this.targetObj){
-                if(this.salvage(targ)){
-                  ret = {'action':'delete','obj':targ};
-                }
+                ret = {'action':'delete','obj':targ};
                 this.path = [];
                 this.targetObj = false;
               }
@@ -228,8 +200,6 @@ Human = function(x,y,name) {
     if(terrain[leftX] && terrain[leftX][leftY] && terrain[leftX][leftY].collision()){
       this.velocity.x += ((leftX+config.gridInterval) - fX);
     }
-
-
     if(!collide){
       this.onGround = false;
     }
@@ -238,7 +208,7 @@ Human = function(x,y,name) {
   this.draw = function(camera,canvasContext){
     var animate = Math.abs(this.velocity.x) > 0.1;
     drawHuman(this.position.x,this.position.y,canvasContext,camera,this.direction,animate,this.fillColor,this.lineColor);
-    //drawPath(this.path,canvasContext,camera);
+    drawPath(this.path,canvasContext,camera);
   }
 
   this.wound = function(damage){
@@ -257,6 +227,7 @@ Human = function(x,y,name) {
     this.lastTarget = false;
     var terMap = terrain.terrain;
     if(!obj){
+      coords = pathfinder.findValidSpace(coords,terMap,this.size);
       this.path = pathfinder.findPath(this.position.x,this.position.y,coords.x,coords.y,terMap,6,this.size,false,false);
     }else if(obj){
       //find spot adjacent to obj

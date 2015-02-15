@@ -94,7 +94,7 @@ Tiles = function() {
           canvasBufferContext.beginPath();
           canvasBufferContext.moveTo(originX,originY);
           var points = [[lX,0],[lX,lY*0.4],[lX*0.9,lY*0.2],[lX*0.8,lY*0.4],[lX*0.7,lY*0.2],[lX*0.6,lY*0.4],[lX*0.5,lY*0.2],[lX*0.4,lY*0.4],[lX*0.3,lY*0.2],[lX*0.2,lY*0.4],[lX*0.1,lY*0.2],[0,lY*0.4],[0,0]];
-          for(var p in points){
+          for(var p = 0; p < points.length; p++){
             canvasBufferContext.lineTo(originX+points[p][0],originY+points[p][1]);
           }
           canvasBufferContext.fill();

@@ -148,7 +148,8 @@ var SceneUtils = function (bg){
   }
 
   this.drawStars = function(stars,camera,clockCycle,canvasBufferContext){
-    for(var x in stars){
+    var xKeys = Object.keys(stars);
+    for(var x = 0; x < xKeys.length; x++){
       if(clockCycle % 2 == 0){
         var r = Math.floor(Math.random() * 250);
         var g = Math.floor(Math.random() * 250);
@@ -156,13 +157,16 @@ var SceneUtils = function (bg){
         var a = Math.floor(Math.random() * 0.1) + 0.9;
         var rgbaString = "rgba("+r+","+g+","+b+","+a+")";
       }
-      for(var y in stars[x]){
+      var xKey = xKeys[x];
+      var yKeys = Object.keys(stars[xKey]);
+      for(var y = 0; y < yKeys.length; y++){
+        var yKey = yKeys[y];
         if(clockCycle % 2 == 0){
-          stars[x][y][0] = rgbaString;
+          stars[xKey][yKey][0] = rgbaString;
         }
-        canvasBufferContext.fillStyle = stars[x][y][0];
+        canvasBufferContext.fillStyle = stars[xKey][yKey][0];
         var size = config.canvasWidth / 125;
-        canvasBufferContext.font = stars[x][y][1]*size +"px Courier";
+        canvasBufferContext.font = stars[xKey][yKey][1]*size +"px Courier";
         canvasBufferContext.fillText("*",x*config.xRatio,y*config.yRatio);
       }
     }
@@ -185,6 +189,10 @@ var SceneUtils = function (bg){
     canvasBufferContext.font = fontSize+"px Courier";
     canvasBufferContext.fillText("SIMULATION SUSPENDED",config.canvasWidth*0.45,config.canvasHeight*0.45);
     canvasBufferContext.fillText("ESC TO RESUME",config.canvasWidth*0.48,config.canvasHeight*0.52);
+  }
+
+  this.onScreen = function(obj,camera){
+    return obj.position.x > camera.xOff && obj.position.x < camera.xOff + config.cX;
   }
 
   var rdbaString;

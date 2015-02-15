@@ -7,10 +7,13 @@ var Config = function (){
   this.canvasMatchWindow = true;
   this.cX = 600;
   this.cY = 450;
-  this.gravity = 0.5;
   this.gridInterval = 10;
+  this.gravity = 0.5;
   this.terrainInterval = 2*this.gridInterval;
   this.adX = -10000;
+  this.lootRange = this.gridInterval * 10;
+  this.pickUpRange = this.gridInterval * 0.25;
+
   this.xRatio = 1;
   this.yRatio = 1;
   this.updateRatios = function(){

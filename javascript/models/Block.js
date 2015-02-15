@@ -71,28 +71,59 @@ Block = function(type,pos) {
   }
 }
 
-Corpse = function(pos,inventory){
+Corpse = function(pos,inventory,cost){
   this.inventory = inventory ? inventory : new Inventory();
   this.size = {'x':1*config.gridInterval,'y':1*config.gridInterval};
   this.name = ["Dessicated","Remains"];
   this.position = pos ? pos : {'x':0,'y':0};
+  this.cost = cost ? cost : {};
+  this.maxVelocity = config.gridInterval / 3;
+
+  var target = false;
 
   this.center = function(){
     return {'x':this.position.x+(this.size.x*0.5),'y':this.position.y+(this.size.y*0.5)};
   }
   this.type = "corpse";
-  this.actions = ["inventory"];
-  this.interact = 'inventory';
+  this.actions = [];
 
-  this.update = function(terrain){
-    var gravY = this.position.y + this.size.y + config.gravity;
-    var tY = gravY - (gravY % config.gridInterval);
-    var tX = this.position.x - (this.position.x % config.gridInterval);
-    if(terrain.terrain[tX] && terrain.terrain[tX][tY]){
-   //   this.position.y = tY - this.size.y;
+  this.update = function(terrain,humans){
+    if(target){
+      var d = config.objectDistance(target,this);
+      if(d < config.pickUpRange){
+        return true;
+      }
+      var fX = target.position.x - this.position.x;
+      var fY = target.position.y - this.position.y;
+      this.applyMaxVelocity(fX,fY);
     }else{
-      this.position.y = gravY;
+      //human pickup
+      for(var h in humans){
+        var d = config.objectDistance(humans[h],this);
+        if(d < config.lootRange){
+          target = humans[h];
+        }
+      }
+      //grav
+      var gravY = this.position.y + this.size.y + config.gravity;
+      var tY = gravY - (gravY % config.gridInterval);
+      var tX = this.position.x - (this.position.x % config.gridInterval);
+      if(terrain.terrain[tX] && terrain.terrain[tX][tY]){
+     //   this.position.y = tY - this.size.y;
+      }else{
+        this.position.y = gravY;
+      }
     }
+  }
+
+  this.applyMaxVelocity = function(dX,dY){
+    var veloMax = this.maxVelocity / (Math.abs(dX) + Math.abs(dY));
+    if(veloMax < 1){
+      dX = dX * veloMax;
+      dY = dY * veloMax;
+    }
+    this.position.x += dX;
+    this.position.y += dY;
   }
 
   this.draw = function(camera,canvasBufferContext,count){

@@ -246,7 +246,6 @@ Ship = function(x,y,aud) {
     var majorMotion = (Math.abs(this.velocity.x) > 0.1 || Math.abs(this.velocity.y) > 0.1);
     if((this.contact.left || this.contact.right) && (this.deltaR == 0) && !majorMotion){
       this.landed = true;
-      console.log('landed');
     }
     if(crashed.length && this.destroyed){
       this.destroyShip();

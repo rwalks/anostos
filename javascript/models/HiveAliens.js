@@ -11,8 +11,6 @@ HiveAlien = function(x,y,size,id,hive) {
   this.hive = hive ? hive : false;
   this.xFlip = false;
 
-  var originalSize = {'x':this.size.x,'y':this.size.y};
-
   this.classUpdate = function(){
     this.setRotTransform();
     this.seekTargetTheta();
@@ -20,60 +18,61 @@ HiveAlien = function(x,y,size,id,hive) {
   }
 
   this.setRotTransform = function(){
-    var tolerance = config.gridInterval / 5;
-    if(this.groundContact.left){
-      //this.theta = Math.PI * 0.5;
+    var tolerance = config.gridInterval / 10;
+    var xAboveTol = Math.abs(this.velocity.x) > tolerance;
+    var yAboveTol = Math.abs(this.velocity.y) > tolerance;
+    var pathLeft = (this.path.length && this.path[0][0] < this.position.x);
+    if(this.groundContact.down){
+      this.thetaTarget = 0;
+      if(this.path.length){
+        this.xFlip = pathLeft;
+      }else if(xAboveTol){
+        this.xFlip = this.velocity.x < 0;
+      }
+    }else if(this.groundContact.up){
+      this.thetaTarget = Math.PI;
+      if(this.path.length){
+        this.xFlip = !pathLeft;
+      }else if(xAboveTol){
+        this.xFlip = this.velocity.x > 0;
+      }
+    }else if(this.groundContact.left){
       this.thetaTarget = Math.PI * 0.5;
-      this.xFlip = (this.velocity.y > tolerance) ? false : this.xFlip;
-      this.xFlip = (this.velocity.y < -tolerance) ? true : this.xFlip;
+      if(yAboveTol){
+        this.xFlip = this.velocity.y < 0;
+      }
     }else if(this.groundContact.right){
       this.thetaTarget = Math.PI * 1.5;
-      //this.theta = Math.PI * 1.5;
-      this.xFlip = (this.velocity.y > tolerance) ? true : this.xFlip;
-      this.xFlip = (this.velocity.y < -tolerance) ? false : this.xFlip;
-    }
-    if(this.groundContact.down){
-      //this.theta = 0;
-      this.thetaTarget = 0;
-      this.xFlip = (this.velocity.x > tolerance) ? false : this.xFlip;
-      this.xFlip = (this.velocity.x < -tolerance) ? true : this.xFlip;
-    }else if(this.groundContact.up){
-      //this.theta = Math.PI;
-      this.thetaTarget = Math.PI;
-      this.xFlip = (this.velocity.x > tolerance) ? true : this.xFlip;
-      this.xFlip = (this.velocity.x < -tolerance) ? false : this.xFlip;
+      if(yAboveTol){
+        this.xFlip = this.velocity.y > 0;
+      }
     }
   }
 
   this.seekTargetTheta = function(){
-    this.theta = this.theta < 0 ? (Math.PI*2)+this.theta : this.theta % (Math.PI * 2);
-    var deltaT = this.thetaDelta;
-    var thetaDistance = Math.abs(this.thetaTarget - this.theta);
-    deltaT = Math.min(deltaT,thetaDistance);
-    //find rotation direction
-    var rotMod = this.thetaTarget > this.theta ? deltaT : -deltaT;
-    var rotDir = thetaDistance > Math.PI ? -1 : 1;
-    this.theta += (rotMod * rotDir);
+    if(this.theta != this.thetaTarget){
+      this.theta = this.theta < 0 ? (Math.PI*2)+this.theta : this.theta % (Math.PI * 2);
+      var deltaT = this.thetaDelta;
+      var thetaDistance = Math.abs(this.thetaTarget - this.theta);
+      deltaT = Math.min(deltaT,thetaDistance);
+      //find rotation direction
+      var rotMod = this.thetaTarget > this.theta ? deltaT : -deltaT;
+      var rotDir = thetaDistance > Math.PI ? -1 : 1;
+      this.theta += (rotMod * rotDir);
+    }
   }
 
   this.pathHome = function(terrain){
     if(this.hive){
-      this.path = pathfinder.findPath(this.position.x,this.position.y,this.hive.position.x,this.hive.position.y,terrain.terrain,2,this.size,true,false);
+      var hiveBase = this.hive.base();
+      this.path = pathfinder.findPath(this.position.x,this.position.y,hiveBase.x,hiveBase.y,terrain.terrain,2,this.size,true,false);
       this.targetObj = this.path.length ? this.hive : false;
       this.hive.reportPath(this.id,this.path.length);
     }
   }
 
   this.applyForces = function(){
-    //no gravity for skittering bugs
-    if(this.onGround){
-      //friction
-      this.velocity.x = this.velocity.x * 0.9;
-      this.velocity.y = this.velocity.y * 0.9;
-    }else{
-      this.velocity.y += config.gravity;
-      this.velocity.x = this.velocity.x * 0.9;
-    }
+    this.velocity.y += config.gravity;
   }
 
 
@@ -166,7 +165,8 @@ HiveWorker = function(x,y,hive,id) {
     var targCent = this.targetObj.center();
     var cent = this.center();
     var interactRange = (Math.max(this.size.x,this.size.y) / 2) + (Math.max(this.targetObj.size.x,this.targetObj.size.y) / 2) * 1.6;
-    //if path lost, recheck
+
+    this.biting = (this.counter % this.biteLength) == 0 ? false : this.biting;
 
     if(this.targetObj.type == 'spawn'){
     //home spawn
@@ -233,11 +233,8 @@ HiveWorker = function(x,y,hive,id) {
             }
           }
           var randAction = Math.random();
-          this.biting = (this.counter % this.biteLength) == 0 ? false : this.biting;
           if(blockingTiles.length){
             this.biting = true;
-            this.velocity.x = 0;
-            this.velocity.y = 0;
             for(var t in blockingTiles){
               var til = blockingTiles[t];
               if(til.cost['soil']){
@@ -303,7 +300,7 @@ HiveNest = function(x,y) {
   this.maxHealth = 100; this.currentHealth = 100;
   this.interact = '';
   this.moveAccel = config.gridInterval/2;
-  this.size = {'x':1*config.gridInterval,'y':1*config.gridInterval};
+  this.size = {'x':4*config.gridInterval,'y':6*config.gridInterval};
 //specific vars
   this.lastMetal;
   this.type = 'spawn';
@@ -313,6 +310,10 @@ HiveNest = function(x,y) {
   this.currentSpawn = 0;
   this.maxSpawn = 10;
   var nextSpawnId = 1;
+
+  this.base = function(){
+    return {'x': this.position.x,'y': (this.position.y + this.size.y - config.gridInterval) };
+  }
 
   this.findTarget = function(terrain,humans){
     //spawn
@@ -331,11 +332,8 @@ HiveNest = function(x,y) {
       var oY = this.position.y + this.size.y;
       oX = oX - (oX % config.gridInterval);
       oY = oY - (oY % config.gridInterval);
-      for(var x = oX; x < (oX + this.size.x); x += config.gridInterval){
-        if(terrain.terrain[x] && terrain.terrain[x][oY]){
-          terrain.removeTile(terrain.terrain[x][oY]);
-        }
-      }
+      this.position.y += config.gridInterval;
+      this.clearTerrain(terrain);
       //reset pathable state to avoid china syndrome
       for(var s in this.spawn){
         this.spawn[s].pathable = true;
@@ -381,18 +379,8 @@ HiveNest = function(x,y) {
     }
   }
 
-  this.draw = function(camera,canvasBufferContext){
-      var x = (this.position.x-camera.xOff)*config.xRatio;
-      var y = (this.position.y-camera.yOff)*config.yRatio;
-      var scale = 1;
-      var oX = x;
-      var oY = y;
-      var lX = this.size.x*config.xRatio*scale;
-      var lY = this.size.y*config.yRatio*scale;
-      canvasBufferContext.beginPath();
-      canvasBufferContext.fillStyle = "rgba(255,0,255,1.0)";
-      canvasBufferContext.rect(oX,oY,lX,lY);
-      canvasBufferContext.fill();
+  this.drawAlien = function(x,y,canvasBufferContext,scale){
+    alienArt.drawHiveNest(x,y,this,canvasBufferContext,scale,this.counter);
   }
 
 }

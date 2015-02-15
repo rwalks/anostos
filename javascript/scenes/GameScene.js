@@ -1,4 +1,4 @@
-var GameScene = function (strs,trn,shp,nam,bg){
+var GameScene = function (strs,trn,shp,nam,bg,als){
   var heroName = nam;
   var sceneUtils = new SceneUtils(bg);
   var stars = strs ? strs : sceneUtils.generateStars();
@@ -12,7 +12,7 @@ var GameScene = function (strs,trn,shp,nam,bg){
   var camDX = 0;
   var camDY = 0;
   var humans = [];
-  var aliens = [];
+  var aliens = als ? als : [];
   var corpses = [];
   this.count = 0;
 
@@ -36,25 +36,10 @@ var GameScene = function (strs,trn,shp,nam,bg){
    // var y = 6000;
     var name = (i == 0) ? heroName : false;
     humans.push( new Human(x,y,name) );
-
   }
   //starting resources
-  humans[0].inventory.addItem('oxygen',50);
-  humans[0].inventory.addItem('metal',150);
-  humans[1].inventory.addItem('oxygen',50);
-  humans[1].inventory.addItem('metal',20);
-  humans[2].inventory.addItem('oxygen',50);
-  humans[2].inventory.addItem('metal',20);
-
-  //add surface spawns
-  for(var sp in terrain.surfaceSpawns){
-    var spPos = terrain.surfaceSpawns[sp]
-    var nest = new HiveNest(spPos.x,spPos.y-(config.gridInterval*1));
-    nest.inventory.addItem('metal',1);
-    aliens.push(nest);
-    //break;
-  }
-  camera.focusOn(aliens[0].position);
+  this.inventory = new Inventory();
+  this.inventory.addItem('metal',250);
 
   var gui = new Gui();
 
@@ -133,13 +118,14 @@ var GameScene = function (strs,trn,shp,nam,bg){
         regen = this.handleAlienUpdate(ret,a) || regen;
       }
       for(c in corpses){
-        corpses[c].update(terrain);
-        if(corpses[c].inventory && corpses[c].inventory.empty()){
+        var collect = corpses[c].update(terrain,humans);
+        if(collect){
+          this.salvage(corpses[c]);
           corpses.splice(c,1);
         }
       }
-      terrain.update(humans);
-      gui.update(focusTarget,humans,buildTarget,this.uiMode,timeElapsed,terrain.powerStats);
+      terrain.update(humans,this.inventory);
+      gui.update(focusTarget,humans,buildTarget,this.uiMode,timeElapsed,terrain.resources);
       if(regen){
         terrain.regenBuildings();
       }
@@ -154,15 +140,14 @@ var GameScene = function (strs,trn,shp,nam,bg){
       switch(ret.action){
         case 'delete':
           var obj = ret.obj;
-          var containerType = obj.type != 'construction' && obj.type != 'block';
-          if(containerType && obj.inventory && !obj.inventory.empty()){
+          if(canSalvage(obj)){
             this.addCorpse(obj);
+            reg = terrain.removeTile(obj);
           }
-          reg = terrain.removeTile(obj);
           break;
         case 'build':
           var obj = ret.obj;
-          if(terrain.isClear(obj,humans)){
+          if(terrain.purchase(obj.cost) && terrain.isClear(obj)){
             reg = terrain.addTile(obj);
           }
           break;
@@ -200,6 +185,28 @@ var GameScene = function (strs,trn,shp,nam,bg){
       }
     }
     return reg;
+  }
+
+  this.salvage = function(obj){
+    var inv = obj.inventory ? obj.inventory.inv : false;
+    if(inv){
+      for(i in inv){
+        var take = this.inventory.addItem(i,inv[i]);
+      }
+    }
+    inv = obj.cost;
+    if(inv){
+      for(i in inv){
+        this.inventory.addItem(i,Math.floor(inv[i]/2));
+      }
+    }
+  }
+
+  var canSalvage = function(obj){
+    if(obj.cost['rock']){
+      return false;
+    }
+    return true;
   }
 
   this.click = function(clickPos,rightClick){
@@ -302,7 +309,7 @@ var GameScene = function (strs,trn,shp,nam,bg){
   this.draw = function(canvasBufferContext){
     sceneUtils.drawStars(stars, camera, clockCycle, canvasBufferContext);
     sceneUtils.drawBG(camera,clockCycle,canvasBufferContext);
-    if(onScreen(ship)){
+    if(sceneUtils.onScreen(ship,camera)){
       ship.draw(camera,canvasBufferContext);
     }
     terrain.draw(canvasBufferContext,camera,this.count);
@@ -310,7 +317,7 @@ var GameScene = function (strs,trn,shp,nam,bg){
     for(var typ in objTypes){
       var objs = objTypes[typ];
       for (o in objs){
-        if(onScreen(objs[o])){
+        if(sceneUtils.onScreen(objs[o],camera)){
           objs[o].draw(camera,canvasBufferContext);
         }
       }
@@ -357,14 +364,10 @@ var GameScene = function (strs,trn,shp,nam,bg){
   }
 
   this.addCorpse = function(corpse){
-    if(corpse.inventory){
-      var lootBox = new Corpse(corpse.position,corpse.inventory);
+    if(corpse.inventory || corpse.cost){
+      var lootBox = new Corpse(corpse.position,corpse.inventory,corpse.cost);
       corpses.push(lootBox);
     }
-  }
-
-  var onScreen = function(obj){
-  return obj.position.x > camera.xOff && obj.position.x < camera.xOff + config.cX;
   }
 
   var drawBuildCursor = function(obj,canvasBufferContext,clear){

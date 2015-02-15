@@ -10,7 +10,7 @@ ResourceNetwork = function(rms,gens,conts,nodes,aff) {
 
 
 
-  this.update = function(powerStats,phaseOne){
+  this.update = function(resourceStats,phaseOne){
     var objs = phaseOne ? this.containers : this.generators;
     for(b in objs){
       var build = objs[b];
@@ -52,7 +52,7 @@ ResourceNetwork = function(rms,gens,conts,nodes,aff) {
           for(res in build.genOutput){
             var addCount = build.genOutput[res] - build.inventory.itemCount(res);
             if(addCount > 0){
-              if(powerStats.power >= build.powerReq){
+              if(resourceStats.power.current >= build.powerReq){
                 build.inventory.addItem(res,addCount);
                 genDone = true;
               }
@@ -60,7 +60,7 @@ ResourceNetwork = function(rms,gens,conts,nodes,aff) {
           }
           if(genDone){
             //remove input cost
-            powerStats.power -= build.powerReq;
+            resourceStats.power.current -= build.powerReq;
             for(res in build.genInput){
               build.inventory.removeItem(res,build.genInput[res]);
             }

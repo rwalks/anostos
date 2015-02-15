@@ -1,6 +1,6 @@
 Inventory = function() {
   this.inv = {};
-  this.maxInventory = 200;
+  this.maxInventory = 0;
   this.allowedResources = true;
 
   this.length = function(){
@@ -75,10 +75,15 @@ Inventory = function() {
   }
 
   this.spaceRemaining = function(){
-    return this.maxInventory - this.count();
+    if(this.maxInventory == 0){
+      return 999;
+    }else{
+      return this.maxInventory - this.count();
+    }
   }
 
   this.full = function(){
+    if(this.maxInventory == 0){return false;}
     return this.count() >= this.maxInventory;
   }
 

@@ -4,6 +4,7 @@ var LandingScene = function (strs,nam,aud){
   this.stars = strs ? strs : this.sceneUtils.generateStars();
   this.terrain = this.sceneUtils.generateTerrain();
   var camera = new Camera(config.mapWidth/2,0);
+  this.aliens = [];
   var mousePos;
   var clockCycle = 0;
   var clockMax = 800;
@@ -19,6 +20,15 @@ var LandingScene = function (strs,nam,aud){
   var debugMode = false;
   var debugLock = false;
 
+
+  //add surface spawns
+  for(var sp in this.terrain.surfaceSpawns){
+    var spPos = this.terrain.surfaceSpawns[sp]
+    var nest = new HiveNest(spPos.x,spPos.y-(config.gridInterval*6));
+    nest.clearTerrain(this.terrain);
+    nest.inventory.addItem('metal',1);
+    this.aliens.push(nest);
+  }
 
   this.update = function(mPos){
     if(!gamePaused && !debugLock){
@@ -142,8 +152,8 @@ var LandingScene = function (strs,nam,aud){
     }else{
       if(this.ship.destroyed){
         this.endScene(false);
-    //  }else if(true){
-      }else if(this.ship.landed){
+      }else if(true){
+    //  }else if(this.ship.landed){
         this.endScene(true);
       }
     }
@@ -164,6 +174,17 @@ var LandingScene = function (strs,nam,aud){
     this.sceneUtils.drawBG(camera,clockCycle,canvasBufferContext);
     this.ship.draw(camera,canvasBufferContext);
     this.terrain.draw(canvasBufferContext,camera,this.count);
+
+    var objTypes = [this.aliens];
+    for(var typ in objTypes){
+      var objs = objTypes[typ];
+      for (o in objs){
+        if(this.sceneUtils.onScreen(objs[o],camera)){
+          objs[o].draw(camera,canvasBufferContext);
+        }
+      }
+    }
+
     if(gamePaused){
       this.sceneUtils.drawPause(canvasBufferContext);
     }else{
