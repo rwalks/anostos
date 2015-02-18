@@ -98,7 +98,7 @@ var SceneUtils = function (bg){
     var xRatio = config.canvasWidth / config.cX;
     var yRatio = config.canvasHeight / config.cY;
     var parallax = 4;
-    for(b in this.bgs){
+    for(var b = 0; b < this.bgs.length; b++){
       var camX = camera.xOff / parallax;
       var camY = camera.yOff;
       var bg = this.bgs[b];
@@ -161,13 +161,14 @@ var SceneUtils = function (bg){
       var yKeys = Object.keys(stars[xKey]);
       for(var y = 0; y < yKeys.length; y++){
         var yKey = yKeys[y];
+        var star = stars[xKey][yKey];
         if(clockCycle % 2 == 0){
-          stars[xKey][yKey][0] = rgbaString;
+          star[0] = rgbaString;
         }
-        canvasBufferContext.fillStyle = stars[xKey][yKey][0];
+        canvasBufferContext.fillStyle = star[0];
         var size = config.canvasWidth / 125;
-        canvasBufferContext.font = stars[xKey][yKey][1]*size +"px Courier";
-        canvasBufferContext.fillText("*",x*config.xRatio,y*config.yRatio);
+        canvasBufferContext.font = star[1]*size +"px Courier";
+        canvasBufferContext.fillText("*",xKey*config.xRatio,yKey*config.yRatio);
       }
     }
   }

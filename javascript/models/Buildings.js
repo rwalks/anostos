@@ -54,7 +54,7 @@ ChemicalBattery = function(pos){
   this.cost = {'metal':8};
   this.actions = [];
   this.resourceAffinities = ['power'];
-  this.powerCapacity = 250;
+  this.storageCapacity = 250;
 
   this.drawBlock = function(x,y,canvasBufferContext,scl){
     bArt.drawChemicalBattery(x,y,canvasBufferContext,this.size,scl);
@@ -76,6 +76,7 @@ WaterCistern = function(pos){
   this.cost = {'metal':8};
   this.inventory.allowedResources = ['water'];
   this.resourceAffinities = ['water'];
+  this.storageCapacity = 250;
 
   this.drawBlock = function(x,y,canvasBufferContext,scl){
     bArt.drawWaterCistern(x,y,canvasBufferContext,this.size,scl);
@@ -97,6 +98,7 @@ OxygenTank = function(pos){
   this.cost = {'metal':8};
   this.inventory.allowedResources = ['oxygen'];
   this.resourceAffinities = ['oxygen'];
+  this.storageCapacity = 250;
 
   this.drawBlock = function(x,y,canvasBufferContext,scl){
     bArt.drawOxygenTank(x,y,canvasBufferContext,this.size,scl);
@@ -118,6 +120,7 @@ DryStorage = function(pos){
   this.size = {'x':2*config.gridInterval,'y':2*config.gridInterval};
   this.inventory.allowedResources = ['soil','metal','ore'];
   this.resourceAffinities = ['dry'];
+  this.storageCapacity = 250;
 
   this.drawBlock = function(x,y,canvasBufferContext,scl){
     bArt.drawDryStorage(x,y,canvasBufferContext,this.size,scl);

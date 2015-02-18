@@ -365,7 +365,7 @@ Gui = function() {
   this.drawResources = function(canvasBufferContext){
     var sides = ['resourcesLeft','resourcesRight'];
     var resourceTypes = [['power','soil','ore','metal'],['bio','xeno','rad','fissile']];
-    for(var s in sides){
+    for(var s = 0; s < sides.length; s++){
       var size = this.size('resources');
       var pos = this.position(sides[s]);
       //draw background
@@ -384,7 +384,7 @@ Gui = function() {
       var yIndex = pos.y + yBuf;
       var xSize = size.x-(2*xBuf);
       var ySize = (size.y - (yBuf * 2)) / types.length;
-      for(var rT in types){
+      for(var rT = 0; rT < types.length; rT++){
         var rColor = resourceColors[types[rT]];
         canvasBufferContext.beginPath();
         canvasBufferContext.lineWidth = Math.floor(config.xRatio)+"";
@@ -748,7 +748,9 @@ Gui = function() {
       var canAfford = true;
       var costString = "";
       if(build){
-        for(var reso in build.cost){
+        var costKeys = Object.keys(build.cost);
+        for(var cInd = 0; cInd < costKeys.length; cInd ++){
+          var reso = costKeys[cInd];
           costString += reso + ": " + build.cost[reso]+" ";
           var rQuant = resourceStats[reso] ? resourceStats[reso].current : 0;
           if(rQuant < build.cost[reso]){

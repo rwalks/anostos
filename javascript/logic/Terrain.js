@@ -9,7 +9,6 @@ Terrain = function(trMap,sSpawns) {
   var airtightWalls = {};
   var containers = {};
   var generators = {};
-  var powerBuildings = {};
 
   this.resources = {
     'power':{'max':0,'current':0},
@@ -36,7 +35,7 @@ Terrain = function(trMap,sSpawns) {
       }
       if(tile.type == 'container'){
         regen = true;
-        delete containers[tile.position.x][tile.position.y];
+        this.deleteContainer(tile);
       }else if(tile.type == 'generator'){
         regen = true;
         delete generators[tile.position.x][tile.position.y];
@@ -50,19 +49,14 @@ Terrain = function(trMap,sSpawns) {
         airtightWalls[tile.position.x] = airtightWalls[tile.position.x] ? airtightWalls[tile.position.x] : {};
         airtightWalls[tile.position.x][tile.position.y] = true;
       }
-      var powerType = tile.resourceAffinities && tile.resourceAffinities[0] == 'power';
+
       if(tile.type == 'door'){
         regen = true;
         doors[tile.position.x] = doors[tile.position.x] ? doors[tile.position.x] : {};
         doors[tile.position.x][tile.position.y] = true;
-      }else if(powerType){
-        regen = true;
-        powerBuildings[tile.position.x] = powerBuildings[tile.position.x] ? powerBuildings[tile.position.x] : {};
-        powerBuildings[tile.position.x][tile.position.y] = true;
       }else if(tile.type == 'container'){
         regen = true;
-        containers[tile.position.x] = containers[tile.position.x] ? containers[tile.position.x] : {};
-        containers[tile.position.x][tile.position.y] = true;
+        this.addContainer(tile);
       }else if(tile.type == 'generator'){
         regen = true;
         generators[tile.position.x] = generators[tile.position.x] ? generators[tile.position.x] : {};
@@ -84,6 +78,23 @@ Terrain = function(trMap,sSpawns) {
 
   this.removeTile = function(tile){
     return this.addTile(tile,true);
+  }
+
+  this.addContainer = function(obj,remove){
+    for(var rI = 0; rI < obj.resourceAffinities.length; rI++){
+      var resource = obj.resourceAffinities[rI];
+      this.resources[resource].max += ((remove ? 1 : -1) * obj.storageCapacity);
+    }
+    if(remove){
+      delete containers[obj.position.x][obj.position.y];
+    }else{
+      containers[obj.position.x] = containers[obj.position.x] ? containers[obj.position.x] : {};
+      containers[obj.position.x][obj.position.y] = true;
+    }
+  }
+
+  this.removeContainer = function(obj){
+    this.addContainer(obj,true);
   }
 
   this.update = function(humans,resourceInv){
@@ -158,7 +169,6 @@ Terrain = function(trMap,sSpawns) {
   }
 
   this.updateBuildings = function(){
-    this.updatePower();
     for(r in resourceNetworks){
       resourceNetworks[r].update(this.resources,true);
     }
@@ -177,37 +187,6 @@ Terrain = function(trMap,sSpawns) {
         this.resources[res].current += invCount;
         inv.removeItem(res,invCount);
       }
-    }
-  }
-
-  this.updatePower = function(){
-    var capacity = 0;
-    var yield = 0;
-    for(var x in powerBuildings){
-      for(var y in powerBuildings[x]){
-        var pBuild = this.terrain[x][y];
-        if(pBuild){
-          switch(pBuild.type){
-            case "container":
-              capacity += pBuild.powerCapacity;
-              break;
-            case "generator":
-              if(pBuild.solar){
-                if(checkSolar(pBuild,this.terrain)){
-                  yield += pBuild.powerYield;
-                }
-              }else{
-                yield += pBuild.powerYield;
-              }
-              break;
-          }
-        }
-      }
-    }
-    this.resources.power.current += yield;
-    this.resources.power.max = capacity;
-    if(this.resources.power.current >= capacity){
-      this.resources.power.current = capacity;
     }
   }
 
@@ -349,7 +328,7 @@ Terrain = function(trMap,sSpawns) {
           if(rm.length > 0){
             if(uniqueRoom(rm,newRooms)){
               var newRoom = new Room(rm);
-              var tRoom = tileInRoom(this.terrain[x][y],rooms);
+              var tRoom = tileInRoom(this.terrain[x][y],this.rooms);
               if(tRoom){
                 newRoom.oxygen = tRoom.oxygen;
               }

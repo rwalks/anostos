@@ -98,10 +98,14 @@ Corpse = function(pos,inventory,cost){
       this.applyMaxVelocity(fX,fY);
     }else{
       //human pickup
+      var minD = 999;
       for(var h in humans){
         var d = config.objectDistance(humans[h],this);
         if(d < config.lootRange){
-          target = humans[h];
+          if(d < minD){
+            minD = d;
+            target = humans[h];
+          }
         }
       }
       //grav

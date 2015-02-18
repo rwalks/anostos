@@ -109,15 +109,15 @@ var GameScene = function (strs,trn,shp,nam,bg,als){
       }
       camera.update(mousePos);
       var regen = false;
-      for (h in humans){
+      for (var h = 0; h < humans.length; h++){
         var ret = humans[h].update(terrain);
         regen = this.handleHumanUpdate(ret,h) || regen;
       }
-      for (a in aliens){
+      for (var a = 0; a < aliens.length; a++){
         var ret = aliens[a].update(terrain,humans);
         regen = this.handleAlienUpdate(ret,a) || regen;
       }
-      for(c in corpses){
+      for(var c = 0; c < corpses.length; c++){
         var collect = corpses[c].update(terrain,humans);
         if(collect){
           this.salvage(corpses[c]);
@@ -314,9 +314,9 @@ var GameScene = function (strs,trn,shp,nam,bg,als){
     }
     terrain.draw(canvasBufferContext,camera,this.count);
     var objTypes = [humans,aliens,corpses];
-    for(var typ in objTypes){
+    for(var typ = 0; typ < objTypes.length; typ ++){
       var objs = objTypes[typ];
-      for (o in objs){
+      for (var o = 0; o < objs.length; o++){
         if(sceneUtils.onScreen(objs[o],camera)){
           objs[o].draw(camera,canvasBufferContext);
         }
