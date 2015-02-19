@@ -5,11 +5,18 @@ Room = function(points) {
 
   this.polygon;
 
-  this.oxygen = 0;
+  this.currentOxygen = 0;
   this.maxOxygen = 20;
 
-  this.update = function(){
+  this.containers = [];
 
+  this.update = function(){
+    for(var i=0;i<this.containers.length;i++){
+      var container = this.containers[i];
+      var oxRequired = this.maxOxygen - this.currentOxygen;
+      this.currentOxygen += container.removeOxygen(oxRequired);
+    }
+    console.log(this.currentOxygen);
   }
 
   this.pointWithin = function(x,y,points){
@@ -25,10 +32,17 @@ Room = function(points) {
     return inside;
   }
 
+  this.addOxygen = function(amount){
+    var defecit = this.maxOxygen - this.currentOxygen;
+    var drain = Math.min(amount,defecit);
+    this.currentOxygen += drain;
+    return drain;
+  }
+
   this.draw = function(camera,canvasBufferContext){
-    var dr = 200 - Math.floor((this.oxygen / this.maxOxygen) * 190);
+    var dr = Math.floor((this.currentOxygen / this.maxOxygen) * 200);
     canvasBufferContext.beginPath();
-    canvasBufferContext.fillStyle = "rgba("+dr+",10,10,0.2)";
+    canvasBufferContext.fillStyle = "rgba(200,"+dr+","+dr+",0.2)";
 
     var x = (this.polygon[0][0] - camera.xOff) * config.xRatio;
     var y = (this.polygon[0][1] - camera.yOff) * config.yRatio;

@@ -51,7 +51,7 @@ Human = function(x,y,name) {
     }
     if(!this.dead){
       var room = terrain.inARoom(this.position.x,this.position.y,terrain.rooms);
-      spaceSuit = !(room && room.oxygen > 0);
+      spaceSuit = !(room && room.currentOxygen > 0);
       if(count % 10 == 0){
         //check room + oxygen;
         if(this.currentOxygen > 0){
@@ -63,9 +63,9 @@ Human = function(x,y,name) {
         }
         if(room){
           var oxygenReq = Math.min(this.maxOxygen - this.currentOxygen, oxygenConsumptionRate*6);
-          if(room.oxygen > 0){
-            var oxygenTransfer = Math.min(oxygenReq,room.oxygen);
-            room.oxygen -= oxygenTransfer;
+          if(room.currentOxygen > 0){
+            var oxygenTransfer = Math.min(oxygenReq,room.currentOxygen);
+            room.currentOxygen -= oxygenTransfer;
             this.currentOxygen += oxygenTransfer;
           }
         }

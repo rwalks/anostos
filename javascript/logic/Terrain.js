@@ -3,7 +3,6 @@ Terrain = function(trMap,sSpawns) {
   this.terrain = trMap ? trMap : {};
 //construct holders
   this.rooms = [];
-  var resourceNetworks = [];
 //tile reference holders
   var doors = {};
   var airtightWalls = {};
@@ -26,43 +25,51 @@ Terrain = function(trMap,sSpawns) {
   var roomFinder = new Roomfinder();
   this.surfaceSpawns = sSpawns ? sSpawns : [];
 
-  this.addTile = function(tile,remove){
+  this.addTile = function(tile){
     var regen = false;
-    if(remove){
-      if(tile.airtight){
-        regen = true;
-        delete airtightWalls[tile.position.x][tile.position.y];
-      }
-      if(tile.type == 'container'){
-        regen = true;
-        this.deleteContainer(tile);
-      }else if(tile.type == 'generator'){
-        regen = true;
-        delete generators[tile.position.x][tile.position.y];
-      }else if(tile.type == 'door'){
-        regen = true;
-        delete doors[tile.position.x][tile.position.y];
-      }
-    }else{
-      if(tile.airtight){
-        regen = true;
-        airtightWalls[tile.position.x] = airtightWalls[tile.position.x] ? airtightWalls[tile.position.x] : {};
-        airtightWalls[tile.position.x][tile.position.y] = true;
-      }
-
-      if(tile.type == 'door'){
-        regen = true;
-        doors[tile.position.x] = doors[tile.position.x] ? doors[tile.position.x] : {};
-        doors[tile.position.x][tile.position.y] = true;
-      }else if(tile.type == 'container'){
-        regen = true;
-        this.addContainer(tile);
-      }else if(tile.type == 'generator'){
-        regen = true;
-        generators[tile.position.x] = generators[tile.position.x] ? generators[tile.position.x] : {};
-        generators[tile.position.x][tile.position.y] = true;
-      }
+    if(tile.airtight){
+      regen = true;
+      airtightWalls[tile.position.x] = airtightWalls[tile.position.x] ? airtightWalls[tile.position.x] : {};
+      airtightWalls[tile.position.x][tile.position.y] = true;
     }
+
+    if(tile.type == 'door'){
+      regen = true;
+      doors[tile.position.x] = doors[tile.position.x] ? doors[tile.position.x] : {};
+      doors[tile.position.x][tile.position.y] = true;
+    }else if(tile.type == 'container'){
+      regen = true;
+      this.addContainer(tile);
+    }else if(tile.type == 'generator'){
+      regen = true;
+      generators[tile.position.x] = generators[tile.position.x] ? generators[tile.position.x] : {};
+      generators[tile.position.x][tile.position.y] = true;
+    }
+    this.updateTileTerrain(tile,false);
+    return regen;
+  }
+
+  this.removeTile = function(tile){
+    var regen = false;
+    if(tile.airtight){
+      regen = true;
+      delete airtightWalls[tile.position.x][tile.position.y];
+    }
+    if(tile.type == 'container'){
+      regen = true;
+      this.removeContainer(tile);
+    }else if(tile.type == 'generator'){
+      regen = true;
+      delete generators[tile.position.x][tile.position.y];
+    }else if(tile.type == 'door'){
+      regen = true;
+      delete doors[tile.position.x][tile.position.y];
+    }
+    this.updateTileTerrain(tile,true);
+    return regen;
+  }
+
+  this.updateTileTerrain = function(tile,remove){
     for(x = tile.position.x; x < tile.position.x+(tile.size.x); x += config.gridInterval){
       for(y = tile.position.y; y < tile.position.y+(tile.size.y); y += config.gridInterval){
         if(remove){
@@ -73,17 +80,21 @@ Terrain = function(trMap,sSpawns) {
         }
       }
     }
-    return regen;
-  }
-
-  this.removeTile = function(tile){
-    return this.addTile(tile,true);
   }
 
   this.addContainer = function(obj,remove){
-    for(var rI = 0; rI < obj.resourceAffinities.length; rI++){
-      var resource = obj.resourceAffinities[rI];
-      this.resources[resource].max += ((remove ? 1 : -1) * obj.storageCapacity);
+    var resource = obj.resourceAffinity;
+    switch(resource){
+      case 'power':
+        this.resources.power.max += ((remove ? -1 : 1) * obj.storageCapacity);
+        break;
+      case 'oxygen':
+        break;
+      case 'dry':
+        this.resources.soil.max += ((remove ? -1 : 1) * obj.storageCapacity);
+        this.resources.metal.max += ((remove ? -1 : 1) * obj.storageCapacity);
+        this.resources.ore.max += ((remove ? -1 : 1) * obj.storageCapacity);
+        break;
     }
     if(remove){
       delete containers[obj.position.x][obj.position.y];
@@ -103,7 +114,7 @@ Terrain = function(trMap,sSpawns) {
         this.terrain[x][y].update(humans);
       }
     }
-    this.updateResources(resourceInv);
+    this.transferResources(resourceInv);
     if(updateCount >= resourceUpdateInterval){
       this.updateBuildings();
       updateCount = 0;
@@ -169,18 +180,22 @@ Terrain = function(trMap,sSpawns) {
   }
 
   this.updateBuildings = function(){
-    for(r in resourceNetworks){
-      resourceNetworks[r].update(this.resources,true);
+    var genXKeys = Object.keys(generators);
+    for(var xi = 0; xi < genXKeys.length; xi++){
+      var x = genXKeys[xi];
+      var genYKeys = Object.keys(generators[x]);
+      for(var yi = 0; yi < genYKeys.length; yi++){
+        var y = genYKeys[yi];
+        var gen = this.terrain[x][y];
+        gen.updateGenerator(this.resources);
+      }
     }
-    for(r in resourceNetworks){
-      resourceNetworks[r].update(this.resources,false);
-    }
-    for(r in this.rooms){
+    for(var r = 0; r < this.rooms.length; r++){
       this.rooms[r].update();
     }
   }
 
-  this.updateResources = function(inv){
+  this.transferResources = function(inv){
     for(var res in this.resources){
       var invCount = inv.itemCount(res);
       if(invCount){
@@ -199,26 +214,37 @@ Terrain = function(trMap,sSpawns) {
     return true;
   }
 
-  this.updateResourceNetwork = function(obj,markedContainers){
+  this.buildGeneratorNetwork = function(obj,markedObjs){
     var openNodes = {};
     var closedNodes = {};
-    var cRooms = [];
-    var cGens = [];
-    var cContainers = [];
+    var netGens = [];
+    var netResources = {'power':true};
+    var oxRooms = [];
+    var oxContainers = [];
     var current = obj;
-    var oxygenType = matchingAffinity(obj,{'resourceAffinities':["oxygen"]});
     addNode(current,openNodes);
     while(current){
       var x = current.position.x;
       var y = current.position.y;
 
+      var oxType = current.resourceAffinity == 'oxygen';
+      addNode(current,markedObjs);
+
       switch(current.type){
         case 'generator':
-          cGens.push(current);
+          netGens.push(current);
           break;
         case 'container':
-          cContainers.push(current);
-          addNode(current,markedContainers);
+          var resAf = current.resourceAffinity;
+          if(resAf == 'oxygen'){
+            oxContainers.push(current);
+          }else if(resAf == 'dry'){
+            netResources.soil = true;
+            netResources.ore = true;
+            netResources.metal = true;
+          }else{
+            netResources[resAf] = true;
+          }
           break;
       }
       //search top and bottom
@@ -230,13 +256,13 @@ Terrain = function(trMap,sSpawns) {
           for(var vy = y+l[3]; vy < y + current.size.y+l[4]; vy += config.gridInterval + l[5]){
             var node = this.terrain[vx][vy];
             if(node){
-              if(oxygenType){
+              if(oxType){
                 var r = tileInRoom(node,this.rooms);
                 if(r){
-                  cRooms.push(r);
+                  oxRooms.push(r);
                 }
               }
-              if(resourceType(node) && matchingAffinity(obj,node)){
+              if(resourceType(node)){
                 if(!nodeExists(node,closedNodes) && !nodeExists(node,openNodes)){
                   addNode(node,openNodes);
                 }
@@ -247,39 +273,36 @@ Terrain = function(trMap,sSpawns) {
       }
       addNode(current,closedNodes);
       delete openNodes[current.position.x][current.position.y];
-      var current = getNextNode(openNodes);
+      var current = getNextNode(openNodes,markedObjs);
     }
-    //handle lists
-    if(cContainers.length > 0 && (cRooms.length > 0 || cGens.length > 0)){
+    //updateRooms
+    var uniqueRooms = [];
+    if(oxRooms.length){
       var uniqueIds = {};
-      var uniqueRooms = [];
-      for(r in cRooms){
-        if(!uniqueIds[cRooms[r].id]){
-          uniqueRooms.push(cRooms[r]);
-          uniqueIds[cRooms[r].id] = true;
+      for(var r = 0; r < oxRooms.length; r++){
+        if(!uniqueIds[oxRooms[r].id]){
+          oxRooms[r].containers = oxContainers;
+          uniqueRooms.push(oxRooms[r]);
+          uniqueIds[oxRooms[r].id] = true;
         }
       }
-      return new ResourceNetwork(cRooms,cGens,cContainers,closedNodes,obj.resourceAffinities);
     }
-    return false;
+    //update gens
+    for(var gi = 0; gi < netGens.length; gi++){
+      var gen = netGens[gi];
+      gen.rooms = uniqueRooms;
+      gen.containers = oxContainers;
+      gen.resourceConnections = netResources;
+    }
   }
 
-  var getNextNode = function(nodes){
+  var getNextNode = function(nodes,markedObjs){
     for(var x in nodes){
      for(var y in nodes[x]){
-       return nodes[x][y];
+       if(!nodeExists(nodes[x][y],markedObjs)){
+         return nodes[x][y];
+       }
      }
-    }
-    return false;
-  }
-
-  var matchingAffinity = function(nodeA,nodeB){
-    for(a in nodeA.resourceAffinities){
-      for(b in nodeB.resourceAffinities){
-        if(nodeA.resourceAffinities[a] == nodeB.resourceAffinities[b]){
-          return true;
-        }
-      }
     }
     return false;
   }
@@ -305,17 +328,13 @@ Terrain = function(trMap,sSpawns) {
   this.regenResourceNetworks = function(){
     var rNets = [];
     var markedNodes = {};
-    for(x in containers){
-      for(y in containers[x]){
+    for(x in generators){
+      for(y in generators[x]){
         if(!(markedNodes[x] && markedNodes[x][y])){
-          var ret = this.updateResourceNetwork(this.terrain[x][y],markedNodes);
-          if(ret){
-            rNets.push(ret);
-          }
+          this.buildGeneratorNetwork(this.terrain[x][y],markedNodes);
         }
       }
     }
-    resourceNetworks = rNets;
   }
 
   this.regenRooms = function(){
@@ -331,6 +350,7 @@ Terrain = function(trMap,sSpawns) {
               var tRoom = tileInRoom(this.terrain[x][y],this.rooms);
               if(tRoom){
                 newRoom.oxygen = tRoom.oxygen;
+                newRoom.containers = tRoom.containers;
               }
               newRoom.id = rId;
               newRooms.push(newRoom);
