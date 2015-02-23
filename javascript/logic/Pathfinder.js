@@ -33,35 +33,41 @@ Pathfinder = function() {
   }
 
   var estimateDistance = function(x,y,dX,dY){
-   var e = config.distance([x,y],[dX,dY]) / config.gridInterval;
+   var e = utils.distance([x,y],[dX,dY]) / config.gridInterval;
     return e;
   }
 
-  this.validSpace = function(nX,nY,grid,size,climber,digger){
-    var valid = true;
-    var grip = false;
+  this.validSpace = function(nX,nY,terrain,size,climber,digger){
+    var valid = {};
+    var airborne = true;
+    //for climbers check adjacent tiles for grip
     var iX = climber ? nX - config.gridInterval : nX;
     var iY = climber ? nY - config.gridInterval : nY;
     var mX = climber ? nX + size.x + config.gridInterval : nX + size.x;
-    var mY = climber ? nY + size.y + config.gridInterval : nY + size.y;
+    //check floor for all to see if airborne
+    var mY = nY + size.y + config.gridInterval;
     for(var x=iX;x<mX;x+=config.gridInterval){
       for(var y=iY;y<mY;y+=config.gridInterval){
-        if(x < nX+size.x && x >= nX && y < nY+size.y && y >= nY){
-          if(grid[x] && grid[x][y]){
-            var invalidDig = grid[x][y].cost['rock'];
-            if((!digger && !grid[x][y].pathable) || (digger && invalidDig)){
+        var til = terrain.getTile(x,y);
+        if(til){
+          //til internal:
+          if(x < nX+size.x && x >= nX && y < nY+size.y && y >= nY){
+            var invalidDig = til.cost['rock'];
+            if((!digger && !til.pathable) || (digger && invalidDig)){
               valid = false;
               break;
             }
+          //til external:
+          }else{
+            airborne = airborne && til.pathable;
           }
-        }else if(climber && grid[x] && grid[x][y]){
-          grip = grip || !grid[x][y].pathable;
         }
       }
       if(!valid){break;}
     }
-    if(climber && !grip){
-      valid = false;
+    if(valid){
+      valid.airborne = airborne;
+   //   valid = (climber && airborne) ? false : valid;
     }
     return valid;
   }
@@ -77,54 +83,89 @@ Pathfinder = function() {
     return coords;
   }
 
-  this.findPath = function(sX,sY,destX,destY,terrain,jump,siz,climber,digger){
-    sX = sX - (sX % config.gridInterval);
-    sY = sY - (sY % config.gridInterval);
-    var maxJump = jump ? jump : 6;
+  this.findObjPath = function(obj,terrain,human){
+    //find spot adjacent to obj
+    var oX = utils.roundToGrid(obj.position.x);
+    var oY = utils.roundToGrid(obj.position.y);
+    var minX = oX - config.gridInterval;
+    var maxX = oX + obj.size.x;
+    var minY = oY - config.gridInterval;
+    var maxY = oY + obj.size.y;
+    var possibleSpaces = [[oX,oY],[oX,minY],[oX,maxY],[minX,oY],[maxX,oY]];
+    var path = false;
+    for(var ps = 0; ps < possibleSpaces.length; ps++){
+      var tX = possibleSpaces[ps][0];
+      var tY = possibleSpaces[ps][1];
+      if(this.validSpace(tX,tY,terrain,human.size,false,false)){
+        var newPath = this.findPath(tX,tY,terrain,human);
+        if(!path || newPath.length < path.length){
+          path = newPath;
+        }
+      }
+    }
+    return path;
+  }
+
+  this.findPath = function(destX,destY,terrain,obj){
+    sX = utils.roundToGrid(obj.position.x);
+    sY = utils.roundToGrid(obj.position.y);
+    //if not climbing collapse to ground to avoid air jumping
+
+    var maxHoriz = obj.jump.x;
+    var maxVert = obj.jump.y;
     var openNodes = {};
     var closedNodes = {};
-    var curNode = new Node(sX,sY);
-    var dX = destX - (destX % config.gridInterval);
-    var dY = destY - (destY % config.gridInterval);
-    var size = siz ? siz : {'x':1*config.gridInterval,'y':2*config.gridInterval};
-    size = climber ? minimumSize(size) : size;
-    //search above destination for valid space
+    var dX = utils.roundToGrid(destX);
+    var dY = utils.roundToGrid(destY);
+    var size = obj.size;
+    size = obj.climber ? minimumSize(size) : size;
+    var climber = obj.climber;
+    var digger = obj.digger;
     var search = true;
     var validPath = false;
+    var possibleSpaces = [[0,1],[0,-1],[1,0],[-1,0]];
+
+    sY = climber ? sY : this.collapseY(sX,sY,terrain,size,climber,digger);
+    var curNode = new Node(sX,sY);
     while(search){
-      //check + add above to open if height below maxJump
-      var nY = curNode.y-config.gridInterval;
-      var validHeight = climber ? true : (curNode.height < maxJump);
-      if(validHeight && this.validSpace(curNode.x,nY,terrain,size,climber,digger)){
-        var dEstimate = estimateDistance(curNode.x,nY,dX,dY);
-        var next = new Node(curNode.x,nY,curNode,dEstimate);
-        considerNode(next,openNodes,closedNodes);
-      }
-      //check below
-      var nY = curNode.y+size.y;
-      if(this.validSpace(curNode.x,nY,terrain,size,climber,digger)){
-        var dEstimate = estimateDistance(curNode.x,nY,dX,dY);
-        var next = new Node(curNode.x,nY,curNode,dEstimate);
-        considerNode(next,openNodes,closedNodes);
-      }
-      //check left + right, collapse to terrain, add to open
-      for(var i = 1; i >= -1; i -= 2){
-        var offset = i * size.x;
-        var nX = curNode.x + offset;
-        if(this.validSpace(nX,curNode.y,terrain,size,climber,digger)){
-          var dEstimate = estimateDistance(nX,curNode.y,dX,dY);
-          var next = new Node(nX,curNode.y,curNode,dEstimate);
+      for(var ps = 0; ps < possibleSpaces.length; ps++){
+        var tX = curNode.x + (possibleSpaces[ps][0] * config.gridInterval);
+        var tY = curNode.y + (possibleSpaces[ps][1] * config.gridInterval);
+        var spaceInfo = this.validSpace(tX,tY,terrain,size,climber,digger);
+        if(spaceInfo){
+          var hJump = curNode.horizJump;
+          var vJump = curNode.vertJump;
+          if(spaceInfo.airborne){
+            //handle jumping
+            if(tX != curNode.x){
+              hJump += 1;
+            }
+            if(tY < curNode.y){
+              vJump += 1;
+            }
+            var validJump = (hJump <= maxHoriz && vJump <= maxVert);
+            if(!validJump){
+              tY = this.collapseY(tX,tY,terrain,size,climber,digger);
+              hJump = 0;
+              vJump = 0;
+            }
+          }else{
+            //grounded - reset jump
+            hJump = 0;
+            vJump = 0;
+          }
+          var dEstimate = estimateDistance(tX,tY,dX,dY);
+          var next = new Node(tX,tY,hJump,vJump,curNode,dEstimate);
           considerNode(next,openNodes,closedNodes);
         }
       }
       //stop searching if no open nodes or digger with too many open nodes
-      var timeoutSearch = (digger && Object.keys(closedNodes).length > 25) || (climber && Object.keys(closedNodes).length > 100);
+      var timeoutSearch = (digger && Object.keys(closedNodes).length > 25) || (Object.keys(closedNodes).length > 200);
       curNode = findCheapestNode(openNodes);
       if(curNode && !timeoutSearch){
         delete openNodes[curNode.x][curNode.y];
         if(Object.keys(openNodes[curNode.x]).length < 1){delete openNodes[curNode.x];}
         addNode(curNode,closedNodes);
-
         if(curNode.x == dX && curNode.y == dY){
           validPath = true;
           search = false;
@@ -136,10 +177,13 @@ Pathfinder = function() {
     return validPath ? buildPath(curNode) : [];
   }
 
-  this.collapseY = function(x,y,map,size,climber,digger){
-    for(var cY = y+size.y;cY < config.mapHeight;cY += size.y){
-      if(!this.validSpace(x,cY,map,size,climber,digger)){
-        return cY - size.y;
+  this.collapseY = function(x,y,terrain,size,climber,digger){
+    for(var cY = y+config.gridInterval;cY < config.mapHeight;cY += config.gridInterval){
+      var spaceInfo = this.validSpace(x,cY,terrain,size,climber,digger);
+      if(!spaceInfo){
+        return cY-config.gridInterval;
+      }else if(!spaceInfo.airborne){
+        return cY;
       }
     }
   }
@@ -173,11 +217,12 @@ Pathfinder = function() {
 }
 
 
-Node = function(pX,pY,pNode,estim){
+Node = function(pX,pY,hJump,vJump,pNode,estim){
   this.x = pX;
   this.y = pY;
   this.parentNode = pNode;
-  this.height = pNode ? ((pY < pNode.y) ? pNode.height + 1 : 0) : 0;
+  this.horizJump = hJump ? hJump : 0;
+  this.vertJump = vJump ? vJump : 0;
   this.cost = this.parentNode ? (this.parentNode.cost + 1) : 1;
   this.estimate = estim ? estim : 0;
   this.costEst = this.estimate + this.cost;

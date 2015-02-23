@@ -1,9 +1,6 @@
 Building = function(pos){
   this.size = {'x':1*config.gridInterval,'y':1*config.gridInterval};
-  this.interact = false;
-  this.inventory = new Inventory();
   this.cost = {};
-  this.actions = [];
   this.resourceAffinity;
   this.name = ["Unknown","Building"];
   this.position = pos ? pos : {'x':0,'y':0};
@@ -97,6 +94,25 @@ Building = function(pos){
     }
   }
 
+  this.relatedAffinity = function(affinity){
+    var ret = false;
+    if(affinity == this.resourceAffinity){
+      ret = true;
+    }else if(this.type == 'generator'){
+      var resTypes = [affinity];
+      if(affinity == 'dry'){
+        resTypes = ['soil','ore','metal'];
+      }
+      for(var di = 0; di < resTypes.length; di++){
+        var res = resTypes[di];
+        if(this.genInput[res] || this.genOutput[res]){
+          ret = true;
+        }
+      }
+    }
+    return ret;
+  }
+
   this.addOxygen = function(amount){
     var defecit = this.storageCapacity - this.currentOxygen;
     var drain = Math.min(amount,defecit);
@@ -119,7 +135,6 @@ ChemicalBattery = function(pos){
   this.name = ['Chemical','Battery'];
   this.size = {'x':1*config.gridInterval,'y':2*config.gridInterval};
   this.cost = {'metal':8};
-  this.actions = [];
   this.resourceAffinity = 'power';
   this.storageCapacity = 250;
 
@@ -139,9 +154,7 @@ WaterCistern = function(pos){
 
   this.name = ['Water','Cistern'];
   this.size = {'x':2*config.gridInterval,'y':2*config.gridInterval};
-  this.interact = 'inventory';
   this.cost = {'metal':8};
-  this.inventory.allowedResources = ['water'];
   this.resourceAffinity = 'water';
   this.storageCapacity = 250;
 
@@ -161,9 +174,7 @@ OxygenTank = function(pos){
 
   this.name = ['Oxygen','Tank'];
   this.size = {'x':1*config.gridInterval,'y':2*config.gridInterval};
-  this.interact = 'inventory';
   this.cost = {'metal':8};
-  this.inventory.allowedResources = ['oxygen'];
   this.resourceAffinity = 'oxygen';
   this.storageCapacity = 250;
 
@@ -182,10 +193,8 @@ DryStorage = function(pos){
   this.type = "container";
 
   this.name = ['Dry','Storage'];
-  this.interact = 'inventory';
   this.cost = {'metal':8};
   this.size = {'x':2*config.gridInterval,'y':2*config.gridInterval};
-  this.inventory.allowedResources = ['soil','metal','ore'];
   this.resourceAffinity = 'dry';
   this.storageCapacity = 250;
 
@@ -261,7 +270,6 @@ SoilEvaporator = function(pos){
   this.size = {'x':4*config.gridInterval,'y':2*config.gridInterval};
   this.cost = {'metal':16};
   this.resourceAffinity = 'oxygen';
-  this.inventory.allowedResources = ['oxygen','soil'];
   this.genInput = {'soil':10,'power':5};
   this.genOutput = {'oxygen':1};
 
@@ -284,9 +292,8 @@ OxygenCondenser = function(pos){
   this.size = {'x':2*config.gridInterval,'y':5*config.gridInterval};
   this.cost = {'metal':50};
   this.resourceAffinity = 'oxygen';
-  this.inventory.allowedResources = ['water','oxygen'];
-  this.genInput = {'power':5};
-  this.genOutput = {'oxygen':0.1};
+  this.genInput = {'power':3};
+  this.genOutput = {'oxygen':0.25};
 
 
   this.drawBlock = function(x,y,canvasBufferContext,scl){
@@ -307,7 +314,6 @@ SmeltingChamber = function(pos){
   this.cost = {'metal':16};
   this.size = {'x':2*config.gridInterval,'y':2*config.gridInterval};
   this.resourceAffinity = 'dry';
-  this.inventory.allowedResources = ['oxygen','ore','metal'];
   this.genInput = {'ore':10,'power':1};
   this.genOutput = {'metal':5};
 

@@ -16,7 +16,6 @@ Room = function(points) {
       var oxRequired = this.maxOxygen - this.currentOxygen;
       this.currentOxygen += container.removeOxygen(oxRequired);
     }
-    console.log(this.currentOxygen);
   }
 
   this.pointWithin = function(x,y,points){

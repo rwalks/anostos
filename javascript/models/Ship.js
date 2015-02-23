@@ -135,8 +135,8 @@ Ship = function(x,y,aud) {
   }
 
   var findAltitude = function(pos,terrain){
-    var x = pos.x - (pos.x % config.gridInterval);
-    var y = pos.y - (pos.y % config.gridInterval);
+    var x = utils.roundToGrid(pos.x);
+    var y = utils.roundToGrid(pos.y);
     for(yT = y; yT < config.mapHeight; yT+=config.gridInterval){
       if(terrain.getTile(x,yT)){
         return Math.floor(yT-pos.y);
@@ -172,8 +172,8 @@ Ship = function(x,y,aud) {
               this.velocity.x = this.velocity.x * -1;
               this.theta = this.theta * -1;
             }else{
-              var tX = vX - (vX % config.gridInterval);
-              var tY = vY - (vY % config.gridInterval);
+              var tX = utils.roundToGrid(vX);
+              var tY = utils.roundToGrid(vY);
               var rightC = (oX > this.position.x);
               var leftC = (oX < this.position.x);
               var upC = (oY > this.position.y);
@@ -330,8 +330,8 @@ Ship = function(x,y,aud) {
       var destPoint = [vX,vY];
       var originPoint = [oX,oY];
       var intPoint = [inter.intersect[0],inter.intersect[1]];
-      var oIntLen = config.distance(originPoint,intPoint);
-      var dIntLen = config.distance(intPoint,destPoint);
+      var oIntLen = utils.distance(originPoint,intPoint);
+      var dIntLen = utils.distance(intPoint,destPoint);
       return oIntLen / dIntLen;
     }
   }
@@ -339,8 +339,8 @@ Ship = function(x,y,aud) {
   this.findTranslationPenetration = function(tX,tY,oX,oY,vX,vY){
     var dX = 0; var dY = 0;
 
-    var otX = oX - (oX % config.gridInterval);
-    var otY = oY - (oY % config.gridInterval);
+    var otX = utils.roundToGrid(oX);
+    var otY = utils.roundToGrid(oY);
     if(!(otX == tX && otY == tY)){
       var interFound = false;
       var inter = this.findTerrainIntersect(tX,tY,oX,oY,vX,vY);
@@ -367,7 +367,7 @@ Ship = function(x,y,aud) {
     sides.push((vX - oX) > 0 ? 'left' : 'right');
     for(var s in sides){
       var side = cubeSides[sides[s]];
-      var inter = config.intersect([oX,oY],[vX,vY],side[0],side[1]);
+      var inter = utils.intersect([oX,oY],[vX,vY],side[0],side[1]);
       if(inter){
         ret.intersect = inter;
         ret.side = sides[s];

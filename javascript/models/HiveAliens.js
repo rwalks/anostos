@@ -3,6 +3,8 @@ HiveAlien = function(x,y,size,id,hive) {
 
   this.id = id ? id : 0;
 
+  this.climber = true;
+
   this.theta = 0;
   this.thetaTarget = 0;
   this.thetaDelta = 0.2;
@@ -65,7 +67,8 @@ HiveAlien = function(x,y,size,id,hive) {
   this.pathHome = function(terrain){
     if(this.hive){
       var hiveBase = this.hive.base();
-      this.path = pathfinder.findPath(this.position.x,this.position.y,hiveBase.x,hiveBase.y,terrain.terrain,2,this.size,true,false);
+      this.digger = false;
+      this.path = pathfinder.findPath(hiveBase.x,hiveBase.y,terrain,this);
       this.targetObj = this.path.length ? this.hive : false;
       this.hive.reportPath(this.id,this.path.length);
     }
@@ -91,8 +94,8 @@ HiveAlien = function(x,y,size,id,hive) {
   }
 
   this.validNode = function(node,terrain){
-  //  var digger = (this.targetObj && this.targetObj.type != 'spawn');
-  //  return pathfinder.validSpace(node[0],node[1],terrain.terrain,this.size,true,digger);
+  //  var digger = (this.targetObj && this.targetObj != this.hive);
+  //  return pathfinder.validSpace(node[0],node[1],terrain,this.size,true,digger);
     return true;
   }
 
@@ -106,11 +109,9 @@ HiveWorker = function(x,y,hive,id) {
 //generic alien vars
   this.name = ["Hive","Worker"];
   this.maxHealth = 100; this.currentHealth = 100;
-  this.interact = '';
   this.moveAccel = config.gridInterval/6;
   this.maxV = config.gridInterval/4;
 //specific vars
-  this.type = 'passive';
 
   this.biting = false;
   this.biteLength = 31;
@@ -127,8 +128,8 @@ HiveWorker = function(x,y,hive,id) {
     var closestRange = range * 2;
     for(var x = oX-range; x < oX+range; x+=config.gridInterval){
       for(var y = oY-range; y < oY+range; y+=config.gridInterval){
-        if(terrain.terrain[x] && terrain.terrain[x][y]){
-          var obj = terrain.terrain[x][y];
+        var obj = terrain.getTile(x,y);
+        if(obj){
           if(obj.cost['ore'] || obj.cost['metal']){
             var objCenter = obj.center();
             var objRange = this.nodeDistance([objCenter.x,objCenter.y],this.center());
@@ -147,18 +148,19 @@ HiveWorker = function(x,y,hive,id) {
       var yRand = Math.floor(Math.random()*(maxMagnitude*1.5))-(maxMagnitude*0.5);
       var rX = oX + xRand; rX = rX - (rX % config.gridInterval);
       var rY = oY + yRand; rY = rY - (rY % config.gridInterval);
-      if(terrain.terrain[rX] && terrain.terrain[rX][rY]){
-        var validTarget = !terrain.terrain[rX][rY].topLayer && !terrain.terrain[rX][rY].cost['rock'];
+      var til = terrain.getTile(rX,rY);
+      if(til){
+        var validTarget = !til.topLayer && !til.cost['rock'];
         if(validTarget){
-          this.targetObj = terrain.terrain[rX][rY];
+          this.targetObj = til;
         }
       }else{
         this.targetObj = false;
         this.randomMove();
       }
     }
-
-    this.path = this.targetObj ? pathfinder.findPath(this.position.x,this.position.y,this.targetObj.position.x,this.targetObj.position.y,terrain.terrain,2,this.size,true,true) : [];
+    this.digger = true;
+    this.path = this.targetObj ? pathfinder.findPath(this.targetObj.position.x,this.targetObj.position.y,terrain,this) : [];
   }
 
   this.interactTarget = function(terrain){
@@ -168,7 +170,7 @@ HiveWorker = function(x,y,hive,id) {
 
     this.biting = (this.counter % this.biteLength) == 0 ? false : this.biting;
 
-    if(this.targetObj.type == 'spawn'){
+    if(this.targetObj == this.hive){
     //home spawn
       if(this.nodeDistance([targCent.x,targCent.y],cent) <= interactRange){
         //deposit metal + ore
@@ -184,8 +186,9 @@ HiveWorker = function(x,y,hive,id) {
           this.currentHealth = this.maxHealth;
         }
         //target dummy building at last metal spot
+        this.digger = false;
         this.targetObj = (this.hive && this.hive.lastMetal) ? new Building(this.hive.lastMetal) : false;
-        this.path = this.targetObj ? pathfinder.findPath(this.position.x,this.position.y,this.hive.lastMetal.x,this.hive.lastMetal.y,terrain.terrain,2,this.size,true,false) : [];
+        this.path = this.targetObj ? pathfinder.findPath(this.hive.lastMetal.x,this.hive.lastMetal.y,terrain,this) : [];
         this.targetObj = this.path.length ? this.targetObj : false;
       }else{
         if(!this.path.length){
@@ -196,7 +199,7 @@ HiveWorker = function(x,y,hive,id) {
     }else{
     //metal obj
       if(this.nodeDistance([targCent.x,targCent.y],cent) <= interactRange){
-        if(terrain.terrain[this.targetObj.position.x] && terrain.terrain[this.targetObj.position.x][this.targetObj.position.y] &&
+        if(terrain.getTile(this.targetObj.position.x,this.targetObj.position.y) &&
             this.targetObj.cost['metal'] || this.targetObj.cost['ore']){
           this.lastHarvested = this.targetObj;
           if(this.targetObj.cost['ore']){
@@ -227,8 +230,9 @@ HiveWorker = function(x,y,hive,id) {
           var blockingTiles = [];
           for(var nx = nextX; nx < (nextX+this.size.x); nx += config.gridInterval){
             for(var ny = nextY; ny < (nextY+this.size.y); ny += config.gridInterval){
-              if(terrain.terrain[nx] && terrain.terrain[nx][ny]){
-                blockingTiles.push(terrain.terrain[nx][ny]);
+              var til = terrain.getTile(nx,ny);
+              if(til){
+                blockingTiles.push(til);
               }
             }
           }
@@ -244,7 +248,8 @@ HiveWorker = function(x,y,hive,id) {
                 }
               }else if(til.cost['metal'] || til.cost['ore']){
                 this.targetObj = til;
-                this.path = pathfinder.findPath(this.position.x,this.position.y,this.targetObj.position.x,this.targetObj.position.y,terrain.terrain,2,this.size,true,true);
+                this.digger = true;
+                this.path = pathfinder.findPath(this.targetObj.position.x,this.targetObj.position.y,terrain,this);
               }else if(til.cost['rock']){
                 this.targetObj = false;
                 this.path = [];
@@ -281,11 +286,8 @@ HiveWarrior = function(x,y) {
 
   this.name = ["Hive","Hunter"];
   this.maxHealth = 100; this.currentHealth = 100;
-  this.interact = '';
   this.moveAccel = config.gridInterval/2;
   this.size = {'x':1*config.gridInterval,'y':1*config.gridInterval};
-
-  this.type = 'aggressive';
 
   this.findTarget = function(terrain,humans){}
   this.interactTarget = function(terrain){}
@@ -298,12 +300,10 @@ HiveNest = function(x,y) {
 //alien vars
   this.name = ["Hive","Nest"];
   this.maxHealth = 100; this.currentHealth = 100;
-  this.interact = '';
   this.moveAccel = config.gridInterval/2;
   this.size = {'x':4*config.gridInterval,'y':6*config.gridInterval};
 //specific vars
   this.lastMetal;
-  this.type = 'spawn';
 
   this.spawn = {};
 
@@ -390,7 +390,6 @@ HiveQueen = function(x,y) {
 
   this.name = ["Hive","Queen"];
   this.maxHealth = 100; this.currentHealth = 100;
-  this.interact = '';
   this.moveAccel = config.gridInterval/2;
   this.size = {'x':1*config.gridInterval,'y':1*config.gridInterval};
 

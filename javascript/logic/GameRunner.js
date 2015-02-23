@@ -11,7 +11,7 @@ function GameRunner() {
     this.Run = function () {
       if (this.initialize()) {
         _scene = new LoadingScene();
-        setInterval(function() {document.GameRunner.tick()}, 1000 / 40);
+        setInterval(function() {document.GameRunner.tick()}, 1000 / config.fps);
         loadContent();
       }
     }

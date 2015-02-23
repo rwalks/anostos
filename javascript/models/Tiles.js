@@ -45,7 +45,7 @@ Tiles = function() {
     this.collision = function(){return true;}
     this.pathable = false;
     this.lastDrawn = -1;
-    this.type = "construction";
+    this.type = "tile";
     var fillStyle; var strokeStyle;
     this.topLayer = false;
     this.plant = false;

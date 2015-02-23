@@ -12,20 +12,23 @@ Alien = function(x,y) {
   this.direction = true;
 
   this.inventory = new Inventory();
-  this.action = false;
   this.dead = false;
   this.stuck = false;
   this.stuckTolerance = config.gridInterval / 5;
+
+  this.climber = false;
+  this.digger = false;
 
   this.moving = false;
 
   //class specific variables
   this.name = ["Unknown","Alien"];
   this.maxHealth = 100; this.currentHealth = 100;
-  this.interact = '';
   this.moveAccel = config.gridInterval/8;
   this.maxVelocity = config.gridInterval / 4;
   this.size = {'x':1*config.gridInterval,'y':1*config.gridInterval};
+  this.jump = {'x':1,'y':1};
+
 
   //class specific functions
   this.findTarget = function(humans){}

@@ -545,7 +545,7 @@ var LoadingScene = function (){
     return ["In the year "+yr+", "+job+" "+name[0]+" "+name[1]+" was convicted of "+crime+".","The sentence: Colonization of a brutal outer world."];
   }
 
-  this.heroName = config.nameGenerator();
+  this.heroName = utils.nameGenerator();
   var shipMsg = shipMessage(this.heroName);
 
   var humanMessage = function(){

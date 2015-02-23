@@ -160,6 +160,17 @@ Terrain = function(trMap,sSpawns) {
     return true;
   }
 
+  this.canDestroy = function(obj){
+    var currentTile = this.getTile(obj.position.x,obj.position.y);
+    if(!currentTile){
+      return false;
+    }
+    if(currentTile.currentHealth > 0 || currentTile.cost['rock']){
+      return false;
+    }
+    return true;
+  }
+
   this.draw = function(canvasBufferContext,camera,count){
     if(this.terrain){
       //drawRooms
@@ -263,7 +274,8 @@ Terrain = function(trMap,sSpawns) {
                 }
               }
               if(resourceType(node)){
-                if(!nodeExists(node,closedNodes) && !nodeExists(node,openNodes)){
+                var relatedAffinity = current.relatedAffinity(node.resourceAffinity);
+                if(relatedAffinity && !nodeExists(node,closedNodes)){
                   addNode(node,openNodes);
                 }
               }

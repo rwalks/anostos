@@ -20,8 +20,7 @@ var GameScene = function (strs,trn,shp,nam,bg,als){
   var buildTarget;
   var followTarget = false;
 
-  var startTime = new Date();
-  var timeElapsed;
+  var timeElapsed = 0;
   var gameOver = false;
   var gamePaused = false;
   var lastPaused = false;
@@ -101,8 +100,7 @@ var GameScene = function (strs,trn,shp,nam,bg,als){
 
   this.update = function(mPos){
     if(!gamePaused && !debugLock){
-      var currentTime = new Date();
-      timeElapsed = currentTime - startTime;
+      timeElapsed += 1;
       mousePos = mPos;
       if(followTarget && focusTarget){
         camera.focusOn(focusTarget.position);
@@ -120,7 +118,7 @@ var GameScene = function (strs,trn,shp,nam,bg,als){
       for(var c = 0; c < corpses.length; c++){
         var collect = corpses[c].update(terrain,humans);
         if(collect){
-          this.salvage(corpses[c]);
+          this.loot(corpses[c]);
           corpses.splice(c,1);
         }
       }
@@ -140,7 +138,7 @@ var GameScene = function (strs,trn,shp,nam,bg,als){
       switch(ret.action){
         case 'delete':
           var obj = ret.obj;
-          if(canSalvage(obj)){
+          if(terrain.canDestroy(obj)){
             this.addCorpse(obj);
             reg = terrain.removeTile(obj);
           }
@@ -150,9 +148,6 @@ var GameScene = function (strs,trn,shp,nam,bg,als){
           if(terrain.purchase(obj.cost) && terrain.isClear(obj)){
             reg = terrain.addTile(obj);
           }
-          break;
-        case 'inventory':
-          this.uiMode = 'trade';
           break;
         case 'die':
           this.addCorpse(humans[hIndex]);
@@ -187,7 +182,7 @@ var GameScene = function (strs,trn,shp,nam,bg,als){
     return reg;
   }
 
-  this.salvage = function(obj){
+  this.loot = function(obj){
     var inv = obj.inventory ? obj.inventory.inv : false;
     if(inv){
       for(i in inv){
@@ -202,19 +197,12 @@ var GameScene = function (strs,trn,shp,nam,bg,als){
     }
   }
 
-  var canSalvage = function(obj){
-    if(obj.cost['rock']){
-      return false;
-    }
-    return true;
-  }
-
   this.click = function(clickPos,rightClick){
     if(rightClick){
       if(this.uiMode == 'select' && focusTarget){
         var coords = clickToCoord(clickPos,false);
         var obj = false;
-        var clickObjs = [aliens,humans,corpses];
+        var clickObjs = [aliens];
         for(var typ in clickObjs){
           var objArray = clickObjs[typ];
           for(var o in objArray){
@@ -225,15 +213,14 @@ var GameScene = function (strs,trn,shp,nam,bg,als){
           }
           if(obj){break;}
         }
-        var coords = clickToCoord(clickPos,true);
+        coords = clickToCoord(clickPos,true);
         obj = !obj ? terrain.getTile(coords.x,coords.y) : obj;
-        focusTarget.click(coords,terrain,'move',obj);
+        focusTarget.click(coords,terrain,'select',obj);
       }else{
         this.uiMode = 'select';
       }
-    }else if(gameOver){
-//      document.GameRunner.endScene("dead");
     }else{
+      //left click
       var targetFound = false;
       var coords = clickToCoord(clickPos,false);
       var x = coords.x;
@@ -269,7 +256,6 @@ var GameScene = function (strs,trn,shp,nam,bg,als){
               }
               if(obj){break;}
             }
-
             if(!obj){
               var coords = clickToCoord(clickPos,true);
               focusTarget = terrain.getTile(coords.x,coords.y);
@@ -360,7 +346,6 @@ var GameScene = function (strs,trn,shp,nam,bg,als){
         }
       }
     }
-
   }
 
   this.addCorpse = function(corpse){
@@ -412,7 +397,7 @@ var GameScene = function (strs,trn,shp,nam,bg,als){
   }
 
   var gameOverMsg = function(endTime){
-    var totalSecs = Math.floor(endTime / 1000);
+    var totalSecs = Math.floor(endTime / config.fps);
     var minutes = Math.floor(totalSecs / 60);
     var seconds = totalSecs % 60;
     var timeString = (minutes > 9 ? minutes : "0" + minutes) + ":" + (seconds > 9 ? seconds : "0" + seconds);
