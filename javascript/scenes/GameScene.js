@@ -14,6 +14,7 @@ var GameScene = function (strs,trn,shp,nam,bg,als){
   var humans = [];
   var aliens = als ? als : [];
   var corpses = [];
+  var ammos = [];
   this.count = 0;
 
   var focusTarget;
@@ -106,16 +107,27 @@ var GameScene = function (strs,trn,shp,nam,bg,als){
         camera.focusOn(focusTarget.position);
       }
       camera.update(mousePos);
-      var regen = false;
-      for (var h = 0; h < humans.length; h++){
-        var ret = humans[h].update(terrain);
-        regen = this.handleHumanUpdate(ret,h) || regen;
+      var ret = false;
+      var regenBuildings = false;
+      var update = false;
+      var deletes = [];
+
+      for (var a = ammos.length-1; a >= 0; a--){
+        if(ammos[a].update(terrain,aliens)){
+          ammos.splice(a,1);
+        }
       }
-      for (var a = 0; a < aliens.length; a++){
-        var ret = aliens[a].update(terrain,humans);
-        regen = this.handleAlienUpdate(ret,a) || regen;
+      for (var h = humans.length-1; h >= 0; h--){
+        ret = humans[h].update(terrain);
+        update = this.handleHumanUpdate(ret,h);
+        regenBuildings = update || regenBuildings;
       }
-      for(var c = 0; c < corpses.length; c++){
+      for (var a = aliens.length-1; a >= 0; a--){
+        ret = aliens[a].update(terrain,humans);
+        update = this.handleAlienUpdate(ret,a);
+        regenBuildings = update || regenBuildings;
+      }
+      for(var c = corpses.length-1; c >= 0; c--){
         var collect = corpses[c].update(terrain,humans);
         if(collect){
           this.loot(corpses[c]);
@@ -124,7 +136,7 @@ var GameScene = function (strs,trn,shp,nam,bg,als){
       }
       terrain.update(humans,this.inventory);
       gui.update(focusTarget,humans,buildTarget,this.uiMode,timeElapsed,terrain.resources);
-      if(regen){
+      if(regenBuildings){
         terrain.regenBuildings();
       }
     }
@@ -147,6 +159,12 @@ var GameScene = function (strs,trn,shp,nam,bg,als){
           var obj = ret.obj;
           if(terrain.purchase(obj.cost) && terrain.isClear(obj)){
             reg = terrain.addTile(obj);
+          }
+          break;
+        case 'fire':
+          var ammoRet = ret.obj;
+          for(var a = 0; a < ammoRet.length; a++){
+            ammos.push(ammoRet[a]);
           }
           break;
         case 'die':
@@ -299,7 +317,7 @@ var GameScene = function (strs,trn,shp,nam,bg,als){
       ship.draw(camera,canvasBufferContext);
     }
     terrain.draw(canvasBufferContext,camera,this.count);
-    var objTypes = [humans,aliens,corpses];
+    var objTypes = [aliens,corpses,humans,ammos];
     for(var typ = 0; typ < objTypes.length; typ ++){
       var objs = objTypes[typ];
       for (var o = 0; o < objs.length; o++){

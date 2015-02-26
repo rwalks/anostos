@@ -83,10 +83,10 @@ HumanArt = function(){
   }
 
   this.drawWeapon = function(x,y,canvasBufferContext,human){
-    switch(human.action){
+    switch(human.activeTool){
       case 'attack':
         if(human.weapon){
-          human.weapon.draw(x,y,canvasBufferContext,human);
+          human.weapon.draw(x,y,canvasBufferContext);
         }
         break;
       case 'build':

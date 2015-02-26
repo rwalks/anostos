@@ -39,6 +39,13 @@ var Utils = function (){
     return (x - (x % config.gridInterval));
   }
 
+  this.clonePos = function(pos){
+    var clone = {};
+    clone.x = pos.x;
+    clone.y = pos.y;
+    return clone;
+  }
+
   this.intersect = function(p0,p1,p2,p3){
     var s10X = p1[0] - p0[0];
     var s10Y = p1[1] - p0[1];

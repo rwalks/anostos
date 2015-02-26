@@ -22,10 +22,13 @@ Human = function(x,y,name) {
   this.maxOxygen = 20; this.currentOxygen = 20;
   var oxygenConsumptionRate = 0.03;
 
+  this.activeTool = false;
+
   this.climber = false;
   this.digger = false;
-
   this.digStrength = 5;
+
+  this.weapon = new BasicBlaster(this);
 
   this.action = false;
 
@@ -75,6 +78,10 @@ Human = function(x,y,name) {
           }
         }
       }
+      //update weapon
+      if(this.weapon){
+        this.weapon.update();
+      }
       //move path
       if(this.path.length){
         this.followPath();
@@ -89,7 +96,7 @@ Human = function(x,y,name) {
       //friction
       this.velocity.x = this.velocity.x * (this.onGround ? 0.8 : 0.9);
       this.velocity.y = this.velocity.y * 0.9;
-      if(this.targetObj){
+      if(this.targetObj && this.targetRange){
         this.direction = (this.targetObj.position.x > this.position.x);
       }else{
         if(this.velocity.x > 0){this.direction = true;}
@@ -135,6 +142,12 @@ Human = function(x,y,name) {
           }
           break;
         case 'attack':
+          if(this.weapon){
+            var ammoRet = this.weapon.fire();
+            if(ammoRet){
+              ret = {'action':'fire','obj':ammoRet};
+            }
+          }
           break;
         case 'repair':
           this.dropTarget();
@@ -301,6 +314,9 @@ Human = function(x,y,name) {
       }
     }
     this.action = action;
+    if(action && action != 'select'){
+      this.activeTool = action;
+    }
     this.targetObj = obj;
     return;
   }
