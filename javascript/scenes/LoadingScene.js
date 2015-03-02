@@ -1,6 +1,6 @@
 var LoadingScene = function (){
   var sceneUtils = new SceneUtils();
-  var stars = sceneUtils.generateStars(20000);
+  var stars = sceneUtils.generateStars();
   var camera = new Camera();
   var camWander = 5;
   var clockCycle = 0;
@@ -53,7 +53,9 @@ var LoadingScene = function (){
       if(sceneTimer > creditDuration){
         sceneTimer = 0;
         creditMode = false;
-        shipMode = true;
+    //    shipMode = true;
+        titleMode = true;
+        this.audio.play("spookyPlanet");
       }
     }else if(titleMode){
       if(clockCycle <= 0){
@@ -543,7 +545,7 @@ var LoadingScene = function (){
     return ["In the year "+yr+", "+job+" "+name[0]+" "+name[1]+" was convicted of "+crime+".","The sentence: Colonization of a brutal outer world."];
   }
 
-  this.heroName = config.nameGenerator();
+  this.heroName = utils.nameGenerator();
   var shipMsg = shipMessage(this.heroName);
 
   var humanMessage = function(){

@@ -1,32 +1,64 @@
 var LandingScene = function (strs,nam,aud){
   this.heroName = nam;
   this.sceneUtils = new SceneUtils();
-  this.stars = strs ? strs : this.sceneUtils.generateStars(10000);
-  var terrainMap = this.sceneUtils.generateTerrain();
-  this.terrain = new Terrain(terrainMap);
+  this.stars = strs ? strs : this.sceneUtils.generateStars();
+  this.terrain = this.sceneUtils.generateTerrain();
   var camera = new Camera(config.mapWidth/2,0);
+  this.aliens = [];
   var mousePos;
   var clockCycle = 0;
   var clockMax = 800;
   this.count = 0;
   this.audio = aud;
   this.audio.play('landing1');
-  this.ship = new Ship(config.mapWidth/2,0,this.audio);
+  this.ship = new Ship(config.mapWidth/2,6000,this.audio);
   var startMsg = ["Welcome to Anostos. Attempt landing using the arrow keys.", "We don't have much fuel.."];
   var startIndex = 0;
   var landIndex = 0;
+  var gamePaused = false;
+  var lastPaused = false;
+  var debugMode = false;
+  var debugLock = false;
+
+
+  //add surface spawns
+  for(var sp in this.terrain.surfaceSpawns){
+    var spPos = this.terrain.surfaceSpawns[sp]
+    var nest = new HiveNest(spPos.x,spPos.y-(config.gridInterval*6));
+    nest.clearTerrain(this.terrain);
+    nest.inventory.addItem('metal',1);
+    this.aliens.push(nest);
+  }
 
   this.update = function(mPos){
-    camera.focusOn(this.ship.position);
-    this.ship.update(this.terrain.terrain);
-    if(this.ship.altitude < 3000){
-      this.audio.play("landing2");
+    if(!gamePaused && !debugLock){
+      camera.focusOn(this.ship.position);
+      this.ship.update(this.terrain);
+      if(this.ship.altitude < 3000){
+        this.audio.play("landing2");
+      }
+      this.count += 1;
     }
-    this.count += 1;
+    debugLock = debugMode ? true : false;
   }
 
   this.keyPress = function(keyCode,keyDown){
     switch(keyCode){
+      case 8:
+        debugMode = !debugMode;
+        break;
+      case 27:
+        if(keyDown){
+          gamePaused = true;
+        }else{
+          if(lastPaused){
+            gamePaused = false;
+            lastPaused = false;
+          }else{
+            lastPaused = true;
+          }
+        }
+        break;
       case 37:
         this.ship.rotate(false,keyDown);
         break;
@@ -120,8 +152,8 @@ var LandingScene = function (strs,nam,aud){
     }else{
       if(this.ship.destroyed){
         this.endScene(false);
-      //}else if(true){
-      }else if(this.ship.landed){
+      }else if(true){
+    //  }else if(this.ship.landed){
         this.endScene(true);
       }
     }
@@ -142,13 +174,28 @@ var LandingScene = function (strs,nam,aud){
     this.sceneUtils.drawBG(camera,clockCycle,canvasBufferContext);
     this.ship.draw(camera,canvasBufferContext);
     this.terrain.draw(canvasBufferContext,camera,this.count);
-    this.drawFuel(canvasBufferContext);
-    if(this.count < 500){
-      startIndex = this.drawText(startMsg,canvasBufferContext,startIndex);
-    }else if(this.ship.destroyed){
-      landIndex = this.drawText(crashMsg,canvasBufferContext,landIndex);
-    }else if(this.ship.landed){
-      landIndex = this.drawText(landedMsg(this.ship),canvasBufferContext,landIndex);
+
+    var objTypes = [this.aliens];
+    for(var typ in objTypes){
+      var objs = objTypes[typ];
+      for (o in objs){
+        if(this.sceneUtils.onScreen(objs[o],camera)){
+          objs[o].draw(camera,canvasBufferContext);
+        }
+      }
+    }
+
+    if(gamePaused){
+      this.sceneUtils.drawPause(canvasBufferContext);
+    }else{
+      this.drawFuel(canvasBufferContext);
+      if(this.count < 500){
+        startIndex = this.drawText(startMsg,canvasBufferContext,startIndex);
+      }else if(this.ship.destroyed){
+        landIndex = this.drawText(crashMsg,canvasBufferContext,landIndex);
+      }else if(this.ship.landed){
+        landIndex = this.drawText(landedMsg(this.ship),canvasBufferContext,landIndex);
+      }
     }
   }
 

@@ -31,7 +31,7 @@ Explosion = function(x,y) {
         canvasBufferContext.beginPath();
         canvasBufferContext.lineWidth=Math.floor(config.xRatio)+"";
         canvasBufferContext.fillStyle = circ[2];
-        canvasBufferContext.strokeStyle= "rgba(250,0,0,0.8)";
+        canvasBufferContext.strokeStyle= "rgba(250,0,0,0.4)";
         canvasBufferContext.arc(x,y,circ[4]+count,0,2*Math.PI,false);
         canvasBufferContext.fill();
         canvasBufferContext.stroke();

@@ -2,6 +2,27 @@ var Camera = function (x,y){
   this.xOff = x ? x : config.mapWidth / 2;
   this.yOff = y ? y : config.mapHeight / 2;
 
+  velocity = {x:0,y:0};
+  scrollRate = 6;
+  scrollMax = 12;
+
+  this.setMove = function(dir,keyDown){
+    switch(dir){
+      case 'up':
+        velocity.y = keyDown ? (Math.max(velocity.y-scrollRate,-scrollMax)) : (velocity.y < 0 ? 0 : velocity.y);
+        break;
+      case 'down':
+        velocity.y = keyDown ? (Math.min(velocity.y+scrollRate,scrollMax)) : (velocity.y > 0 ? 0 : velocity.y);
+        break;
+      case 'left':
+        velocity.x = keyDown ? (Math.max(velocity.x-scrollRate,-scrollMax)) : (velocity.x < 0 ? 0 : velocity.x);
+        break;
+      case 'right':
+        velocity.x = keyDown ? (Math.min(velocity.x+scrollRate,scrollMax)) : (velocity.x > 0 ? 0 : velocity.x);
+        break;
+    }
+  }
+
   this.move = function(x,y){
     if((this.xOff + x)>0 && (this.xOff+x)<(config.mapWidth-config.cX)){this.xOff += x;}
     if((this.yOff + y)>0 && (this.yOff+y)<(config.mapHeight-config.cY)){this.yOff += y;}
@@ -32,6 +53,7 @@ var Camera = function (x,y){
       if(mousePos.y > config.canvasHeight - (config.canvasHeight / 20)){ dY += config.cameraMoveRate; }
       this.move(dX,dY);
     }
+    this.move(velocity.x,velocity.y);
     return (dX != 0 || dY != 0);
   }
 }

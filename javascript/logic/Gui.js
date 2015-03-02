@@ -10,30 +10,33 @@ Gui = function() {
   this.buildOffset = 0;
 
   this.inventoryOffset = 0;
-  this.tradeOffset = 0;
 
   var timeElapsed;
-  var powerStats;
+  var resourceStats;
 
   this.buildings = {
   "construction":[new Block('soil'),new Block('metal'),new Door()],
-  "power":[new StorageBuild('power'),new GeneratorBuild('solar')],
-  "oxygen":[new StorageBuild('oxygen'),new GeneratorBuild('oxygen'),new ConveyorBuild('vent')],
-  "water":[new StorageBuild('water'),new GeneratorBuild('water'),new ConveyorBuild('pipe')],
-  "earth":[new StorageBuild('dry'),new GeneratorBuild('metal'),new ConveyorBuild('dry')],
+  "power":[new ChemicalBattery(),new SolarPanel()],
+  "oxygen":[new OxygenTank(),new AirVent(),new OxygenCondenser()],
+  "earth":[new DryStorage(),new ConveyorTube(),new SmeltingChamber()],
+  "water":[],
   "other":[]
   };
 
   this.position = function(type){
     var pos = {};
     switch(type){
-      case "resources":
+      case "resourcesLeft":
         pos.x = (config.canvasWidth / 2.5) - (config.canvasWidth/13.9);
-        pos.y = config.canvasHeight * (5.25/6);
+        pos.y = config.canvasHeight * (5/6);
+        break;
+      case "resourcesRight":
+        pos.x = config.canvasWidth * (5.85/8);
+        pos.y = config.canvasHeight * (5/6);
         break;
       case "timer":
-        pos.x = (config.canvasWidth / 2.5) - (config.canvasWidth/13.9);
-        pos.y = config.canvasHeight * (5.5/6);
+        pos.x = config.canvasWidth * 0.025;
+        pos.y = config.canvasHeight * 0.1;
         break;
       case "target":
         pos.x = config.canvasWidth / 2.5;
@@ -51,12 +54,39 @@ Gui = function() {
         pos.x = config.canvasWidth *0.1;
         pos.y = config.canvasHeight * 0.1;
         break;
-      case "trade":
-        pos.x = config.canvasWidth *0.6;
-        pos.y = config.canvasHeight * 0.1;
-        break;
     }
     return pos;
+  }
+
+  this.size = function(type){
+    var size = {};
+    switch(type){
+      case "resources":
+        size.x = config.canvasWidth / 14;
+        size.y = config.canvasHeight / 6;
+        break;
+      case "timer":
+        size.x = config.canvasWidth / 14;
+        size.y = config.canvasHeight / 6 / 4;
+        break;
+      case "target":
+        size.x = config.canvasWidth / 3;
+        size.y = config.canvasHeight / 6;
+        break;
+      case "build":
+        size.x = config.canvasWidth / 6;
+        size.y = config.canvasHeight * 0.6;
+        break;
+      case "inventory":
+        size.x = config.canvasWidth / 6;
+        size.y = config.canvasHeight * 0.6;
+        break;
+      case "roster":
+        size.x = config.canvasWidth / 8;
+        size.y = config.canvasHeight * 0.6;
+        break;
+    }
+    return size;
   }
 
   this.click = function(clickPos, target){
@@ -113,7 +143,7 @@ Gui = function() {
       }else if(y <= tArrowY){
         this.inventoryOffset -= (this.inventoryOffset > 0) ? 1 : 0;
       }else if(y <= objY){
-        //clicking on an invetory square
+        //clicking on an inventory square
         var invIndex = Math.floor(6*((y - tArrowY) / (objY - tArrowY))) + this.inventoryOffset;
         var resource = Object.keys(this.target.inventory.inv)[invIndex];
         if(resource){
@@ -122,52 +152,19 @@ Gui = function() {
             this.target.inventory.removeItem(resource,1);
           }else if(x >= xSize * 0.85 && x < xSize){
             //trade
-            if(this.target.lastTarget.inventory.addItem(resource,1)){
-              this.target.inventory.removeItem(resource,1);
+            var tradeY = ((objY-tArrowY)/6);
+            if(y < tArrowY+(tradeY*invIndex)+(tradeY/2)){
+              //trade 1
+            }else{
+              //trade all
             }
           }
         }
       }else{
         this.inventoryOffset += (Object.keys(this.target.inventory.inv).length > 6) ? 1 : 0;
       }
-    }else if(target == "trade" && this.target && this.target.lastTarget && this.target.lastTarget.inventory){
-      var x = clickPos.x - this.position('trade').x;
-      var y = clickPos.y - this.position('trade').y;
-      var xSize = this.size('trade').x;
-      var ySize = this.size('trade').y;
-      var xBuf = Math.floor(config.xRatio) * 2;
-      var tabY = ySize/10;
-      var tArrowY = tabY + (ySize / 16);
-      var objY = ySize - (ySize / 16);
-      if(y <= tabY){
-        //tabs
-        var tX = Math.floor(6*((x - (2*xBuf)) / (xSize - (2*xBuf))));
-        if(tX >= 0){
-          this.tradeOffset = 0;
-        }
-      }else if(y <= tArrowY){
-        this.tradeOffset -= (this.tradeOffset > 0) ? 1 : 0;
-      }else if(y <= objY){
-        //clicking on a trade square
-        var tradeIndex = Math.floor(6*((y - tArrowY) / (objY - tArrowY))) + this.tradeOffset;
-        var resource = Object.keys(this.target.lastTarget.inventory.inv)[tradeIndex];
-        if(resource){
-          if(x >= xSize * 0.7 && x < xSize * 0.85){
-            //delete
-            this.target.lastTarget.inventory.removeItem(resource,1);
-          }else if(x >= xSize * 0.85 && x < xSize){
-            //trade
-            if(this.target.inventory.addItem(resource,1)){
-              this.target.lastTarget.inventory.removeItem(resource,1);
-            }
-          }
-        }
-
-      }else{
-        this.tradeOffset += (Object.keys(this.target.lastTarget.inventory.inv).length > 6) ? 1 : 0;
-      }
     }else if(target == "target"){
-      if(this.target && this.target.actions){
+      if(this.target && this.target.actionButtons){
         var x = clickPos.x - this.position('target').x;
         var xSize = this.size('target').x;
         if(x > xSize - (xSize * 0.21)){
@@ -176,56 +173,22 @@ Gui = function() {
           var yBuf = Math.floor(config.xRatio) * 2;
           var aY = Math.floor(4*((y - (2*yBuf)) / (ySize - (2*yBuf))));
           if(aY >= 0){
-            return {'action':this.target.actions[aY]};
+            return {'action':this.target.actionButtons[aY]};
           }
         }
       }
     }
   }
 
-  this.update = function(target,humans,buildTarget,uiMode,deltaT,powStats){
+  this.update = function(target,humans,buildTarget,uiMode,deltaT,rStats){
     this.target = target;
     this.roster = humans;
     this.buildTarget = buildTarget;
     this.uiMode = uiMode;
     timeElapsed = deltaT;
-    powerStats = powStats;
+    resourceStats = rStats;
   }
 
-  this.size = function(type){
-    var size = {};
-    switch(type){
-      case "resources":
-        size.x = config.canvasWidth / 14;
-        size.y = config.canvasHeight / 6 / 4;
-        break;
-      case "timer":
-        size.x = config.canvasWidth / 14;
-        size.y = config.canvasHeight / 6 / 4;
-        break;
-      case "target":
-        size.x = config.canvasWidth / 3;
-        size.y = config.canvasHeight / 6;
-        break;
-      case "build":
-        size.x = config.canvasWidth / 6;
-        size.y = config.canvasHeight * 0.6;
-        break;
-      case "inventory":
-        size.x = config.canvasWidth / 6;
-        size.y = config.canvasHeight * 0.6;
-        break;
-      case "trade":
-        size.x = config.canvasWidth / 6;
-        size.y = config.canvasHeight * 0.6;
-        break;
-      case "roster":
-        size.x = config.canvasWidth / 8;
-        size.y = config.canvasHeight * 0.6;
-        break;
-    }
-    return size;
-  }
 
   this.pointWithin = function(x,y){
     if (x > this.position('target').x && x < (this.position('target').x + this.size('target').x) &&
@@ -241,15 +204,10 @@ Gui = function() {
         y > this.position('build').y && y < (this.position('build').y + this.size('build').y)){
           return "build";
         }
-    else if ( (this.uiMode == 'inventory' || this.uiMode == 'trade') &&
+    else if ( (this.uiMode == 'inventory') &&
         x > this.position('inventory').x && x < (this.position('inventory').x + this.size('inventory').x) &&
         y > this.position('inventory').y && y < (this.position('inventory').y + this.size('inventory').y)){
           return "inventory"
-        };
-    if ( this.uiMode == 'trade' &&
-        x > this.position('trade').x && x < (this.position('trade').x + this.size('trade').x) &&
-        y > this.position('trade').y && y < (this.position('trade').y + this.size('trade').y)){
-          return "trade"
         };
     return false;
   }
@@ -259,13 +217,10 @@ Gui = function() {
     if(this.uiMode == 'build'){
      // this.drawGrid(camera,canvasBufferContext);
       this.drawBuild(this.size("build"),this.position("build"),canvasBufferContext);
-    }else if(this.uiMode == 'inventory' || this.uiMode == 'trade'){
+    }else if(this.uiMode == 'inventory'){
       this.drawInventory(canvasBufferContext);
-      if(this.uiMode == 'trade'){
-        this.drawTrade(canvasBufferContext);
-      }
     };
-    this.drawResources(this.size("resources"),this.position("resources"),canvasBufferContext);
+    this.drawResources(canvasBufferContext);
     this.drawTarget(this.size("target"),this.position("target"),canvasBufferContext);
     this.drawRoster(this.size("roster"),this.position("roster"),canvasBufferContext);
     this.drawTimer(this.size("timer"),this.position("timer"),canvasBufferContext);
@@ -292,14 +247,14 @@ Gui = function() {
     canvasBufferContext.rect(xIndex,yIndex,xSize,ySize);
     canvasBufferContext.fill();
     if(timeElapsed){
-      var totalSecs = Math.floor(timeElapsed / 1000);
+      var totalSecs = Math.floor(timeElapsed / config.fps);
       var minutes = Math.floor(totalSecs / 60);
       var seconds = totalSecs % 60;
       var secondString = seconds > 9 ? seconds : "0"+seconds;
       var minuteString = (minutes > 9 ? minutes : "0"+minutes) + ":";
 
       var fontSize = Math.min(config.xRatio * 10, config.yRatio*10);
-      var x = pos.x + (size.x * 0.2);
+      var x = pos.x + (size.x * 0.16);
       var y = pos.y + (size.y * 0.65);
       canvasBufferContext.font = fontSize + 'px Courier';
       canvasBufferContext.fillStyle = "rgba(100,190,250,0.8)";
@@ -328,37 +283,69 @@ Gui = function() {
     }
   }
 
-  this.drawResources = function(size,pos,canvasBufferContext){
-    //draw
-    canvasBufferContext.beginPath();
-    canvasBufferContext.lineWidth=Math.floor(config.xRatio)+"";
-    canvasBufferContext.fillStyle = "rgba(150,0,200,0.9)";
-    canvasBufferContext.strokeStyle="rgba(200,0,250,1.0)";
-    canvasBufferContext.rect(pos.x,pos.y,size.x,size.y);
-    canvasBufferContext.fill();
-    canvasBufferContext.stroke();
-    //resources
-    var xBuf = Math.floor(config.xRatio) * 2;
-    var yBuf = Math.floor(config.yRatio) * 2;
-    var xIndex = pos.x + xBuf;
-    var yIndex = pos.y + yBuf;
-    var xSize = size.x-(2*xBuf);
-    var ySize = size.y-(2*yBuf);
-    canvasBufferContext.beginPath();
-    canvasBufferContext.lineWidth=Math.floor(config.xRatio)+"";
-    canvasBufferContext.fillStyle = "rgba(20,0,50,0.9)";
-    canvasBufferContext.strokeStyle="rgba(20,0,75,1.0)";
-    canvasBufferContext.rect(xIndex,yIndex,xSize,ySize);
-    canvasBufferContext.fill();
-    if(powerStats){
+  var resourceStrings = {'power':'Power','soil':'Soil','ore':'Ore','metal':'Metal',
+                         'bio':'Biomass','xeno':'Xenomat','rad':'Rad Ore','fissile':'Fissile'};
 
-      var fontSize = Math.min(config.xRatio * 7, config.yRatio*7);
-      var x = pos.x + (size.x * 0.1);
-      var y = pos.y + (size.y * 0.65);
-      powerString = "Power: " + powerStats.power;
-      canvasBufferContext.font = fontSize + 'px Courier';
-      canvasBufferContext.fillStyle = powerStats.maxPower ? "rgba(250,190,150,0.8)" : "rgba(100,190,250,0.8)";
-      canvasBufferContext.fillText(powerString,x,y);
+  var resourceColors = {'power':'rgba(250,250,0,','soil':'rgba(20,200,250,','ore':'rgba(110,100,130,','metal':'rgba(150,140,170,',
+                         'bio':'rgba(0,250,0,','xeno':'rgba(150,250,0,','rad':'rgba(250,100,0,','fissile':'rgba(200,10,150,'};
+
+  this.drawResources = function(canvasBufferContext){
+    var sides = ['resourcesLeft','resourcesRight'];
+    var resourceTypes = [['power','soil','ore','metal'],['bio','xeno','rad','fissile']];
+    for(var s = 0; s < sides.length; s++){
+      var size = this.size('resources');
+      var pos = this.position(sides[s]);
+      //draw background
+      canvasBufferContext.beginPath();
+      canvasBufferContext.lineWidth=Math.floor(config.xRatio)+"";
+      canvasBufferContext.fillStyle = "rgba(0,0,0,0.7)";
+      canvasBufferContext.strokeStyle="rgba(200,0,250,1.0)";
+      canvasBufferContext.rect(pos.x,pos.y,size.x,size.y);
+      canvasBufferContext.fill();
+      canvasBufferContext.stroke();
+      //resources
+      var types = resourceTypes[s];
+      var xBuf = Math.floor(config.xRatio) * 2;
+      var yBuf = Math.floor(config.yRatio) * 2;
+      var xIndex = pos.x + xBuf;
+      var yIndex = pos.y + yBuf;
+      var xSize = size.x-(2*xBuf);
+      var ySize = (size.y - (yBuf * 2)) / types.length;
+      for(var rT = 0; rT < types.length; rT++){
+        var rColor = resourceColors[types[rT]];
+        canvasBufferContext.beginPath();
+        canvasBufferContext.lineWidth = Math.floor(config.xRatio)+"";
+        canvasBufferContext.fillStyle = rColor + "0.5)";
+        canvasBufferContext.strokeStyle = rColor + "0.9)";
+        canvasBufferContext.rect(xIndex,yIndex,xSize,ySize);
+        canvasBufferContext.stroke();
+        canvasBufferContext.fill();
+        if(resourceStats){
+          var stats = resourceStats[types[rT]];
+          var percentFull = Math.min(stats.current / stats.max, 1);
+          var powerString = resourceStrings[types[rT]];
+          var fontSize = Math.min(config.xRatio * 7, config.yRatio*7);
+          var x = xIndex + (xBuf*2);
+          var y = yIndex + fontSize + yBuf;
+          //fill percentage
+          canvasBufferContext.beginPath();
+          canvasBufferContext.fillStyle = rColor + "0.8)";
+          var xS = xSize * percentFull;
+          canvasBufferContext.rect(xIndex,yIndex,xS,ySize);
+          canvasBufferContext.fill();
+          //text
+          canvasBufferContext.font = fontSize + 'px Courier';
+          var textFill = "rgba(0,0,0,1.0)";
+          if(stats.current < 1){
+            textFill = "rgba(100,190,250,0.8)";
+          }else if(percentFull >= 1){
+            textFill = "rgba(250,0,0,0.8)";
+          }
+          canvasBufferContext.fillStyle = textFill;
+          canvasBufferContext.fillText(powerString,x,y);
+        }
+        yIndex += ySize;
+      }
     }
   }
 
@@ -409,7 +396,7 @@ Gui = function() {
       if(this.target.genInput && this.target.genOutput){
         var inputString = [];
         for(i in this.target.genInput){
-          inputString.push(i + '-'+this.target.genInput[i]);
+          inputString.push(i + ' '+this.target.genInput[i]);
         }
         inputString = inputString.join(",");
         canvasBufferContext.fillText("Input: "+inputString,xIndex+xBuf,yText);
@@ -441,32 +428,37 @@ Gui = function() {
     var aY = yIndex + yBuf;
     var aXSize = xSize - (2*xBuf);
     var aYSize = ((ySize) / 4) - (2*yBuf);
-    if(this.target && this.target.actions){
-      for(i in this.target.actions){
+    var lineWidth = Math.min(config.xRatio,config.yRatio);
+    var buttonSize = Math.min(aXSize,aYSize);
+    if(this.target && this.target.actionButtons){
+      for(i in this.target.actionButtons){
+        var cX = aX + (aXSize / 2);
+        var cY = aY + (aYSize / 2);
+        canvasBufferContext.lineWidth = lineWidth;
         canvasBufferContext.beginPath();
-        canvasBufferContext.lineWidth=Math.floor(config.xRatio)+"";
-        var aRed = (this.target.actions[i] == this.uiMode) ? 200 : 0;
+        var aRed = (this.target.actionButtons[i] == this.uiMode) ? 200 : 0;
         canvasBufferContext.fillStyle = "rgba("+aRed+",50,100,0.9)";
         canvasBufferContext.strokeStyle="rgba("+aRed+",50,175,1.0)";
         canvasBufferContext.rect(aX,aY,aXSize,aYSize);
         canvasBufferContext.fill();
         canvasBufferContext.stroke();
-        switch(this.target.actions[i]){
+        switch(this.target.actionButtons[i]){
           case "build":
             canvasBufferContext.fillStyle = "rgba(250,250,250,0.9)";
             canvasBufferContext.strokeStyle="rgba(250,250,250,1.0)";
             canvasBufferContext.beginPath();
-            canvasBufferContext.moveTo(aX + (aXSize * 0.2), aY + (aYSize * 0.8));
-            canvasBufferContext.lineTo(aX + (aXSize * 0.3), aY + (aYSize * 0.8));
-            canvasBufferContext.lineTo(aX + (aXSize * 0.6), aY + (aYSize * 0.5));
-            canvasBufferContext.lineTo(aX + (aXSize * 0.8), aY + (aYSize * 0.5));
-            canvasBufferContext.lineTo(aX + (aXSize * 0.8), aY + (aYSize * 0.3));
-            canvasBufferContext.lineTo(aX + (aXSize * 0.7), aY + (aYSize * 0.4));
-            canvasBufferContext.lineTo(aX + (aXSize * 0.6), aY + (aYSize * 0.3));
-            canvasBufferContext.lineTo(aX + (aXSize * 0.7), aY + (aYSize * 0.2));
-            canvasBufferContext.lineTo(aX + (aXSize * 0.5), aY + (aYSize * 0.2));
-            canvasBufferContext.lineTo(aX + (aXSize * 0.5), aY + (aYSize * 0.4));
-            canvasBufferContext.lineTo(aX + (aXSize * 0.2), aY + (aYSize * 0.7));
+            canvasBufferContext.moveTo(cX + (buttonSize * -0.3), cY + (buttonSize * 0.3));
+            canvasBufferContext.lineTo(cX + (buttonSize * -0.2), cY + (buttonSize * 0.3));
+            canvasBufferContext.lineTo(cX + (buttonSize * 0.1), cY + (buttonSize * 0.0));
+            canvasBufferContext.lineTo(cX + (buttonSize * 0.3), cY + (buttonSize * 0.0));
+            canvasBufferContext.lineTo(cX + (buttonSize * 0.3), cY + (buttonSize * -0.2));
+            canvasBufferContext.lineTo(cX + (buttonSize * 0.2), cY + (buttonSize * -0.1));
+            canvasBufferContext.lineTo(cX + (buttonSize * 0.1), cY + (buttonSize * -0.2));
+            canvasBufferContext.lineTo(cX + (buttonSize * 0.2), cY + (buttonSize * -0.3));
+            canvasBufferContext.lineTo(cX + (buttonSize * 0.0), cY + (buttonSize * -0.3));
+            canvasBufferContext.lineTo(cX + (buttonSize * 0.0), cY + (buttonSize * -0.1));
+            canvasBufferContext.lineTo(cX + (buttonSize * -0.3), cY + (buttonSize * 0.2));
+            canvasBufferContext.lineTo(cX + (buttonSize * -0.3), cY + (buttonSize * 0.3));
             canvasBufferContext.fill();
             canvasBufferContext.stroke();
             break;
@@ -475,44 +467,63 @@ Gui = function() {
             canvasBufferContext.strokeStyle="rgba(250,250,250,1.0)";
             //crates
             canvasBufferContext.beginPath();
-            canvasBufferContext.rect(aX + (aXSize * 0.4), aY + (aYSize * 0.2),aXSize*0.2,aYSize*0.2);
+            canvasBufferContext.rect(cX + (buttonSize * -0.1), cY + (buttonSize * -0.3),buttonSize*0.2,buttonSize*0.2);
             canvasBufferContext.fill();
             canvasBufferContext.stroke();
             canvasBufferContext.beginPath();
-            canvasBufferContext.rect(aX + (aXSize * 0.2), aY + (aYSize * 0.6),aXSize*0.2,aYSize*0.2);
+            canvasBufferContext.rect(cX + (buttonSize * -0.3), cY + (buttonSize * 0.1),buttonSize*0.2,buttonSize*0.2);
             canvasBufferContext.fill();
             canvasBufferContext.stroke();
             canvasBufferContext.beginPath();
-            canvasBufferContext.rect(aX + (aXSize * 0.6), aY + (aYSize * 0.6),aXSize*0.2,aYSize*0.2);
+            canvasBufferContext.rect(cX + (buttonSize * 0.1), cY + (buttonSize * 0.1),buttonSize*0.2,buttonSize*0.2);
             canvasBufferContext.fill();
             canvasBufferContext.stroke();
             //sides
             canvasBufferContext.beginPath();
-            canvasBufferContext.rect(aX + (aXSize * 0.1), aY + (aYSize * 0.1),aXSize*0.03,aYSize*0.8);
+            canvasBufferContext.rect(cX + (buttonSize * -0.4), cY + (buttonSize * -0.4),buttonSize*0.03,buttonSize*0.8);
             canvasBufferContext.fill();
             canvasBufferContext.stroke();
             canvasBufferContext.beginPath();
-            canvasBufferContext.rect(aX + (aXSize * 0.1), aY + (aYSize * 0.9),aXSize*0.8,aYSize*0.03);
+            canvasBufferContext.rect(cX + (buttonSize * -0.4), cY + (buttonSize * 0.4),buttonSize*0.8,buttonSize*0.03);
             canvasBufferContext.fill();
             canvasBufferContext.stroke();
             canvasBufferContext.beginPath();
-            canvasBufferContext.rect(aX + (aXSize * 0.9), aY + (aYSize * 0.1),aXSize*0.03,aYSize*0.83);
+            canvasBufferContext.rect(cX + (buttonSize * 0.4), cY + (buttonSize * -0.4),buttonSize*0.03,buttonSize*0.83);
             canvasBufferContext.fill();
             canvasBufferContext.stroke();
             break;
           case "delete":
             canvasBufferContext.strokeStyle="rgba(250,250,250,1.0)";
-            canvasBufferContext.lineWidth=xBuf;
             canvasBufferContext.beginPath();
-            canvasBufferContext.moveTo(aX + (aXSize * 0.2), aY + (aYSize * 0.8));
-            canvasBufferContext.lineTo(aX + (aXSize * 0.8), aY + (aYSize * 0.2));
+            canvasBufferContext.moveTo(cX + (buttonSize * -0.2), cY + (buttonSize * 0.2));
+            canvasBufferContext.lineTo(cX + (buttonSize * 0.2), cY + (buttonSize * -0.2));
             canvasBufferContext.stroke();
             canvasBufferContext.beginPath();
-            canvasBufferContext.moveTo(aX + (aXSize * 0.2), aY + (aYSize * 0.2));
-            canvasBufferContext.lineTo(aX + (aXSize * 0.8), aY + (aYSize * 0.8));
+            canvasBufferContext.moveTo(cX + (buttonSize * -0.2), cY + (buttonSize * -0.2));
+            canvasBufferContext.lineTo(cX + (buttonSize * 0.2), cY + (buttonSize * 0.2));
+            canvasBufferContext.stroke();
+
+            canvasBufferContext.lineWidth = lineWidth;
+            canvasBufferContext.beginPath();
+            canvasBufferContext.rect(cX + (buttonSize * -0.3), cY + (buttonSize * -0.3),buttonSize*0.6,buttonSize*0.6);
             canvasBufferContext.stroke();
             break;
-          case "upgrade":
+          case "select":
+            canvasBufferContext.strokeStyle="rgba(250,250,250,1.0)";
+            canvasBufferContext.beginPath();
+            canvasBufferContext.moveTo(cX + (buttonSize * -0.3), cY + (buttonSize * 0.0));
+            canvasBufferContext.lineTo(cX + (buttonSize * 0.3), cY + (buttonSize * 0.0));
+            canvasBufferContext.stroke();
+            canvasBufferContext.beginPath();
+            canvasBufferContext.moveTo(cX + (buttonSize * 0.0), cY + (buttonSize * -0.3));
+            canvasBufferContext.lineTo(cX + (buttonSize * 0.0), cY + (buttonSize * 0.3));
+            canvasBufferContext.stroke();
+
+            canvasBufferContext.lineWidth = lineWidth;
+            canvasBufferContext.beginPath();
+            var circRad = buttonSize * 0.2;
+            canvasBufferContext.arc(cX,cY,circRad,0,2*Math.PI,false);
+            canvasBufferContext.stroke();
             break;
         }
         aY += aYSize + (2*yBuf);
@@ -688,9 +699,12 @@ Gui = function() {
       var canAfford = true;
       var costString = "";
       if(build){
-        for(var reso in build.cost){
+        var costKeys = Object.keys(build.cost);
+        for(var cInd = 0; cInd < costKeys.length; cInd ++){
+          var reso = costKeys[cInd];
           costString += reso + ": " + build.cost[reso]+" ";
-          if(this.target.inventory.itemCount(reso) < build.cost[reso]){
+          var rQuant = resourceStats[reso] ? resourceStats[reso].current : 0;
+          if(rQuant < build.cost[reso]){
             canAfford = false;
           }
         }
@@ -833,7 +847,7 @@ Gui = function() {
         canvasBufferContext.beginPath();
         canvasBufferContext.fillStyle = "rgba(0,50,100,0.9)";
         canvasBufferContext.strokeStyle="rgba(0,50,175,1.0)";
-        canvasBufferContext.rect(x+(xSize*0.85),y,xSize*0.15,ySize);
+        canvasBufferContext.rect(x+(xSize*0.85),y,xSize*0.15,ySize/2);
         canvasBufferContext.fill();
         canvasBufferContext.stroke();
 
@@ -843,18 +857,51 @@ Gui = function() {
         canvasBufferContext.fillStyle="rgba("+aRed+","+aRed+","+aRed+","+tAlpha+")";
         canvasBufferContext.lineWidth=xBuf;
         canvasBufferContext.beginPath();
-        canvasBufferContext.moveTo(x + (xSize * 0.86), y + (ySize * 0.5));
-        canvasBufferContext.lineTo(x + (xSize * 0.99), y + (ySize * 0.5));
+        canvasBufferContext.moveTo(x + (xSize * 0.86), y + (ySize * 0.25));
+        canvasBufferContext.lineTo(x + (xSize * 0.99), y + (ySize * 0.25));
         canvasBufferContext.fill();
         canvasBufferContext.stroke();
         canvasBufferContext.beginPath();
-        canvasBufferContext.moveTo(x + (xSize * 0.99), y + (ySize * 0.5));
-        canvasBufferContext.lineTo(x + (xSize * 0.93), y + (ySize * 0.3));
+        canvasBufferContext.moveTo(x + (xSize * 0.99), y + (ySize * 0.25));
+        canvasBufferContext.lineTo(x + (xSize * 0.93), y + (ySize * 0.15));
         canvasBufferContext.fill();
         canvasBufferContext.stroke();
         canvasBufferContext.beginPath();
-        canvasBufferContext.moveTo(x + (xSize * 0.99), y + (ySize * 0.5));
-        canvasBufferContext.lineTo(x + (xSize * 0.93), y + (ySize * 0.7));
+        canvasBufferContext.moveTo(x + (xSize * 0.99), y + (ySize * 0.25));
+        canvasBufferContext.lineTo(x + (xSize * 0.93), y + (ySize * 0.35));
+        canvasBufferContext.fill();
+        canvasBufferContext.stroke();
+        //draw trade ALL
+        canvasBufferContext.beginPath();
+        canvasBufferContext.fillStyle = "rgba(0,50,100,0.9)";
+        canvasBufferContext.strokeStyle="rgba(0,50,175,1.0)";
+        canvasBufferContext.rect(x+(xSize*0.85),y+ySize*0.5,xSize*0.15,ySize/2);
+        canvasBufferContext.fill();
+        canvasBufferContext.stroke();
+
+        var tAlpha = ("trade" == this.uiMode) ? 1 : 0.5;
+        var aRed = ("trade" == this.uiMode) ? 250 : 20;
+        canvasBufferContext.strokeStyle="rgba("+aRed+","+aRed+","+aRed+","+tAlpha+")";
+        canvasBufferContext.fillStyle="rgba("+aRed+","+aRed+","+aRed+","+tAlpha+")";
+        canvasBufferContext.lineWidth=xBuf;
+        canvasBufferContext.beginPath();
+        canvasBufferContext.moveTo(x + (xSize * 0.87), y + (ySize * 0.65));
+        canvasBufferContext.lineTo(x + (xSize * 0.87), y + (ySize * 0.85));
+        canvasBufferContext.fill();
+        canvasBufferContext.stroke();
+        canvasBufferContext.beginPath();
+        canvasBufferContext.moveTo(x + (xSize * 0.87), y + (ySize * 0.75));
+        canvasBufferContext.lineTo(x + (xSize * 0.99), y + (ySize * 0.75));
+        canvasBufferContext.fill();
+        canvasBufferContext.stroke();
+        canvasBufferContext.beginPath();
+        canvasBufferContext.moveTo(x + (xSize * 0.99), y + (ySize * 0.75));
+        canvasBufferContext.lineTo(x + (xSize * 0.93), y + (ySize * 0.65));
+        canvasBufferContext.fill();
+        canvasBufferContext.stroke();
+        canvasBufferContext.beginPath();
+        canvasBufferContext.moveTo(x + (xSize * 0.99), y + (ySize * 0.75));
+        canvasBufferContext.lineTo(x + (xSize * 0.93), y + (ySize * 0.85));
         canvasBufferContext.fill();
         canvasBufferContext.stroke();
       }
@@ -869,144 +916,6 @@ Gui = function() {
     canvasBufferContext.stroke();
     canvasBufferContext.beginPath();
     var aRed = (this.target && this.target.inventory && (Object.keys(this.target.inventory.inv).slice(this.inventoryOffset).length > 6)) ? 200 : 100;
-    canvasBufferContext.fillStyle = "rgba("+aRed+",0,50,0.9)";
-    canvasBufferContext.strokeStyle="rgba("+aRed+",0,75,1.0)";
-    canvasBufferContext.moveTo(x+(xSize*0.4),y+yBuf);
-    canvasBufferContext.lineTo(x+(xSize*0.5),y+yArrow-yBuf);
-    canvasBufferContext.lineTo(x+(xSize*0.6),y+yBuf);
-    canvasBufferContext.fill();
-    canvasBufferContext.stroke();
-
-  }
-
-  this.drawTrade = function(canvasBufferContext){
-    var size = this.size('trade');
-    var pos = this.position('trade');
-    canvasBufferContext.beginPath();
-    canvasBufferContext.lineWidth=Math.floor(config.xRatio)+"";
-    canvasBufferContext.fillStyle = "rgba(150,0,200,0.9)";
-    canvasBufferContext.strokeStyle="rgba(200,0,250,1.0)";
-    canvasBufferContext.rect(pos.x,pos.y,size.x,size.y);
-    canvasBufferContext.fill();
-    canvasBufferContext.stroke();
-    var xBuf = Math.floor(config.xRatio) * 2;
-    var yBuf = Math.floor(config.yRatio) * 2;
-    var x = pos.x + xBuf;
-    var y = pos.y + yBuf;
-    var xSize = size.x - (2*xBuf);
-    var yArrow = (size.y / 16) - (2*yBuf);
-    var yTab = (size.y / 10) - (2*yBuf);
-    var ySize = ((size.y - (yArrow*2) - yTab - (yBuf*6))/6)-(2*yBuf);
-    //tabs
-    canvasBufferContext.beginPath();
-    canvasBufferContext.fillStyle = "rgba(20,0,50,0.6)";
-    canvasBufferContext.strokeStyle="rgba(20,0,75,1.0)";
-    canvasBufferContext.rect(x,y,xSize,yTab);
-    canvasBufferContext.fill();
-   canvasBufferContext.stroke();
-    y += yTab + (2*yBuf);
-    //arrow
-    canvasBufferContext.beginPath();
-    canvasBufferContext.fillStyle = "rgba(20,0,50,0.6)";
-    canvasBufferContext.strokeStyle="rgba(20,0,75,1.0)";
-    canvasBufferContext.rect(x,y,xSize,yArrow);
-    canvasBufferContext.fill();
-    canvasBufferContext.stroke();
-    canvasBufferContext.beginPath();
-    var aRed = (this.inventoryOffset > 0) ? 200 : 100;
-    canvasBufferContext.fillStyle = "rgba("+aRed+",0,50,0.9)";
-    canvasBufferContext.strokeStyle="rgba("+aRed+",0,75,1.0)";
-    canvasBufferContext.moveTo(x+(xSize*0.4),y+yArrow-yBuf);
-    canvasBufferContext.lineTo(x+(xSize*0.5),y+yBuf);
-    canvasBufferContext.lineTo(x+(xSize*0.6),y+yArrow-yBuf);
-    canvasBufferContext.fill();
-    canvasBufferContext.stroke();
-    y += yArrow + (2*yBuf);
-    //objs
-    for(var i = 0;i<6;i++){
-      canvasBufferContext.beginPath();
-      canvasBufferContext.fillStyle = "rgba(20,0,50,0.9)";
-      canvasBufferContext.strokeStyle="rgba(20,0,75,1.0)";
-      canvasBufferContext.rect(x,y,xSize,ySize);
-      canvasBufferContext.fill();
-      canvasBufferContext.stroke();
-      if(this.target.lastTarget && this.target.lastTarget.inventory){
-        var invKey = Object.keys(this.target.lastTarget.inventory.inv)[i];
-        var invCount = this.target.lastTarget.inventory.inv[invKey];
-        if(invCount){
-      //    invItem.drawTargetPortrait(x,y,xSize/4,ySize,canvasBufferContext);
-          var fontSize = ySize / 4;
-          canvasBufferContext.font = fontSize + 'px Courier';
-          canvasBufferContext.fillStyle = "rgba(50,250,200,0.9)";
-          canvasBufferContext.fillText(invKey,x+(xSize/4),y+fontSize+yBuf);
-  //count
-          var fontSize = ySize / 4;
-          canvasBufferContext.font = fontSize + 'px Courier';
-          canvasBufferContext.fillStyle = "rgba(50,250,200,0.9)";
-          canvasBufferContext.fillText(invCount,x+(xSize/2),y+fontSize+yBuf);
-
-          //draw delete
-          //
-          canvasBufferContext.beginPath();
-          canvasBufferContext.fillStyle = "rgba(20,50,100,0.9)";
-          canvasBufferContext.strokeStyle="rgba(20,50,175,1.0)";
-          canvasBufferContext.rect(x+(xSize*0.7),y,xSize*0.15,ySize);
-          canvasBufferContext.fill();
-          canvasBufferContext.stroke();
-
-          canvasBufferContext.strokeStyle="rgba(250,250,250,1.0)";
-          canvasBufferContext.fillStyle="rgba(250,250,250,1.0)";
-          canvasBufferContext.lineWidth=xBuf;
-          canvasBufferContext.beginPath();
-          canvasBufferContext.moveTo(x + (xSize * 0.72), y + (ySize * 0.3));
-          canvasBufferContext.lineTo(x + (xSize * 0.83), y + (ySize * 0.7));
-          canvasBufferContext.fill();
-          canvasBufferContext.stroke();
-          canvasBufferContext.beginPath();
-          canvasBufferContext.moveTo(x + (xSize * 0.83), y + (ySize * 0.3));
-          canvasBufferContext.lineTo(x + (xSize * 0.72), y + (ySize * 0.7));
-          canvasBufferContext.fill();
-          canvasBufferContext.stroke();
-          //draw trade arrow
-          var aRed = ("trade" == this.uiMode) ? 0 : 200;
-          canvasBufferContext.beginPath();
-          canvasBufferContext.fillStyle = "rgba("+aRed+",50,100,0.9)";
-          canvasBufferContext.strokeStyle="rgba("+aRed+",50,175,1.0)";
-          canvasBufferContext.rect(x+(xSize*0.85),y,xSize*0.15,ySize);
-          canvasBufferContext.fill();
-          canvasBufferContext.stroke();
-
-          canvasBufferContext.strokeStyle="rgba(250,250,250,1.0)";
-          canvasBufferContext.fillStyle="rgba(250,250,250,1.0)";
-          canvasBufferContext.lineWidth=xBuf;
-          canvasBufferContext.beginPath();
-          canvasBufferContext.moveTo(x + (xSize * 0.86), y + (ySize * 0.5));
-          canvasBufferContext.lineTo(x + (xSize * 0.99), y + (ySize * 0.5));
-          canvasBufferContext.fill();
-          canvasBufferContext.stroke();
-          canvasBufferContext.beginPath();
-          canvasBufferContext.moveTo(x + (xSize * 0.99), y + (ySize * 0.5));
-          canvasBufferContext.lineTo(x + (xSize * 0.93), y + (ySize * 0.3));
-          canvasBufferContext.fill();
-          canvasBufferContext.stroke();
-          canvasBufferContext.beginPath();
-          canvasBufferContext.moveTo(x + (xSize * 0.99), y + (ySize * 0.5));
-          canvasBufferContext.lineTo(x + (xSize * 0.93), y + (ySize * 0.7));
-          canvasBufferContext.fill();
-          canvasBufferContext.stroke();
-        }
-      }
-      y += ySize + (2*yBuf);
-    }
-    //arrow
-    canvasBufferContext.beginPath();
-    canvasBufferContext.fillStyle = "rgba(20,0,50,0.6)";
-    canvasBufferContext.strokeStyle="rgba(20,0,75,1.0)";
-    canvasBufferContext.rect(x,y,xSize,yArrow);
-    canvasBufferContext.fill();
-    canvasBufferContext.stroke();
-    canvasBufferContext.beginPath();
-    var aRed = (this.target && this.target.inventory.inv && (Object.keys(this.target.inventory.inv).slice(this.inventoryOffset).length > 6)) ? 200 : 100;
     canvasBufferContext.fillStyle = "rgba("+aRed+",0,50,0.9)";
     canvasBufferContext.strokeStyle="rgba("+aRed+",0,75,1.0)";
     canvasBufferContext.moveTo(x+(xSize*0.4),y+yBuf);

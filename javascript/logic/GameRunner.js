@@ -11,7 +11,7 @@ function GameRunner() {
     this.Run = function () {
       if (this.initialize()) {
         _scene = new LoadingScene();
-        setInterval(function() {document.GameRunner.tick()}, 1000 / 40);
+        setInterval(function() {document.GameRunner.tick()}, 1000 / config.fps);
         loadContent();
       }
     }
@@ -34,19 +34,23 @@ function GameRunner() {
     }
 
     function bindControls () {
-      $(document).bind('keyup', function (event) {
-          LocalEvent(event);
+      $(document).bind('keyup', function (e) {
+        LocalEvent(e,true);
+        return false;
       });
-      $(document).bind('keydown', function (event) {
-          LocalEvent(event);
+      $(document).bind('keydown', function (e) {
+        var noDefault = (e.keyCode == 8 || e.keyCode == 32);
+        LocalEvent(e,noDefault);
+        if(noDefault){
+          return false;
+        }
       });
-      $(document).bind('click', function (event) {
-        event.preventDefault();
-          LocalEvent(event);
+      $(document).bind('click', function (e) {
+        LocalEvent(e,true);
+        return false;
       });
-      $(document).bind('contextmenu', function (event) {
-        event.preventDefault();
-        LocalEvent(event);
+      $(document).bind('contextmenu', function (e) {
+        LocalEvent(e,true);
         return false;
       });
       _canvas.addEventListener('mousemove', function(evt) {
@@ -59,8 +63,8 @@ function GameRunner() {
 
     var updateSizes = function() {
       var windowSize = getWindowSize();
-      windowSize.x -= 10;
-      windowSize.y -= 20;
+      windowSize.x -= 15;
+      windowSize.y -= 40;
       $('#canvas').width(windowSize.x).height(windowSize.y);
       $('#canvas').attr('width', windowSize.x).attr('height', windowSize.y);
       config.canvasWidth = windowSize.x;
@@ -78,22 +82,26 @@ function GameRunner() {
     };
 
 
-    function LocalEvent (event) {
-      if (event != null){
-        switch(event.type) {
+    function LocalEvent(e,preventDefault) {
+      if (e != null){
+        if(preventDefault){
+          e.preventDefault();
+          e.stopPropagation();
+        }
+        switch(e.type) {
           case 'contextmenu':
           case 'click':
-            if (event.target.id == 'canvas'){
-              mousePos = getPosition(event);
-              var rightMouse = (event.button == 2);
+            if (e.target.id == 'canvas'){
+              mousePos = getPosition(e);
+              var rightMouse = (e.button == 2);
               _scene.click(mousePos, rightMouse);
             }
             break;
           case 'keydown':
-            _scene.keyPress(event.keyCode,true);
+            _scene.keyPress(e.keyCode,true);
             break;
           case 'keyup':
-            _scene.keyPress(event.keyCode,false);
+            _scene.keyPress(e.keyCode,false);
             break;
         }
       }
@@ -123,7 +131,7 @@ function GameRunner() {
           _scene = new LandingScene(_scene.stars,_scene.heroName,_scene.audio);
           break;
         case 'landing':
-          _scene = new GameScene(_scene.stars,_scene.terrain,_scene.ship,_scene.heroName,_scene.sceneUtils.bgs);
+          _scene = new GameScene(_scene.stars,_scene.terrain,_scene.ship,_scene.heroName,_scene.sceneUtils.bgs,_scene.aliens);
           break;
       }
     }

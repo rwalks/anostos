@@ -7,6 +7,7 @@ Block = function(type,pos) {
   this.airtight = false;
   this.pathable = false;
   this.cost = {};
+  this.maxHealth = 100; this.currentHealth = 100;
   switch(type){
     case 'soil':
       fName = 'Soil';
@@ -26,9 +27,13 @@ Block = function(type,pos) {
   this.name = [fName,"Block"];
   this.size = {'x':1*config.gridInterval,'y':1*config.gridInterval};
   this.position = pos ? pos : {'x':x,'y':y};
+
+  this.center = function(){
+    return {'x':this.position.x+(this.size.x*0.5),'y':this.position.y+(this.size.y*0.5)};
+  }
   this.collision = function(){return true;}
   this.lastDrawn = -1;
-  this.type = "block";
+  this.type = "tile";
   this.draw = function(camera,canvasBufferContext,count){
     //draw less often
     if(count > this.lastDrawn || Math.abs(count - this.lastDrawn) > 1){
@@ -66,24 +71,62 @@ Block = function(type,pos) {
   }
 }
 
-Corpse = function(pos,inventory){
+Corpse = function(pos,inventory,cost){
   this.inventory = inventory ? inventory : new Inventory();
   this.size = {'x':1*config.gridInterval,'y':1*config.gridInterval};
   this.name = ["Dessicated","Remains"];
   this.position = pos ? pos : {'x':0,'y':0};
-  this.type = "corpse";
-  this.actions = ["inventory"];
-  this.interact = 'inventory';
+  this.cost = cost ? cost : {};
+  this.maxVelocity = config.gridInterval / 3;
 
-  this.update = function(terrain){
-    var gravY = this.position.y + this.size.y + config.gravity;
-    var tY = gravY - (gravY % config.gridInterval);
-    var tX = this.position.x - (this.position.x % config.gridInterval);
-    if(terrain.terrain[tX] && terrain.terrain[tX][tY]){
-   //   this.position.y = tY - this.size.y;
+  var target = false;
+
+  this.center = function(){
+    return {'x':this.position.x+(this.size.x*0.5),'y':this.position.y+(this.size.y*0.5)};
+  }
+  this.type = "corpse";
+
+  this.update = function(terrain,humans){
+    if(target){
+      var d = utils.objectDistance(target,this);
+      if(d < config.pickUpRange){
+        return true;
+      }
+      var fX = target.position.x - this.position.x;
+      var fY = target.position.y - this.position.y;
+      this.applyMaxVelocity(fX,fY);
     }else{
-      this.position.y = gravY;
+      //human pickup
+      var minD = 999;
+      for(var h in humans){
+        var d = utils.objectDistance(humans[h],this);
+        if(d < config.lootRange){
+          if(d < minD){
+            minD = d;
+            target = humans[h];
+          }
+        }
+      }
+      //grav
+      var gravY = this.position.y + this.size.y + config.gravity;
+      var tY = utils.roundToGrid(gravY);
+      var tX = utils.roundToGrid(this.position.x);
+      if(terrain.getTile(tX,tY)){
+     //   this.position.y = tY - this.size.y;
+      }else{
+        this.position.y = gravY;
+      }
     }
+  }
+
+  this.applyMaxVelocity = function(dX,dY){
+    var veloMax = this.maxVelocity / (Math.abs(dX) + Math.abs(dY));
+    if(veloMax < 1){
+      dX = dX * veloMax;
+      dY = dY * veloMax;
+    }
+    this.position.x += dX;
+    this.position.y += dY;
   }
 
   this.draw = function(camera,canvasBufferContext,count){
@@ -157,6 +200,12 @@ Door = function(pos) {
   this.name = [fName,""];
   this.size = {'x':1*config.gridInterval,'y':2*config.gridInterval};
   this.position = pos ? pos : {'x':x,'y':y};
+
+  this.maxHealth = 100; this.currentHealth = 100;
+
+  this.center = function(){
+    return {'x':this.position.x+(this.size.x*0.5),'y':this.position.y+(this.size.y*0.5)};
+  }
   this.open = false;
   this.cost = {'metal': 4};
 
@@ -170,7 +219,7 @@ Door = function(pos) {
   this.update = function(humans){
     var closeHuman = false;
     for(h in humans){
-      if(config.distance(humans[h],this) <= config.gridInterval*1.1){
+      if(utils.objectDistance(humans[h],this) <= config.gridInterval*1.1){
         closeHuman = true;
       }
     }

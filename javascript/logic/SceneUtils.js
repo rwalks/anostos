@@ -1,10 +1,12 @@
 var SceneUtils = function (bg){
   this.bgs = bg ? bg : [{},{},{}];
   var bgColors = [[20,10,100],[40,20,150],[100,50,200]];
+  this.starInterval = 5;
 
   this.generateTerrain = function(){
     var terrainInterval = config.terrainInterval;
     var tMap = {};
+    var surfaceSpawns = [];
     var mid = config.mapHeight*0.7;
     var last = mid;
     for(var x=0;x<=config.mapWidth;x+=terrainInterval){
@@ -23,11 +25,16 @@ var SceneUtils = function (bg){
          //dY = 0;
       }
       var yMin = last + dY;
+      var rockChance = 0.99;
+      var colHeight = (config.mapHeight - yMin);
       for(var y=config.mapHeight;y>=yMin;y-=terrainInterval){
          var tile = new tiles.TerrainTile(x,y,'soil');
          if(y < yMin+terrainInterval){
            tile.topLayer = true;
-           if(Math.random() < 0.1){
+           var randAction = Math.random();
+           if(Math.random() < 0.01){
+             surfaceSpawns.push(tile.position);
+           }else if(Math.random() < 0.1){
              tile.plant = new Plant(tile.position);
            }
          }
@@ -43,8 +50,9 @@ var SceneUtils = function (bg){
       last = yMin;
     }
 
+    generateRock(tMap);
     generateOre(tMap);
-    return tMap;
+    return new Terrain(tMap,surfaceSpawns);
   }
 
   var generateOre = function(tMap){
@@ -66,12 +74,31 @@ var SceneUtils = function (bg){
     }
   }
 
+  var generateRock = function(tMap){
+    var lastMin = config.mapHeight * 0.9;
+    var yMax = config.mapHeight;
+    var towerDuration = 0;
+    var towerHeight = 0;
+    for(var x = 0; x < config.mapWidth; x += config.terrainInterval){
+      if(Math.random() < 0.01){
+        towerDuration = Math.random() * 20;
+        towerHeight = Math.random() * config.mapHeight * 0.1;
+      }
+      var deltaH = (Math.random() * config.mapHeight * 0.01) - (config.mapHeight*0.005);
+      lastMin = lastMin - deltaH;
+      for(var y = yMax; y > (lastMin - towerHeight); y -= config.terrainInterval){
+        var tile = new tiles.TerrainTile(x,y,'rock');
+        tiles.addTile(tile,tMap);
+      }
+    }
+  }
+
   this.drawBG = function(camera,clockCycle,canvasBufferContext){
     var bgInt = 4 * config.gridInterval;
     var xRatio = config.canvasWidth / config.cX;
     var yRatio = config.canvasHeight / config.cY;
     var parallax = 4;
-    for(b in this.bgs){
+    for(var b = 0; b < this.bgs.length; b++){
       var camX = camera.xOff / parallax;
       var camY = camera.yOff;
       var bg = this.bgs[b];
@@ -109,10 +136,10 @@ var SceneUtils = function (bg){
 
   this.generateStars = function(c){
     var ret = {};
-    var count = c ? c : 10000;
+    var count = c ? c : 100;
     for(i=0; i<count; i++){
-      var x = Math.floor(Math.random() * config.mapWidth);
-      var y = Math.floor(Math.random() * config.mapHeight);
+      var x = (Math.random() * config.cX);
+      var y = (Math.random() * config.cY);
       if(!ret[x]){ ret[x] = {};}
       var fontSize = Math.random();
       ret[x][y] = ["",fontSize];
@@ -121,29 +148,52 @@ var SceneUtils = function (bg){
   }
 
   this.drawStars = function(stars,camera,clockCycle,canvasBufferContext){
-    var parallax = 10;
-    for(x in stars){
-      if((x > camera.xOff/parallax)&&(x < ((camera.xOff/parallax) + config.cX))){
+    var xKeys = Object.keys(stars);
+    for(var x = 0; x < xKeys.length; x++){
+      if(clockCycle % 2 == 0){
+        var r = Math.floor(Math.random() * 250);
+        var g = Math.floor(Math.random() * 250);
+        var b = Math.floor(Math.random() * 250);
+        var a = Math.floor(Math.random() * 0.1) + 0.9;
+        var rgbaString = "rgba("+r+","+g+","+b+","+a+")";
+      }
+      var xKey = xKeys[x];
+      var yKeys = Object.keys(stars[xKey]);
+      for(var y = 0; y < yKeys.length; y++){
+        var yKey = yKeys[y];
+        var star = stars[xKey][yKey];
         if(clockCycle % 2 == 0){
-          var r = Math.floor(Math.random() * 250);
-          var g = Math.floor(Math.random() * 250);
-          var b = Math.floor(Math.random() * 250);
-          var a = Math.floor(Math.random() * 0.1) + 0.9;
-          var rgbaString = "rgba("+r+","+g+","+b+","+a+")";
+          star[0] = rgbaString;
         }
-        for(y in stars[x]){
-          if((y > camera.yOff/parallax) && (y < (camera.yOff/parallax) + config.cY)){
-            if(clockCycle % 2 == 0){
-              stars[x][y][0] = rgbaString;
-            }
-            canvasBufferContext.fillStyle = stars[x][y][0];
-            var size = config.canvasWidth / 125;
-            canvasBufferContext.font = stars[x][y][1]*size +"px Courier";
-            canvasBufferContext.fillText("*",(x-(camera.xOff/parallax))*config.xRatio,(y-(camera.yOff/parallax))*config.yRatio);
-          }
-        }
+        canvasBufferContext.fillStyle = star[0];
+        var size = config.canvasWidth / 125;
+        canvasBufferContext.font = star[1]*size +"px Courier";
+        canvasBufferContext.fillText("*",xKey*config.xRatio,yKey*config.yRatio);
       }
     }
+  }
+
+  this.drawPause = function(canvasBufferContext){
+    //dark mask
+    canvasBufferContext.fillStyle = "rgba(0,0,0,0.5)";
+    canvasBufferContext.beginPath();
+    canvasBufferContext.rect(0,0,config.canvasWidth,config.canvasHeight);
+    canvasBufferContext.fill();
+    //flashing text
+    var dr = Math.floor(Math.random() * 150);
+    var dg = Math.floor(Math.random() * 150);
+    var db = Math.floor(Math.random() * 150);
+    var da = Math.floor(Math.random() * 0.2) + 0.8;
+    var rgbStr = "rgba("+(100+dr)+","+(100+dg)+","+(100+db)+","+da+")";
+    canvasBufferContext.fillStyle = rgbStr;
+    var fontSize = Math.min(config.xRatio * 10, config.yRatio*10);
+    canvasBufferContext.font = fontSize+"px Courier";
+    canvasBufferContext.fillText("SIMULATION SUSPENDED",config.canvasWidth*0.45,config.canvasHeight*0.45);
+    canvasBufferContext.fillText("ESC TO RESUME",config.canvasWidth*0.48,config.canvasHeight*0.52);
+  }
+
+  this.onScreen = function(obj,camera){
+    return obj.position.x > camera.xOff && obj.position.x < camera.xOff + config.cX;
   }
 
   var rdbaString;

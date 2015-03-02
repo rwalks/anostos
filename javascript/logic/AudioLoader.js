@@ -25,9 +25,9 @@ var AudioLoader = function (){
   }
 
   this.play = function(id,reload){
-    if(reload && window.chrome){ files[id].copies[files[id].index].load(); }
-    files[id].copies[files[id].index].play();
-    files[id].index = (files[id].index + 1) % files[id].copies.length;
+  //  if(reload && window.chrome){ files[id].copies[files[id].index].load(); }
+  //  files[id].copies[files[id].index].play();
+  //  files[id].index = (files[id].index + 1) % files[id].copies.length;
   }
 
   this.stop = function(id){
@@ -40,8 +40,12 @@ var AudioLoader = function (){
   this.ready = function(){
     var ret = true;
     for(f in this.files){
-      if(this.files[f].readyState != 4){
-        ret = false;
+      var fil = this.files[f];
+      for(c in fil.copies){
+        var copy = fil.copies[c];
+        if(!copy.readyState != 4){
+          ret = false;
+        }
       }
     }
     return ret;

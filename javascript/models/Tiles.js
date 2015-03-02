@@ -38,13 +38,18 @@ Tiles = function() {
     x = x - (x % this.size.x);
     y = y - (y % this.size.y);
     this.position = {'x':x,'y':y};
+
+    this.center = function(){
+      return {'x':this.position.x+(this.size.x*0.5),'y':this.position.y+(this.size.y*0.5)};
+    }
     this.collision = function(){return true;}
     this.pathable = false;
     this.lastDrawn = -1;
-    this.type = "construction";
+    this.type = "tile";
     var fillStyle; var strokeStyle;
     this.topLayer = false;
     this.plant = false;
+    this.maxHealth = 100; this.currentHealth = 100;
     switch(type){
       case "soil":
         this.name = ["Soil",""];
@@ -57,6 +62,12 @@ Tiles = function() {
         this.cost = {'ore': 8};
         fillStyle = "rgba(110,100,130,1.0)";
         strokeStyle = "rgba(210,200,230,1.0)";
+        break;
+      case "rock":
+        this.name = ["Rock",""];
+        this.cost = {'rock': 8};
+        fillStyle = "rgba(10,100,100,1.0)";
+        strokeStyle = "rgba(20,150,150,1.0)";
         break;
     }
     this.draw = function(camera,canvasBufferContext,count){
@@ -83,7 +94,7 @@ Tiles = function() {
           canvasBufferContext.beginPath();
           canvasBufferContext.moveTo(originX,originY);
           var points = [[lX,0],[lX,lY*0.4],[lX*0.9,lY*0.2],[lX*0.8,lY*0.4],[lX*0.7,lY*0.2],[lX*0.6,lY*0.4],[lX*0.5,lY*0.2],[lX*0.4,lY*0.4],[lX*0.3,lY*0.2],[lX*0.2,lY*0.4],[lX*0.1,lY*0.2],[0,lY*0.4],[0,0]];
-          for(var p in points){
+          for(var p = 0; p < points.length; p++){
             canvasBufferContext.lineTo(originX+points[p][0],originY+points[p][1]);
           }
           canvasBufferContext.fill();

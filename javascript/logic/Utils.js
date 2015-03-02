@@ -1,22 +1,4 @@
-var Config = function (){
-  this.canvasWidth = 800;
-  this.canvasHeight = 600;
-  this.mapWidth = 10000;
-  this.mapHeight = 10000;
-  this.cameraMoveRate = 11;
-  this.canvasMatchWindow = true;
-  this.cX = 600;
-  this.cY = 450;
-  this.gravity = 0.5;
-  this.gridInterval = 10;
-  this.terrainInterval = 2*this.gridInterval;
-  this.adX = -10000;
-  this.xRatio = 1;
-  this.yRatio = 1;
-  this.updateRatios = function(){
-    this.xRatio = this.canvasWidth / this.cX;
-    this.yRatio = this.canvasHeight / this.cY;
-  }
+var Utils = function (){
 
   var firstNames = ["Lob","Tex","Snake","Jeb","Moose","Kansas","Rolf","Tane","Benji","Javier","Jane","El",
                     "Ellen","Parthenia","Tiny","Henry","Virgil","Hildred","Fern","Eve","Gibraltar","Ace","Vivian",
@@ -45,9 +27,58 @@ var Config = function (){
     return [firstNames[fN],lastNamesA[lNA] + "" + lastNamesB[lNB]];
   }
 
-  this.test = 0;
+  this.distance = function(p1, p2) {
+    return Math.sqrt(Math.pow(p2[0] - p1[0],2)+Math.pow(p2[1]-p1[1],2));
+  }
 
-  this.distance = function(obj1, obj2) {
+  this.objectDistance = function(obj1, obj2) {
     return Math.sqrt(Math.pow((obj2.position.x - obj1.position.x),2)+Math.pow((obj2.position.y-obj1.position.y),2));
+  }
+
+  this.roundToGrid = function(x){
+    return (x - (x % config.gridInterval));
+  }
+
+  this.clonePos = function(pos){
+    var clone = {};
+    clone.x = pos.x;
+    clone.y = pos.y;
+    return clone;
+  }
+
+  this.intersect = function(p0,p1,p2,p3){
+    var s10X = p1[0] - p0[0];
+    var s10Y = p1[1] - p0[1];
+    var s32X = p3[0] - p2[0];
+    var s32Y = p3[1] - p2[1];
+
+    var denom = s10X * s32Y - s32X * s10Y;
+    if(denom == 0){
+      return false;
+    }
+    var denomPos = denom > 0;
+
+    var s02X = p0[0] - p2[0];
+    var s02Y = p0[1] - p2[1];
+
+    var sNum = s10X * s02Y - s10Y * s02X;
+    if((sNum < 0) == denomPos){
+      return false;
+    }
+
+    var tNum = s32X * s02Y - s32Y * s02X;
+    if((tNum < 0) == denomPos){
+      return false;
+    }
+
+    if((sNum > denom) == denomPos || (tNum > denom) == denomPos){
+      return false;
+    }
+
+    //collision if this far
+    var t = tNum / denom;
+    var iX = p0[0] + (t * s10X);
+    var iY = p0[1] + (t * s10Y);
+    return [iX,iY];
   }
 }
