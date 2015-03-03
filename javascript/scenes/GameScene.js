@@ -33,10 +33,10 @@ var GameScene = function (strs,trn,shp,nam,bg,als){
   for(var i=0;i<3;i++){
     var x = (Math.random()*(config.gridInterval*6))-(config.gridInterval*3) + ship.position.x;
     var y = ship.position.y;
-   // var y = 6000;
-    var name = (i == 0) ? heroName : false;
-    humans.push( new Human(x,y,name) );
+    humans.push( new Human(x,y) );
   }
+
+  this.player = new Player(ship.position.x,ship.position.y,heroName);
   //starting resources
   this.inventory = new Inventory();
   this.inventory.addItem('metal',250);

@@ -1,4 +1,4 @@
-Player = function(x,y,name) {
+Npc = function(x,y,name) {
   Human.call(this,x,y,name);
 
   var rdbaString;
