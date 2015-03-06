@@ -119,7 +119,7 @@ HiveWorker = function(x,y,hive,id) {
   this.lastHarvested;
   this.burrowStrength = 2;
 
-  this.findTarget = function(terrain,humans){
+  this.findTarget = function(terrain){
     //search for source of metal within range: buildings or ore
     //else set random tile dest
     var oX = this.position.x - (this.position.x % config.gridInterval);
@@ -289,7 +289,7 @@ HiveWarrior = function(x,y) {
   this.moveAccel = config.gridInterval/2;
   this.size = {'x':1*config.gridInterval,'y':1*config.gridInterval};
 
-  this.findTarget = function(terrain,humans){}
+  this.findTarget = function(terrain){}
   this.interactTarget = function(terrain){}
   this.draw = function(camera,canvasContext){}
 
@@ -315,7 +315,7 @@ HiveNest = function(x,y) {
     return {'x': this.position.x,'y': (this.position.y + this.size.y - config.gridInterval) };
   }
 
-  this.findTarget = function(terrain,humans){
+  this.findTarget = function(terrain){
     //spawn
     if(this.inventory.itemCount('metal') >= 1 && this.currentSpawn < this.maxSpawn){
       if(this.inventory.removeItem('metal',1)){
@@ -393,7 +393,7 @@ HiveQueen = function(x,y) {
   this.moveAccel = config.gridInterval/2;
   this.size = {'x':1*config.gridInterval,'y':1*config.gridInterval};
 
-  this.findTarget = function(humans){}
+  this.findTarget = function(){}
   this.interactTarget = function(terrain){}
   this.draw = function(camera,canvasContext){}
 

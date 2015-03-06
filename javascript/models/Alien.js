@@ -31,7 +31,7 @@ Alien = function(x,y) {
 
 
   //class specific functions
-  this.findTarget = function(humans){}
+  this.findTarget = function(terrain){}
   this.interactTarget = function(terrain){}
 
   this.draw = function(camera,canvasContext){
@@ -55,7 +55,7 @@ Alien = function(x,y) {
     return {'x':this.position.x+(this.size.x*0.5),'y':this.position.y+(this.size.y*0.5)};
   }
 
-  this.update = function(terrain,humans){
+  this.update = function(terrain){
     var ret = false;
     this.counter += 1;
     if(this.counter > 100){ this.counter = 0; }
@@ -70,7 +70,7 @@ Alien = function(x,y) {
       if(this.targetObj){
         ret = this.interactTarget(terrain);
       }else{
-        ret = this.findTarget(terrain,humans);
+        ret = this.findTarget(terrain);
       }
       this.applyForces();
       this.applyMaxVelocity();

@@ -39,6 +39,12 @@ var Utils = function (){
     return (x - (x % config.gridInterval));
   }
 
+  this.rotate = function(x,y,theta){
+    var rx = (x*Math.cos(theta))-(y*Math.sin(theta));
+    var ry = (x*Math.sin(theta))+(y*Math.cos(theta));
+    return [rx,ry];
+  }
+
   this.clonePos = function(pos){
     var clone = {};
     clone.x = pos.x;

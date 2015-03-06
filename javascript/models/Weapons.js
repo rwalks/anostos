@@ -14,15 +14,16 @@ Weapon = function(owner){
   this.fire = function(){
     var ret = false;
     var origin = utils.clonePos(this.owner.center());
-    var dest = this.owner.targetObj ? utils.clonePos(this.owner.targetObj.center()) : false;
-    if(!this.cooldownTimer && dest){
+    if(!this.cooldownTimer){
       this.cooldownTimer += this.cooldownCost;
-      ret = this.spawnAmmo(origin,dest);
+      var theta = this.owner.direction ? Math.PI : 0;
+      theta += this.owner.weaponTheta * (this.owner.direction ? 1 : -1);
+      ret = this.spawnAmmo(origin,theta);
     }
     return ret;
   }
 
-  this.spawnAmmo = function(orig,dest){
+  this.spawnAmmo = function(orig,theta){
   }
 
   this.update = function(){
@@ -44,8 +45,8 @@ BasicBlaster = function(owner){
     weaponArt.drawBlaster(x,y,buffer,this.owner);
   }
 
-  this.spawnAmmo = function(orig,dest){
-    return [new BlastAmmo(orig,dest)];
+  this.spawnAmmo = function(orig,theta){
+    return [new BlastAmmo(orig,theta)];
   }
 
   this.clone = function(pos){

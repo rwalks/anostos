@@ -1,10 +1,15 @@
-Ammo = function(orig,dest){
+Ammo = function(orig,theta){
   this.lifeSpan;
-  this.origin = orig;
-  this.dest = dest;
-  this.position = utils.clonePos(orig);
+  this.velocity = {};
+  this.position = orig;
   this.maxVelocity = 1;
   this.damage = 1;
+
+  var initVX = this.direction ? 1 : -1;
+  var velo = utils.rotate(initVX,0,theta);
+  this.velocity.x = velo[0];
+  this.velocity.y = velo[1];
+
 
   this.draw = function(camera,canvasContext){
     var x = (this.position.x-camera.xOff)*config.xRatio;
@@ -14,26 +19,22 @@ Ammo = function(orig,dest){
 
   this.drawAmmo = function(x,y,buffer){};
 
-  this.update = function(terrain,aliens){
+  this.update = function(terrain){
     //update position
-    var dX = this.dest.x - this.origin.x;
-    var dY = this.dest.y - this.origin.y;
-    var veloMax = this.maxVelocity / (Math.abs(dX) + Math.abs(dY));
-    if(veloMax < 1){
-      dX = dX * veloMax;
-      dY = dY * veloMax;
-    }
-    this.position.x += dX;
-    this.position.y += dY;
+    this.position.x += this.velocity.x * this.maxVelocity;
+    this.position.y += this.velocity.y * this.maxVelocity;
     //check collisions
     var tX = utils.roundToGrid(this.position.x);
     var tY = utils.roundToGrid(this.position.y);
-    if(terrain.getTile(tX,tY)){
+    var tile = terrain.getTile(tX,tY);
+    if(tile){
+      //TODO wound building
       return true;
     }
-    for(var a = 0; a < aliens.length; a++){
-      if(aliens[a].pointWithin(this.position.x,this.position.y)){
-        aliens[a].wound(this.damage);
+    var entity = terrain.getEntity(tX,tY);
+    if(entity){
+      if(entity.pointWithin(this.position.x,this.position.y)){
+        entity.wound(this.damage);
         return true;
       }
     }
@@ -41,8 +42,8 @@ Ammo = function(orig,dest){
 
 }
 
-BlastAmmo = function(orig,dest){
-  Ammo.call(this,orig,dest);
+BlastAmmo = function(orig,theta){
+  Ammo.call(this,orig,theta);
 
   this.drawAmmo = function(x,y,buffer){
     ammoArt.drawBlastAmmo(x,y,buffer);

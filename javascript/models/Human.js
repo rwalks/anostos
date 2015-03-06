@@ -8,21 +8,21 @@ Human = function(x,y,name) {
 
   this.position = {'x':x,'y':y};
   this.velocity = {'x':0,'y':0};
-  var maxSpeed = {'x':3,'y':10};
-  var walkAccel = config.gridInterval/2;
+  this.maxVelocity = config.gridInterval;
+  this.walkAccel = config.gridInterval/2;
   this.count = 0;
-  this.targetObj;
-  this.targetCoords = {};
-  this.targetRange = false;
   this.path = [];
   this.onGround = false;
   this.direction = true;
   this.distress = false;
   this.maxHealth = 100; this.currentHealth = 100;
   this.maxOxygen = 20; this.currentOxygen = 20;
+
   var oxygenConsumptionRate = 0.03;
 
   this.activeTool = false;
+  this.weaponTheta = 0;
+  this.weaponActive = false;
 
   this.climber = false;
   this.digger = false;
@@ -51,130 +51,56 @@ Human = function(x,y,name) {
   this.update = function(terrain){
     this.count += 1;
     if(this.count > 100){ this.count = 0; }
-    this.targetRange = false;
 
     if(this.currentHealth <= 0 && !this.dead){
       this.dead = true;
       return {'action':'die'};
     }
     if(!this.dead){
-      var room = terrain.inARoom(this.position.x,this.position.y,terrain.rooms);
-      this.spaceSuit = !(room && room.currentOxygen > 0);
-      if(this.count % 10 == 0){
-        //check room + oxygen;
-        if(this.currentOxygen > 0){
-          //breathe
-          this.currentOxygen -= oxygenConsumptionRate;
-        }else{
-          //hurt
-          this.wound(1);
-        }
-        if(room){
-          var oxygenReq = Math.min(this.maxOxygen - this.currentOxygen, oxygenConsumptionRate*6);
-          if(room.currentOxygen > 0){
-            var oxygenTransfer = Math.min(oxygenReq,room.currentOxygen);
-            room.currentOxygen -= oxygenTransfer;
-            this.currentOxygen += oxygenTransfer;
-          }
-        }
-      }
+      this.updateOxygen(terrain);
+      this.updateMove();
+      this.applyForces();
+      //terrain detection
+      this.terrainCollide(terrain);
+      this.setDirection();
+      this.applyMove();
       //update weapon
       if(this.weapon){
         this.weapon.update();
       }
-      //move path
-      if(this.path.length){
-        this.followPath();
-      }
-      //gravity
-      this.velocity.y += config.gravity;
-      //max speed
-      this.velocity.x = (Math.abs(this.velocity.x) > maxSpeed.x) ? (this.velocity.x * (maxSpeed.x/Math.abs(this.velocity.x))) : this.velocity.x ;
-      this.velocity.y = (Math.abs(this.velocity.y) > maxSpeed.y) ? (this.velocity.y * (maxSpeed.y/Math.abs(this.velocity.y))) : this.velocity.y ;
-      //terrain detection
-      this.terrainCollide(terrain);
-      //friction
-      this.velocity.x = this.velocity.x * (this.onGround ? 0.8 : 0.9);
-      this.velocity.y = this.velocity.y * 0.9;
-      if(this.targetObj && this.targetRange){
-        this.direction = (this.targetObj.position.x > this.position.x);
+      return this.interactTarget(terrain);
+    }
+  }
+
+  this.updateMove = function(){};
+  this.applyForces = function(){};
+  this.interactTarget = function(terrain){};
+  this.setDirection = function(){};
+
+  this.applyMove = function(){
+    //apply move
+    this.position.x += this.velocity.x;
+    this.position.y += this.velocity.y;
+  }
+
+  this.updateOxygen = function(terrain){
+    var room = terrain.inARoom(this.position.x,this.position.y,terrain.rooms);
+    this.spaceSuit = !(room && room.currentOxygen > 0);
+    if(this.count % 10 == 0){
+      //check room + oxygen;
+      if(this.currentOxygen > 0){
+        //breathe
+        this.currentOxygen -= oxygenConsumptionRate;
       }else{
-        if(this.velocity.x > 0){this.direction = true;}
-        if(this.velocity.x < 0){this.direction = false;}
+        //hurt
+        this.wound(1);
       }
-      //apply move
-      this.position.x += this.velocity.x;
-      this.position.y += this.velocity.y;
-      if(this.targetObj){
-        return this.interactTarget(terrain);
-      }
-    }
-  }
-
-  this.interactTarget = function(terrain){
-    var ret = false;
-    var targCoords = [this.targetObj.position.x+(this.targetObj.size.x/2),this.targetObj.position.y+(this.targetObj.size.y/2)];
-    var range = config.gridInterval * 3;
-    if(this.action == 'build'){
-      range = config.gridInterval * 3;
-    }else if(this.action == 'attack'){
-      if(this.weapon){
-        range = this.weapon.range;
-      }
-    }
-    if(nodeDistance(targCoords,this.center()) < range){
-      this.targetRange = true;
-      switch(this.action){
-        case 'build':
-          ret = {'action':'build','obj':this.targetObj};
-          this.dropTarget();
-          break;
-        case 'delete':
-          var targ = terrain.getTile(this.targetObj.position.x,this.targetObj.position.y);
-          if(targ && targ == this.targetObj){
-            var dead = this.digTile(targ);
-            if(dead){
-              ret = {'action':'delete','obj':targ};
-              this.dropTarget();
-            }
-          }else{
-            this.dropTarget();
-          }
-          break;
-        case 'attack':
-          if(this.weapon){
-            var ammoRet = this.weapon.fire();
-            if(ammoRet){
-              ret = {'action':'fire','obj':ammoRet};
-            }
-          }
-          break;
-        case 'repair':
-          this.dropTarget();
-          break;
-        default:
-          this.dropTarget();
-          break;
-      }
-    }
-    if(this.action == 'attack'){
-      this.attackTarget(terrain);
-    }
-    return ret;
-  }
-
-  this.attackTarget = function(terrain){
-    if(!this.targetObj || this.targetObj.dead){
-      this.dropTarget();
-      return false;
-    }else{
-      var enemyDeviation = utils.objectDistance({'position':this.targetCoords},this.targetObj);
-      var range = this.weapon ? this.weapon.range : config.gridInterval*2;
-      if(enemyDeviation > range){
-        this.path = pathfinder.findObjPath(this.targetObj,terrain,this);
-        if(this.path.length){
-          this.targetCoords.x = this.path[0][0];
-          this.targetCoords.y = this.path[0][1];
+      if(room){
+        var oxygenReq = Math.min(this.maxOxygen - this.currentOxygen, oxygenConsumptionRate*6);
+        if(room.currentOxygen > 0){
+          var oxygenTransfer = Math.min(oxygenReq,room.currentOxygen);
+          room.currentOxygen -= oxygenTransfer;
+          this.currentOxygen += oxygenTransfer;
         }
       }
     }
@@ -183,12 +109,6 @@ Human = function(x,y,name) {
   this.digTile = function(tile){
     tile.currentHealth -= this.digStrength;
     return tile.currentHealth <= 0;
-  }
-
-  this.dropTarget = function(){
-    this.path = [];
-    this.targetObj = false;
-    this.targetCoords = {};
   }
 
   this.center = function(){
@@ -215,15 +135,15 @@ Human = function(x,y,name) {
       //left or right
       if(nextNode && nextNode[0] > this.position.x){
       var d = nextNode[0] - this.position.x;
-        this.velocity.x = Math.min(walkAccel,d);
+        this.velocity.x = Math.min(this.walkAccel,d);
       }else if(nextNode && nextNode[0] < this.position.x){
       var d = nextNode[0] - this.position.x;
-        this.velocity.x = Math.max(-walkAccel,d);
+        this.velocity.x = Math.max(-this.walkAccel,d);
       }else{
         this.velocity.x = 0;
       }
       if(nextNode && nextNode[1] < this.position.y){
-        this.velocity.y = -walkAccel * 0.7;
+        this.velocity.y = -this.walkAccel * 0.7;
       }
     }
   }
@@ -240,7 +160,7 @@ Human = function(x,y,name) {
     var terrain = terrainObj.terrain;
     var fX = this.position.x + this.velocity.x;
     var fY = this.position.y + this.velocity.y;
-    var collide = false;
+    this.onGround = false;
     var topX = fX + (this.size.x / 2);
     var topY = fY;
     topX = topX - (topX % config.gridInterval);
@@ -255,7 +175,6 @@ Human = function(x,y,name) {
     if(terrain[botX] && terrain[botX][botY] && terrain[botX][botY].collision()){
       this.velocity.y -= ((fY+this.size.y) - botY);
       this.onGround = true;
-      collide = true;
     }
     var rightX = fX + this.size.x;
     var rightY = fY + (this.size.y/2);
@@ -270,9 +189,6 @@ Human = function(x,y,name) {
     leftY = leftY - (leftY % config.gridInterval);
     if(terrain[leftX] && terrain[leftX][leftY] && terrain[leftX][leftY].collision()){
       this.velocity.x += ((leftX+config.gridInterval) - fX);
-    }
-    if(!collide){
-      this.onGround = false;
     }
   }
 
@@ -293,33 +209,6 @@ Human = function(x,y,name) {
             y > this.position.y && y < (this.position.y + this.size.y));
   }
 
-  this.click = function(coords,terrain,action,obj){
-    this.action = false;
-    this.targetObj = false;
-    this.targetCoords = {};
-    if(!obj){
-      coords = pathfinder.findValidSpace(coords,terrain,this.size);
-      this.path = pathfinder.findPath(coords.x,coords.y,terrain,this);
-    }else if(obj){
-      this.targetCoords.x = obj.position.x;
-      this.targetCoords.y = obj.position.y;
-      this.path = pathfinder.findObjPath(obj,terrain,this);
-      if(this.path.length && action == 'select'){
-        //determine if attack or repair
-        if(hostileTarget(obj)){
-          action = 'attack';
-        }else if(repairTarget(obj)){
-          action = 'repair';
-        }
-      }
-    }
-    this.action = action;
-    if(action && action != 'select'){
-      this.activeTool = action;
-    }
-    this.targetObj = obj;
-    return;
-  }
 
   var hostileTarget = function(obj){
     return obj.type == 'alien';
@@ -328,6 +217,14 @@ Human = function(x,y,name) {
   var repairTarget = function(obj){
     return (obj.type == 'generator' || obj.type == 'container' ||
             obj.type == 'conveyor'  || obj.type == 'turret');
+  }
+
+  this.applyMaxVelocity = function(){
+    var veloMax = this.maxVelocity / (Math.abs(this.velocity.x) + Math.abs(this.velocity.y));
+    if(veloMax < 1){
+      this.velocity.x = this.velocity.x * veloMax;
+      this.velocity.y = this.velocity.y * veloMax;
+    }
   }
 
   this.drawTargetPortrait = function(x,y,xSize,ySize,canvasBufferContext){

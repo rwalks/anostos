@@ -158,9 +158,9 @@ HumanArt = function(){
       [0.1,-0.4]
     ];
   this.drawMiningLaser = function(x,y,canvasBufferContext,human){
-    var active = human.targetObj && human.targetRange;
-    var lX = (human.size.x * 1.2) * config.xRatio;
-    var lY = (human.size.y / 2.5) * config.yRatio;
+    var active = human.weaponActive;
+    var lX = config.gridInterval * config.xRatio;
+    var lY = config.gridInterval * config.yRatio;
     //draw emission
     //
     var fX = active ? 1.4 : 0.9;
@@ -180,9 +180,10 @@ HumanArt = function(){
       var geometry = geometries[g];
       canvasBufferContext.beginPath();
       for(var i = 0; i < geometry.length; i++){
-        var pointX = geometry[i][0]*(human.direction ? 1 : -1);
-        var eX = x+(pointX*lX);
-        var eY = y+(geometry[i][1]*lY);
+        var points = utils.rotate(geometry[i][0],geometry[i][1],human.weaponTheta);
+        points[0] = points[0]*(human.direction ? 1 : -1);
+        var eX = x+(points[0]*lX);
+        var eY = y+(points[1]*lY);
         if(i == 0){
           canvasBufferContext.moveTo(eX,eY);
           firstPoint = [eX,eY];

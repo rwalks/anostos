@@ -1,6 +1,7 @@
 Terrain = function(trMap,sSpawns) {
 
   this.terrain = trMap ? trMap : {};
+  this.entityMap = {};
 //construct holders
   this.rooms = [];
 //tile reference holders
@@ -223,6 +224,50 @@ Terrain = function(trMap,sSpawns) {
       }
     }
     return true;
+  }
+
+  this.getEntity = function(tX,tY){
+    if(this.entityMap[x] && this.entityMap[x][y]){
+      return this.entityMap[x][y];
+    }else{
+      return false;
+    }
+  }
+
+  this.updateEntityMap = function(obj,newPos,oldPos){
+    if(newPos){
+      newPos[0] = utils.roundToGrid(newPos[0]);
+      newPos[1] = utils.roundToGrid(newPos[1]);
+    }
+    if(oldPos){
+      oldPos[0] = utils.roundToGrid(oldPos[0]);
+      oldPos[1] = utils.roundToGrid(oldPos[1]);
+      if(newPos && (oldPos[0] == newPos[0]) && (oldPos[1] == newPos[1])){
+        return true;
+      }
+    }
+    for(sx = 0; sx <= obj.size.x; sx += config.gridInterval){
+      for(sy = 0; sy <= obj.size.y; sy += config.gridInterval){
+        if(oldPos){
+          var x = oldPos[0] + sx;
+          var y = oldPos[1] + sy;
+          if(this.entityMap[x]){
+            delete this.entityMap[x][y];
+            if(!Object.keys(this.entityMap[x]).length){
+              delete this.entityMap[x];
+            }
+          }
+        }
+        if(newPos){
+          var x = newPos[0] + sx;
+          var y = newPos[1] + sy;
+          if(!this.entityMap[x]){
+            this.entityMap[x] = {};
+          }
+          this.entityMap[x][y] = obj;
+        }
+      }
+    }
   }
 
   this.buildGeneratorNetwork = function(obj,markedObjs){
