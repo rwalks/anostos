@@ -2,13 +2,13 @@ Alien = function(x,y) {
 
   this.counter = 0;
   this.type = "alien";
-  this.position = {'x':x,'y':y};
-  this.lastPosition = {'x':this.position.x,'y':this.position.y};
-  this.velocity = {'x':0,'y':0};
+  this.position = new Vector(x,y);
+  this.lastPosition = new Vector(this.position.x,this.position.y);
+  this.velocity = new Vector(0,0);
   this.targetObj;
   this.path = [];
   this.onGround = false;
-  this.groundContact = {'left':false,'right':false,'up':false,'down':false};
+  this.groundContact = new Directional();
   this.direction = true;
 
   this.inventory = new Inventory();
@@ -22,12 +22,12 @@ Alien = function(x,y) {
   this.moving = false;
 
   //class specific variables
-  this.name = ["Unknown","Alien"];
+  this.name = new Name("Unknown","Alien");
   this.maxHealth = 100; this.currentHealth = 100;
   this.moveAccel = config.gridInterval/8;
   this.maxVelocity = config.gridInterval / 4;
-  this.size = {'x':1*config.gridInterval,'y':1*config.gridInterval};
-  this.jump = {'x':1,'y':1};
+  this.size = new Vector(1*config.gridInterval,1*config.gridInterval);
+  this.jump = new Vector(1,1);
 
 
   //class specific functions
@@ -40,6 +40,7 @@ Alien = function(x,y) {
     var y = (cent.y-camera.yOff)*config.yRatio;
     this.drawAlien(x,y,canvasContext,1);
     //this.drawPath(this.path,canvasContext,camera);
+    //sceneArt.drawHitBoxes(this.hitBoxes(),camera,canvasContext);
   }
 
   this.drawTargetPortrait = function(oX,oY,xSize,ySize,canvasBufferContext){
@@ -191,7 +192,7 @@ Alien = function(x,y) {
 
   this.terrainCollide = function(terrain){
     var collide = false;
-    this.groundContact = resetGroundContact();
+    this.groundContact = new Directional();
 
     if(this.velocity.x){
       var posX = this.velocity.x > 0;
@@ -247,10 +248,6 @@ Alien = function(x,y) {
     this.onGround = collide;
   }
 
-  var resetGroundContact = function(){
-    return {'left':false,'right':false,'up':false,'down':false};
-  }
-
   this.wound = function(damage){
     var dam = Math.min(damage,this.currentHealth);
     this.currentHealth -= dam;
@@ -270,8 +267,23 @@ Alien = function(x,y) {
   }
 
   this.pointWithin = function(x,y){
-    return (x > this.position.x && x < (this.position.x + this.size.x) &&
-            y > this.position.y && y < (this.position.y + this.size.y));
+    var hitBoxes = this.hitBoxes();
+    for(var b = 0; b < hitBoxes.length; b++){
+      var box = hitBoxes[b];
+      if(box.pointWithin(x,y)){
+        return true;
+      }
+    }
+    return false;
+  }
+
+  this.hitBoxes = function(){
+    var boxes = [];
+    var pos = new Vector(this.position.x,this.position.y);
+    var size = new Vector(this.size.x,this.size.y);
+    var sizeBox = new HitBox(pos,size);
+    boxes.push(sizeBox)
+    return boxes;
   }
 
   this.drawPath = function(path,canvasBufferContext,camera){

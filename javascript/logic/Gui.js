@@ -121,7 +121,7 @@ Gui = function() {
         this.buildOffset -= (this.buildOffset > 0) ? 1 : 0;
       }else if(y <= objY){
         var bIn = Math.floor(6*((y - tArrowY) / (objY - tArrowY)));
-        return {'buildTarget':this.buildings[this.buildTab][bIn+this.buildOffset]};
+        return {'buildTarget':this.buildings[this.buildTab][bIn+this.buildOffset].clone()};
       }else{
         this.buildOffset += (this.buildings[this.buildTab].slice(this.buildOffset).length > 6) ? 1 : 0;
       }
@@ -389,7 +389,7 @@ Gui = function() {
       canvasBufferContext.font = fontSize + 'px Courier';
       canvasBufferContext.fillStyle = "rgba(50,250,200,0.9)";
       var yText = yIndex + fontSize + yBuf;
-      canvasBufferContext.fillText(this.target.name[0]+" "+this.target.name[1],xIndex+xBuf,yText);
+      canvasBufferContext.fillText(this.target.name.first+" "+this.target.name.last,xIndex+xBuf,yText);
       yText += fontSize + yBuf;
       canvasBufferContext.fillText("Position: "+Math.floor(this.target.position.x)+", "+Math.floor(this.target.position.y),xIndex+xBuf,yText);
       yText += fontSize + yBuf;
@@ -577,7 +577,7 @@ Gui = function() {
         var fontSize = ySize / 4;
         canvasBufferContext.font = fontSize + 'px Courier';
         canvasBufferContext.fillStyle = "rgba(50,250,200,0.9)";
-        canvasBufferContext.fillText(plr.name[0][0]+"."+plr.name[1],x+(xSize/4),y+fontSize+yBuf);
+        canvasBufferContext.fillText(plr.name.first[0]+"."+plr.name.last,x+(xSize/4),y+fontSize+yBuf);
         //health bar
         canvasBufferContext.beginPath();
         canvasBufferContext.fillStyle = "rgba(50,0,20,0.6)";
@@ -729,7 +729,7 @@ Gui = function() {
         //name
         canvasBufferContext.font = fontSize + 'px Courier';
         canvasBufferContext.fillStyle = "rgba(50,250,200,0.9)";
-        canvasBufferContext.fillText(build.name[0]+" "+build.name[1],x+(xSize/4),y+fontSize+yBuf);
+        canvasBufferContext.fillText(build.name.first+" "+build.name.last,x+(xSize/4),y+fontSize+yBuf);
         //cost
         canvasBufferContext.font = fontSize*0.75 + 'px Courier';
         canvasBufferContext.fillStyle = "rgba(50,250,200,0.9)";

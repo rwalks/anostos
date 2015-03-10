@@ -170,8 +170,8 @@ var LandingScene = function (strs,nam,aud){
   }
 
   this.draw = function(canvasBufferContext){
-    this.sceneUtils.drawStars(this.stars, camera, clockCycle, canvasBufferContext);
-    this.sceneUtils.drawBG(camera,clockCycle,canvasBufferContext);
+    sceneArt.drawStars(this.stars, camera, clockCycle, canvasBufferContext);
+    sceneArt.drawBG(camera,this.sceneUtils.bgs,clockCycle,canvasBufferContext);
     this.ship.draw(camera,canvasBufferContext);
     this.terrain.draw(canvasBufferContext,camera,this.count);
 
@@ -186,7 +186,7 @@ var LandingScene = function (strs,nam,aud){
     }
 
     if(gamePaused){
-      this.sceneUtils.drawPause(canvasBufferContext);
+      sceneArt.drawPause(canvasBufferContext);
     }else{
       this.drawFuel(canvasBufferContext);
       if(this.count < 500){

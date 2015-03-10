@@ -3,11 +3,14 @@ Human = function(x,y,name) {
   var rdbaString;
   this.spaceSuit = true;
   this.type = "human";
-  this.size = {'x':1*config.gridInterval,'y':2*config.gridInterval};
-  this.jump = {'x':1,'y':6};
+  //sizes
+  this.size = new Vector(1*config.gridInterval,2*config.gridInterval);
+  this.crouchOffset = config.gridInterval * 0.5;
+  this.crouching = false;
+  this.jump = new Vector(1,6);
 
-  this.position = {'x':x,'y':y};
-  this.velocity = {'x':0,'y':0};
+  this.position = new Vector(x,y);
+  this.velocity = new Vector(0,0);
   this.maxVelocity = config.gridInterval;
   this.walkAccel = config.gridInterval/2;
   this.count = 0;
@@ -20,15 +23,15 @@ Human = function(x,y,name) {
 
   var oxygenConsumptionRate = 0.03;
 
-  this.activeTool = false;
-  this.weaponTheta = 0;
-  this.weaponActive = false;
+  this.currentTool = false;
+  this.toolTheta = 0;
+  this.toolActive = false;
+
+  this.equipment = {};
 
   this.climber = false;
   this.digger = false;
   this.digStrength = 5;
-
-  this.weapon = new BasicBlaster(this);
 
   this.action = false;
 
@@ -65,8 +68,8 @@ Human = function(x,y,name) {
       this.setDirection();
       this.applyMove();
       //update weapon
-      if(this.weapon){
-        this.weapon.update();
+      if(this.currentTool){
+        this.currentTool.update();
       }
       return this.interactTarget(terrain);
     }
@@ -112,7 +115,10 @@ Human = function(x,y,name) {
   }
 
   this.center = function(){
-    return {'x':this.position.x+(this.size.x*0.5),'y':this.position.y+(this.size.y*0.5)};
+    var crouchMod = this.crouching ? this.crouchOffset : 0;
+    var x = this.position.x+(this.size.x*0.5);
+    var y = this.position.y+(this.size.y*0.5) + crouchMod;
+    return new Vector(x,y);
   }
 
   this.followPath = function(){
@@ -192,6 +198,10 @@ Human = function(x,y,name) {
     }
   }
 
+  this.equipTool = function(toolType){
+    this.currentTool = this.equipment[toolType];
+  }
+
   this.draw = function(camera,canvasContext){
     var x = (this.position.x-camera.xOff)*config.xRatio;
     var y = (this.position.y-camera.yOff)*config.yRatio;
@@ -205,10 +215,26 @@ Human = function(x,y,name) {
   }
 
   this.pointWithin = function(x,y){
-    return (x > this.position.x && x < (this.position.x + this.size.x) &&
-            y > this.position.y && y < (this.position.y + this.size.y));
+    var hitBoxes = this.hitBoxes();
+    for(var b = 0; b < hitBoxes.length; b++){
+      var box = hitBoxes[b];
+      if(box.pointWithin(x,y)){
+        return true;
+      }
+    }
+    return false;
   }
 
+  this.hitBoxes = function(){
+    var boxes = [];
+    var oY = this.position.y + (this.crouching ? this.crouchOffset : 0);
+    var sY = this.size.y - (this.crouching ? this.crouchOffset : 0);
+    var pos = new Vector(this.position.x,oY);
+    var size = new Vector(this.size.x,sY);
+    var sizeBox = new HitBox(pos,size);
+    boxes.push(sizeBox)
+    return boxes;
+  }
 
   var hostileTarget = function(obj){
     return obj.type == 'alien';
@@ -225,6 +251,14 @@ Human = function(x,y,name) {
       this.velocity.x = this.velocity.x * veloMax;
       this.velocity.y = this.velocity.y * veloMax;
     }
+  }
+
+  this.interactRange = function(){
+    var range = config.gridInterval * 3;
+    if(this.currentTool){
+      range = this.currentTool.range;
+    }
+    return range;
   }
 
   this.drawTargetPortrait = function(x,y,xSize,ySize,canvasBufferContext){

@@ -1,24 +1,19 @@
-Building = function(pos){
-  this.size = {'x':1*config.gridInterval,'y':1*config.gridInterval};
-  this.cost = {};
+Building = function(x,y){
+  Tile.call(this,x,y);
+
   this.resourceAffinity;
-  this.name = ["Unknown","Building"];
-  this.position = pos ? pos : {'x':0,'y':0};
-  this.collision = function(){return false;}
+  this.name.set("Unknown","Building");
   this.pathable = true;
-  this.lastDrawn = -1;
-  this.type = "tile";
+  this.type = "building";
   this.storageCapacity = 0;
   this.currentOxygen = 0;
   this.rooms = [];
   this.containers = [];
   this.resourceConnections = {};
+  this.built = false;
+  this.active = false;
 
-  this.maxHealth = 100; this.currentHealth = 100;
-
-  this.center = function(){
-    return {'x':this.position.x+(this.size.x*0.5),'y':this.position.y+(this.size.y*0.5)};
-  }
+  this.collision = function(){return false;}
 
   this.draw = function(camera,canvasBufferContext,count){
     //draw less often
@@ -26,69 +21,84 @@ Building = function(pos){
       this.lastDrawn = count;
       var x = (this.position.x-camera.xOff)*config.xRatio;
       var y = (this.position.y-camera.yOff)*config.yRatio;
-      this.drawBlock(x,y,canvasBufferContext);
+      var healthPercent = this.currentHealth / this.maxHealth;
+      var alpha = 0.4 + (healthPercent*0.6);
+      this.drawBlock(x,y,alpha,canvasBufferContext,1);
+      this.drawHealth(x,y,healthPercent,canvasBufferContext);
     }
   }
 
-  this.drawBlock = function(x,y,canvasBufferContext,scl){
+  this.drawHealth = function(x,y,canvasBufferContext){
+    var barColor;
+    if(!this.built){
+
+    }else if(this.currentHealth < this.maxHealth){
+
+    }
+    if(barColor){
+
+    }
+  }
+
+  this.drawBlock = function(x,y,alpha,canvasBufferContext,scl){
   }
 
   this.drawTargetPortrait = function(oX,oY,xSize,ySize,canvasBufferContext){
     var scale = (xSize*0.4) / (this.size.x*config.xRatio);
-    this.drawBlock(oX+(xSize*0.3),oY+(ySize*0.2),canvasBufferContext,scale);
+    this.drawBlock(oX+(xSize*0.3),oY+(ySize*0.2),1.0,canvasBufferContext,scale);
   }
 
-  this.click = function(coords,terrain){
-    return;
-  }
-  this.clone = function(pos){
-    return new Building(pos);
+  this.clone = function(x,y){
+    return new Building(x,y);
   }
 
   this.updateGenerator = function(resources){
-    //attempt reaction
-    var react = true;
-    var inputResources = Object.keys(this.genInput);
-    for(var ir = 0; ir < inputResources.length; ir ++){
-      var inputResource = inputResources[ir];
+    if(this.built){
+      //attempt reaction
+      var react = true;
+      var inputResources = Object.keys(this.genInput);
+      for(var ir = 0; ir < inputResources.length; ir ++){
+        var inputResource = inputResources[ir];
 
-      var connectedResource = (inputResource == 'power') || this.resourceConnections[inputResource];
-      var requiredResources = resources[inputResource] && (resources[inputResource].current >= this.genInput[inputResource]);
-      if(!(connectedResource && requiredResources)){
-        react = false;
-      }
-    }
-    if(react){
-      var outputResources = Object.keys(this.genOutput);
-      var outputPath = false;
-      for(var or = 0; or < outputResources.length; or ++){
-        var outputResource = outputResources[or];
-        var outputAmount = this.genOutput[outputResource];
-        if(outputResource == 'oxygen'){
-          //push oxygen to rooms and containers
-          var oxDests = [this.rooms,this.containers];
-          for(var ti = 0; ti < oxDests.length; ti++){
-            var destObjs = oxDests[ti];
-            for(var ri = 0; ri < destObjs.length; ri++){
-              var obj = destObjs[ri];
-              var drain = obj.addOxygen(outputAmount);
-              if(drain){
-                outputPath = true;
-                outputAmount -= drain;
-              }
-            }
-          }
-        }else{
-          var resource = resources[outputResource];
-          resource.current += outputAmount;
-          resource.current = Math.min(resource.current,resource.max);
-          outputPath = true;
+        var connectedResource = (inputResource == 'power') || this.resourceConnections[inputResource];
+        var requiredResources = resources[inputResource] && (resources[inputResource].current >= this.genInput[inputResource]);
+        if(!(connectedResource && requiredResources)){
+          react = false;
         }
       }
-      if(outputPath){
-        for(var ir = 0; ir < inputResources.length; ir ++){
-          var inputResource = inputResources[ir];
-          resources[inputResource].current -= this.genInput[inputResource];
+      this.active = react;
+      if(react){
+        var outputResources = Object.keys(this.genOutput);
+        var outputPath = false;
+        for(var or = 0; or < outputResources.length; or ++){
+          var outputResource = outputResources[or];
+          var outputAmount = this.genOutput[outputResource];
+          if(outputResource == 'oxygen'){
+            //push oxygen to rooms and containers
+            var oxDests = [this.rooms,this.containers];
+            for(var ti = 0; ti < oxDests.length; ti++){
+              var destObjs = oxDests[ti];
+              for(var ri = 0; ri < destObjs.length; ri++){
+                var obj = destObjs[ri];
+                var drain = obj.addOxygen(outputAmount);
+                if(drain){
+                  outputPath = true;
+                  outputAmount -= drain;
+                }
+              }
+            }
+          }else{
+            var resource = resources[outputResource];
+            resource.current += outputAmount;
+            resource.current = Math.min(resource.current,resource.max);
+            outputPath = true;
+          }
+        }
+        if(outputPath){
+          for(var ir = 0; ir < inputResources.length; ir ++){
+            var inputResource = inputResources[ir];
+            resources[inputResource].current -= this.genInput[inputResource];
+          }
         }
       }
     }
@@ -128,145 +138,145 @@ Building = function(pos){
 
 }
 
-ChemicalBattery = function(pos){
-  Building.call(this,pos);
+ChemicalBattery = function(x,y){
+  Building.call(this,x,y);
 
   this.type = "container";
-  this.name = ['Chemical','Battery'];
+  this.name.set('Chemical','Battery');
   this.size = {'x':1*config.gridInterval,'y':2*config.gridInterval};
   this.cost = {'metal':8};
   this.resourceAffinity = 'power';
   this.storageCapacity = 250;
 
-  this.drawBlock = function(x,y,canvasBufferContext,scl){
-    bArt.drawChemicalBattery(x,y,canvasBufferContext,this.size,scl);
+  this.drawBlock = function(x,y,alpha,canvasBufferContext,scl){
+    bArt.drawChemicalBattery(x,y,alpha,canvasBufferContext,this,scl);
   }
 
-  this.clone = function(pos){
-    return new ChemicalBattery(pos);
+  this.clone = function(x,y){
+    return new ChemicalBattery(x,y);
   }
 }
 
-WaterCistern = function(pos){
-  Building.call(this,pos);
+WaterCistern = function(x,y){
+  Building.call(this,x,y);
 
   this.type = "container";
 
-  this.name = ['Water','Cistern'];
+  this.name.set('Water','Cistern');
   this.size = {'x':2*config.gridInterval,'y':2*config.gridInterval};
   this.cost = {'metal':8};
   this.resourceAffinity = 'water';
   this.storageCapacity = 250;
 
-  this.drawBlock = function(x,y,canvasBufferContext,scl){
-    bArt.drawWaterCistern(x,y,canvasBufferContext,this.size,scl);
+  this.drawBlock = function(x,y,alpha,canvasBufferContext,scl){
+    bArt.drawWaterCistern(x,y,alpha,canvasBufferContext,this,scl);
   }
 
-  this.clone = function(pos){
-    return new WaterCistern(pos);
+  this.clone = function(x,y){
+    return new WaterCistern(x,y);
   }
 }
 
-OxygenTank = function(pos){
-  Building.call(this,pos);
+OxygenTank = function(x,y){
+  Building.call(this,x,y);
 
   this.type = "container";
 
-  this.name = ['Oxygen','Tank'];
+  this.name.set('Oxygen','Tank');
   this.size = {'x':1*config.gridInterval,'y':2*config.gridInterval};
   this.cost = {'metal':8};
   this.resourceAffinity = 'oxygen';
   this.storageCapacity = 250;
 
-  this.drawBlock = function(x,y,canvasBufferContext,scl){
-    bArt.drawOxygenTank(x,y,canvasBufferContext,this.size,scl);
+  this.drawBlock = function(x,y,alpha,canvasBufferContext,scl){
+    bArt.drawOxygenTank(x,y,alpha,canvasBufferContext,this,scl);
   }
 
-  this.clone = function(pos){
-    return new OxygenTank(pos);
+  this.clone = function(x,y){
+    return new OxygenTank(x,y);
   }
 }
 
-DryStorage = function(pos){
-  Building.call(this,pos);
+DryStorage = function(x,y){
+  Building.call(this,x,y);
 
   this.type = "container";
 
-  this.name = ['Dry','Storage'];
+  this.name.set('Dry','Storage');
   this.cost = {'metal':8};
   this.size = {'x':2*config.gridInterval,'y':2*config.gridInterval};
   this.resourceAffinity = 'dry';
   this.storageCapacity = 250;
 
-  this.drawBlock = function(x,y,canvasBufferContext,scl){
-    bArt.drawDryStorage(x,y,canvasBufferContext,this.size,scl);
+  this.drawBlock = function(x,y,alpha,canvasBufferContext,scl){
+    bArt.drawDryStorage(x,y,alpha,canvasBufferContext,this,scl);
   }
 
-  this.clone = function(pos){
-    return new DryStorage(pos);
+  this.clone = function(x,y){
+    return new DryStorage(x,y);
   }
 }
 
-AirVent = function(pos){
-  Building.call(this,pos);
+AirVent = function(x,y){
+  Building.call(this,x,y);
 
   this.type = "conveyor";
 
-  this.name = ['Air','Vent'];
+  this.name.set('Air','Vent');
   this.cost = {'metal':4};
   this.resourceAffinity = 'oxygen';
 
-  this.drawBlock = function(x,y,canvasBufferContext,scl){
-    bArt.drawAirVent(x,y,canvasBufferContext,this.size,scl);
+  this.drawBlock = function(x,y,alpha,canvasBufferContext,scl){
+    bArt.drawAirVent(x,y,alpha,canvasBufferContext,this,scl);
   }
 
-  this.clone = function(pos){
-    return new AirVent(pos);
+  this.clone = function(x,y){
+    return new AirVent(x,y);
   }
 }
 
-WaterPipe = function(pos){
-  Building.call(this,pos);
+WaterPipe = function(x,y){
+  Building.call(this,x,y);
 
   this.type = "conveyor";
 
-  this.name = ['Water','Pipe'];
+  this.name.set('Water','Pipe');
   this.cost = {'metal':4};
   this.resourceAffinity = 'water';
 
-  this.drawBlock = function(x,y,canvasBufferContext,scl){
-    bArt.drawWaterPipe(x,y,canvasBufferContext,this.size,scl);
+  this.drawBlock = function(x,y,alpha,canvasBufferContext,scl){
+    bArt.drawWaterPipe(x,y,alpha,canvasBufferContext,this,scl);
   }
 
-  this.clone = function(pos){
-    return new WaterPipe(pos);
+  this.clone = function(x,y){
+    return new WaterPipe(x,y);
   }
 }
 
-ConveyorTube = function(pos){
-  Building.call(this,pos);
+ConveyorTube = function(x,y){
+  Building.call(this,x,y);
 
   this.type = "conveyor";
 
-  this.name = ['Conveyor','Tube'];
+  this.name.set('Conveyor','Tube');
   this.cost = {'metal':4};
   this.resourceAffinity = 'dry';
 
-  this.drawBlock = function(x,y,canvasBufferContext,scl){
-    bArt.drawConveyorTube(x,y,canvasBufferContext,this.size,scl);
+  this.drawBlock = function(x,y,alpha,canvasBufferContext,scl){
+    bArt.drawConveyorTube(x,y,alpha,canvasBufferContext,this,scl);
   }
 
-  this.clone = function(pos){
-    return new ConveyorTube(pos);
+  this.clone = function(x,y){
+    return new ConveyorTube(x,y);
   }
 }
 
-SoilEvaporator = function(pos){
-  Building.call(this,pos);
+SoilEvaporator = function(x,y){
+  Building.call(this,x,y);
 
   this.type = "generator";
 
-  this.name = ['Soil','Evaporator'];
+  this.name.set('Soil','Evaporator');
   this.size = {'x':4*config.gridInterval,'y':2*config.gridInterval};
   this.cost = {'metal':16};
   this.resourceAffinity = 'oxygen';
@@ -274,21 +284,21 @@ SoilEvaporator = function(pos){
   this.genOutput = {'oxygen':1};
 
 
-  this.drawBlock = function(x,y,canvasBufferContext,scl){
-    bArt.drawSoilEvaporator(x,y,canvasBufferContext,this.size,scl);
+  this.drawBlock = function(x,y,alpha,canvasBufferContext,scl){
+    bArt.drawSoilEvaporator(x,y,alpha,canvasBufferContext,this,scl);
   }
 
-  this.clone = function(pos){
-    return new SoilEvaporator(pos);
+  this.clone = function(x,y){
+    return new SoilEvaporator(x,y);
   }
 }
 
-OxygenCondenser = function(pos){
-  Building.call(this,pos);
+OxygenCondenser = function(x,y){
+  Building.call(this,x,y);
 
   this.type = "generator";
 
-  this.name = ['O2','Condenser'];
+  this.name.set('O2','Condenser');
   this.size = {'x':2*config.gridInterval,'y':5*config.gridInterval};
   this.cost = {'metal':50};
   this.resourceAffinity = 'oxygen';
@@ -296,21 +306,21 @@ OxygenCondenser = function(pos){
   this.genOutput = {'oxygen':0.25};
 
 
-  this.drawBlock = function(x,y,canvasBufferContext,scl){
-    bArt.drawOxygenCondenser(x,y,canvasBufferContext,this.size,scl);
+  this.drawBlock = function(x,y,alpha,canvasBufferContext,scl){
+    bArt.drawOxygenCondenser(x,y,alpha,canvasBufferContext,this,scl);
   }
 
-  this.clone = function(pos){
-    return new OxygenCondenser(pos);
+  this.clone = function(x,y){
+    return new OxygenCondenser(x,y);
   }
 }
 
-SmeltingChamber = function(pos){
-  Building.call(this,pos);
+SmeltingChamber = function(x,y){
+  Building.call(this,x,y);
 
   this.type = "generator";
 
-  this.name = ['Smelting','Chamber'];
+  this.name.set('Smelting','Chamber');
   this.cost = {'metal':16};
   this.size = {'x':2*config.gridInterval,'y':2*config.gridInterval};
   this.resourceAffinity = 'dry';
@@ -318,23 +328,21 @@ SmeltingChamber = function(pos){
   this.genOutput = {'metal':5};
 
 
-  this.drawBlock = function(x,y,canvasBufferContext,scl){
-    bArt.drawSmeltingChamber(x,y,canvasBufferContext,this.size,scl);
+  this.drawBlock = function(x,y,alpha,canvasBufferContext,scl){
+    bArt.drawSmeltingChamber(x,y,alpha,canvasBufferContext,this,scl);
   }
 
-  this.clone = function(pos){
-    return new SmeltingChamber(pos);
+  this.clone = function(x,y){
+    return new SmeltingChamber(x,y);
   }
 }
 
-SolarPanel = function(pos){
-  Building.call(this,pos);
+SolarPanel = function(x,y){
+  Building.call(this,x,y);
 
   this.type = "generator";
 
-  this.name = ['Solar','Panel'];
-  fName = 'Solar';
-  lName = 'Panel';
+  this.name.set('Solar','Panel');
   this.cost = {'metal':10};
   this.size = {'x':3*config.gridInterval,'y':1*config.gridInterval};
   this.resourceAffinity = 'power';
@@ -343,11 +351,11 @@ SolarPanel = function(pos){
   this.genOutput = {'power':1};
 
 
-  this.drawBlock = function(x,y,canvasBufferContext,scl){
-    bArt.drawSolarPanel(x,y,canvasBufferContext,this.size,scl);
+  this.drawBlock = function(x,y,alpha,canvasBufferContext,scl){
+    bArt.drawSolarPanel(x,y,alpha,canvasBufferContext,this,scl);
   }
 
-  this.clone = function(pos){
-    return new SolarPanel(pos);
+  this.clone = function(x,y){
+    return new SolarPanel(x,y);
   }
 }

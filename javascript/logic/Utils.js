@@ -24,7 +24,9 @@ var Utils = function (){
     var fN = Math.floor(Math.random()*firstNames.length);
     var lNA = Math.floor(Math.random()*lastNamesA.length);
     var lNB = Math.floor(Math.random()*lastNamesB.length);
-    return [firstNames[fN],lastNamesA[lNA] + "" + lastNamesB[lNB]];
+    var firstName = firstNames[fN];
+    var lastName = lastNamesA[lNA] + "" + lastNamesB[lNB];
+    return new Name(firstName,lastName);
   }
 
   this.distance = function(p1, p2) {
@@ -45,11 +47,9 @@ var Utils = function (){
     return [rx,ry];
   }
 
-  this.clonePos = function(pos){
-    var clone = {};
-    clone.x = pos.x;
-    clone.y = pos.y;
-    return clone;
+  this.outOfBounds = function(pos){
+    return (pos.x < -config.gridInterval || pos.x > config.mapWidth ||
+        pos.y < -config.gridInterval || pos.y > config.mapHeight);
   }
 
   this.intersect = function(p0,p1,p2,p3){
@@ -86,5 +86,38 @@ var Utils = function (){
     var iX = p0[0] + (t * s10X);
     var iY = p0[1] + (t * s10Y);
     return [iX,iY];
+  }
+}
+
+Vector = function(x,y){
+  this.x = x;
+  this.y = y;
+}
+
+Directional = function(u,d,l,r){
+  this.up = u || false;
+  this.down = d || false;
+  this.left = l || false;
+  this.right = r || false;
+}
+
+Name = function(firstName,lastName){
+  this.first = firstName || "Unknown";
+  this.last = lastName || "Unkown";
+
+  this.set = function(f,l){
+    this.first = f;
+    this.last = l;
+  }
+}
+
+Color = function(r,g,b,a){
+  this.r = r || Math.floor((Math.random() * 255));
+  this.g = g || Math.floor((Math.random() * 255));
+  this.b = b || Math.floor((Math.random() * 255));
+  this.a = a || 1.0;
+
+  this.colorStr = function(){
+    return "rgba("+this.r+","+this.g+","+this.b+","+this.a+")";
   }
 }

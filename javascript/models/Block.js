@@ -1,5 +1,5 @@
-Block = function(type,pos) {
-
+Block = function(type,x,y) {
+  Building.call(this,x,y);
   this.rType = type;
   var fName = '';
   var fillRGB;
@@ -11,79 +11,50 @@ Block = function(type,pos) {
   switch(type){
     case 'soil':
       fName = 'Soil';
-      fillRGB = "rgba(20,200,150,0.9)";
-      strokeRGB="rgba(40,250,200,1.0)";
+      fillRGB = new Color(20,200,150,0.9);
+      strokeRGB=new Color(40,250,200,1.0);
       this.cost.soil = 2;
       break;
     case 'metal':
       fName = 'Metal';
-      fillRGB = "rgba(200,220,200,0.9)";
-      strokeRGB="rgba(230,230,230,1.0)";
+      fillRGB = new Color(200,220,200,0.9);
+      strokeRGB=new Color(230,230,230,1.0);
       this.airtight = true;
       this.cost.metal = 2;
       break;
   }
 
-  this.name = [fName,"Block"];
-  this.size = {'x':1*config.gridInterval,'y':1*config.gridInterval};
-  this.position = pos ? pos : {'x':x,'y':y};
+  this.name.set(fName,"Block");
 
-  this.center = function(){
-    return {'x':this.position.x+(this.size.x*0.5),'y':this.position.y+(this.size.y*0.5)};
-  }
   this.collision = function(){return true;}
-  this.lastDrawn = -1;
-  this.type = "tile";
-  this.draw = function(camera,canvasBufferContext,count){
-    //draw less often
-    if(count > this.lastDrawn || Math.abs(count - this.lastDrawn) > 1){
-      this.lastDrawn = count;
-      canvasBufferContext.beginPath();
-      canvasBufferContext.lineWidth=Math.floor(config.xRatio)+"";
-      canvasBufferContext.fillStyle = fillRGB;
-      canvasBufferContext.strokeStyle= strokeRGB;
-      var originX = (this.position.x-camera.xOff)*config.xRatio;
-      var originY = (this.position.y-camera.yOff)*config.yRatio;
-      var lX = this.size.x*config.xRatio;
-      var lY = this.size.y*config.yRatio;
-      canvasBufferContext.rect(originX,originY,lX,lY);
-      canvasBufferContext.fill();
-      canvasBufferContext.stroke();
-    }
-  }
 
-  this.drawTargetPortrait = function(oX,oY,xSize,ySize,canvasBufferContext){
+  this.drawBlock = function(x,y,alpha,canvasBufferContext,scl){
+    fillRGB.a = alpha - 0.1;
     canvasBufferContext.beginPath();
     canvasBufferContext.lineWidth=Math.floor(config.xRatio)+"";
-    canvasBufferContext.fillStyle = fillRGB;
-    canvasBufferContext.strokeStyle= strokeRGB;
-    canvasBufferContext.rect(oX+(xSize*0.2),oY+(ySize*0.2),xSize*0.6,ySize*0.6);
+    canvasBufferContext.fillStyle = fillRGB.colorStr();
+    canvasBufferContext.strokeStyle= strokeRGB.colorStr();
+    var lX = this.size.x*config.xRatio*scl;
+    var lY = this.size.y*config.yRatio*scl;
+    canvasBufferContext.rect(x,y,lX,lY);
     canvasBufferContext.fill();
     canvasBufferContext.stroke();
   }
 
-  this.clone = function(pos){
-    return new Block(this.rType,pos);
-  }
-
-  this.click = function(coords,terrain){
-    return;
+  this.clone = function(x,y){
+    return new Block(this.rType,x,y);
   }
 }
 
 Corpse = function(pos,inventory,cost){
+  Tile.call(this,pos.x,pos.y);
   this.inventory = inventory ? inventory : new Inventory();
-  this.size = {'x':1*config.gridInterval,'y':1*config.gridInterval};
-  this.name = ["Dessicated","Remains"];
-  this.position = pos ? pos : {'x':0,'y':0};
+  this.name.set("Dessicated","Remains");
   this.cost = cost ? cost : {};
   this.maxVelocity = config.gridInterval / 3;
 
   var target = false;
 
-  this.center = function(){
-    return {'x':this.position.x+(this.size.x*0.5),'y':this.position.y+(this.size.y*0.5)};
-  }
   this.type = "corpse";
 
   this.update = function(terrain,humans){
@@ -177,90 +148,136 @@ Corpse = function(pos,inventory,cost){
     var scale = (xSize*0.4) / (this.size.x*config.xRatio);
     this.drawBlock(oX+(xSize*0.3),oY+(ySize*0.2),canvasBufferContext,scale);
   }
-
-  this.click = function(coords,terrain){
-    return;
-  }
-
-  this.pointWithin = function(x,y){
-    return (x > this.position.x && x < (this.position.x + this.size.x) &&
-            y > this.position.y && y < (this.position.y + this.size.y));
-  }
-
-
 }
 
-Door = function(pos) {
+Door = function(x,y) {
+  Building.call(this,x,y);
 
-  var fName = 'Hatch';
   this.airtight = true;
-  var fillRGB = "rgba(40,200,50,0.9)";
-  var strokeRGB="rgba(80,250,100,1.0)";
+  this.name.set("AirLock","");
+  this.size.y = 2*config.gridInterval;
 
-  this.name = [fName,""];
-  this.size = {'x':1*config.gridInterval,'y':2*config.gridInterval};
-  this.position = pos ? pos : {'x':x,'y':y};
-
-  this.maxHealth = 100; this.currentHealth = 100;
-
-  this.center = function(){
-    return {'x':this.position.x+(this.size.x*0.5),'y':this.position.y+(this.size.y*0.5)};
-  }
   this.open = false;
   this.cost = {'metal': 4};
 
   this.collision = function(){
-    return !this.open;
+    return this.active && !this.open;
   }
   this.pathable = true;
-  this.lastDrawn = -1;
   this.type = "door";
 
-  this.update = function(humans){
+  var fillRGB = new Color(40,200,50,0.9);
+  var strokeRGB = new Color(80,250,100,1.0);
+
+  this.update = function(terrain){
     var closeHuman = false;
-    for(h in humans){
-      if(utils.objectDistance(humans[h],this) <= config.gridInterval*1.1){
-        closeHuman = true;
+    if(this.active){
+      var entities = terrain.getEntities(this.position.x,this.position.y) || [];
+      entities = entities.concat(terrain.getEntities(this.position.x+config.gridInterval,this.position.y) || []);
+      entities = entities.concat(terrain.getEntities(this.position.x-config.gridInterval,this.position.y) || []);
+      for(var e = 0; e < entities.length; e++){
+        var entity = entities[e];
+        var humanType = (entity.type == 'human');
+        if(humanType){
+          closeHuman = true;
+        }
       }
     }
     this.open = closeHuman;
   }
 
+  this.drawBlock = function(x,y,alpha,canvasBufferContext,scl){
+    fillRGB.a = alpha;
+    canvasBufferContext.beginPath();
+    canvasBufferContext.lineWidth=Math.floor(config.xRatio)+"";
+    canvasBufferContext.fillStyle = fillRGB.colorStr();
+    canvasBufferContext.strokeStyle= strokeRGB.colorStr();
+    var lX = this.size.x*config.xRatio*scl / 3;
+    var lY = (this.open ? this.size.y * 0.1 * config.yRatio : this.size.y*config.yRatio) * scl;
+    canvasBufferContext.rect(x+lX,y,lX,lY);
+    canvasBufferContext.fill();
+    canvasBufferContext.stroke();
+  }
+
+  this.clone = function(x,y){
+    return new Door(x,y);
+  }
+}
+
+TerrainTile = function(x,y,type){
+  Tile.call(this,x,y);
+  this.size.x = 2*config.gridInterval;
+  this.size.y = 2*config.gridInterval;
+
+  this.pathable = false;
+  var fillStyle; var strokeStyle;
+  this.topLayer = false;
+  this.plant = false;
+  this.maxHealth = 100; this.currentHealth = 100;
+  this.currentHealth -= (Math.random() * 20);
+  switch(type){
+    case "soil":
+      this.name.set("Soil","");
+      this.cost = {'soil': 8};
+      fillStyle = new Color(20,200,150,1.0);
+      strokeStyle = new Color(40,250,200,1.0);
+      break;
+    case "ore":
+      this.name.set("Metal","Ore");
+      this.cost = {'ore': 8};
+      fillStyle = new Color(110,100,130,1.0);
+      strokeStyle = new Color(210,200,230,1.0);
+      break;
+    case "rock":
+      this.name.set("Rock","");
+      this.cost = {'rock': 8};
+      fillStyle = new Color(10,100,100,1.0);
+      strokeStyle = new Color(20,150,150,1.0);
+      break;
+  }
   this.draw = function(camera,canvasBufferContext,count){
     //draw less often
     if(count > this.lastDrawn || Math.abs(count - this.lastDrawn) > 1){
+      if(this.plant){
+        this.plant.draw(camera,canvasBufferContext);
+      }
       this.lastDrawn = count;
+      var healthPercent = (this.currentHealth/this.maxHealth);
+      var alpha = 0.4 + (healthPercent*0.6);
+      fillStyle.a = alpha;
       canvasBufferContext.beginPath();
       canvasBufferContext.lineWidth=Math.floor(config.xRatio)+"";
-      canvasBufferContext.fillStyle = fillRGB;
-      canvasBufferContext.strokeStyle= strokeRGB;
+      canvasBufferContext.fillStyle = fillStyle.colorStr();
+      canvasBufferContext.strokeStyle = strokeStyle.colorStr();
       var originX = (this.position.x-camera.xOff)*config.xRatio;
       var originY = (this.position.y-camera.yOff)*config.yRatio;
       var lX = this.size.x*config.xRatio;
-      var lY = this.open ? this.size.y * 0.1 * config.yRatio : this.size.y*config.yRatio;
-      canvasBufferContext.rect(originX+lX/3,originY,lX/3,lY);
+      var lY = this.size.y*config.yRatio;
+      canvasBufferContext.rect(originX,originY,lX,lY);
       canvasBufferContext.fill();
       canvasBufferContext.stroke();
+      if(this.topLayer){
+        canvasBufferContext.fillStyle = "rgba(100,0,100,"+alpha+")";
+        canvasBufferContext.strokeStyle = "rgba(250,0,250,1.0)";
+        canvasBufferContext.beginPath();
+        canvasBufferContext.moveTo(originX,originY);
+        var points = [[lX,0],[lX,lY*0.4],[lX*0.9,lY*0.2],[lX*0.8,lY*0.4],[lX*0.7,lY*0.2],[lX*0.6,lY*0.4],[lX*0.5,lY*0.2],[lX*0.4,lY*0.4],[lX*0.3,lY*0.2],[lX*0.2,lY*0.4],[lX*0.1,lY*0.2],[0,lY*0.4],[0,0]];
+        for(var p = 0; p < points.length; p++){
+          canvasBufferContext.lineTo(originX+points[p][0],originY+points[p][1]);
+        }
+        canvasBufferContext.fill();
+        canvasBufferContext.stroke();
+      }
     }
   }
 
   this.drawTargetPortrait = function(oX,oY,xSize,ySize,canvasBufferContext){
     canvasBufferContext.beginPath();
     canvasBufferContext.lineWidth=Math.floor(config.xRatio)+"";
-    canvasBufferContext.fillStyle = fillRGB;
-    canvasBufferContext.strokeStyle= strokeRGB;
-    var lX = xSize*0.6;
-    var lY = ySize*0.6;
-    canvasBufferContext.rect((oX+lX/3)+(xSize*0.2),oY+(ySize*0.2),xSize*0.6/3,ySize*0.6);
+    canvasBufferContext.fillStyle = "rgba(20,200,150,0.9)";
+    canvasBufferContext.strokeStyle="rgba(40,250,200,1.0)";
+    canvasBufferContext.rect(oX+(xSize*0.2),oY+(ySize*0.2),xSize*0.6,ySize*0.6);
     canvasBufferContext.fill();
     canvasBufferContext.stroke();
-  }
-
-  this.clone = function(pos){
-    return new Door(pos);
-  }
-
-  this.click = function(coords,terrain){
-    return;
   }
 }

@@ -3,31 +3,57 @@ HumanArt = function(){
   var skinRGB = "rgba(208,146,110,1.0)";
 
   this.drawHuman = function(x,y,canvasBufferContext,human){
-
     var active = human.targetObj && human.targetRange;
     var animate = Math.abs(human.velocity.x) > 0.1;
+    var crouchMod = human.crouching ? human.crouchOffset : 0;
+    y += (crouchMod * config.yRatio);
 
-    var lLeg = 0.5*config.gridInterval*config.yRatio;
-    var rLeg = 0.5*config.gridInterval*config.yRatio;
+  //animation variables
+    //legs
+    var lLeg = new Vector(x,y+(1.5*config.gridInterval*config.yRatio));
+    var lLegSize = new Vector(config.gridInterval*config.xRatio/4,0.5*config.gridInterval*config.yRatio);
+    var rLeg = new Vector(x+(config.gridInterval*config.xRatio/4)*3,y+(1.5*config.gridInterval*config.yRatio));
+    var rLegSize = new Vector(config.gridInterval*config.xRatio/4,0.5*config.gridInterval*config.yRatio);
+    //hands
     var lHandX = x+(config.gridInterval*config.xRatio);
     var rHandX = x+(config.gridInterval*config.xRatio/2);
-    var helmX = x+(config.gridInterval*config.xRatio/3);
-    var eyeX =  x+(config.gridInterval*config.xRatio/2);
     var handY = y+(config.gridInterval*config.yRatio*1.2);
+    //body
+    var helmX = x+(config.gridInterval*config.xRatio/3);
+    var eyeX = x+(config.gridInterval*config.xRatio/2);
+    var torsoLength = 1.5*config.gridInterval*config.yRatio;
     if(!human.direction){
       helmX = x-(config.gridInterval*config.xRatio/80);
       eyeX =  x+(config.gridInterval*config.xRatio/30);
       lHandX = x;
     }
-    if(animate || active){
+    if(crouchMod){
+      var crouchLegY = (config.gridInterval * 0.2 * config.yRatio);
+      torsoLength -= crouchLegY;
+      if(human.direction){
+        rLeg.x = rLeg.x + (config.gridInterval * 0.1 * config.xRatio);
+        rLeg.y -= (crouchMod * config.yRatio);
+        lLeg.x = lLeg.x - (config.gridInterval * 0.25 * config.xRatio);
+        lLeg.y -= crouchLegY;
+        lLegSize.x = (lLegSize.y / config.yRatio) * config.xRatio;
+        lLegSize.y = (rLegSize.x / config.xRatio) * config.yRatio;
+      }else{
+        lLeg.x = lLeg.x - (config.gridInterval * 0.1 * config.xRatio);
+        lLeg.y -= (crouchMod * config.yRatio);
+        rLeg.x = rLeg.x - (config.gridInterval * 0.1 * config.xRatio);
+        rLeg.y -= crouchLegY;
+        rLegSize.x = (rLegSize.y / config.yRatio) * config.xRatio;
+        rLegSize.y = (lLegSize.x / config.xRatio) * config.yRatio;
+      }
+    }else if(animate || active){
       var moveMod = human.direction ? 1.8 : 0.65;
       if((human.count % 20) >= 10){
-       rLeg = (human.direction ? 0.3 : 0.5)*config.gridInterval*config.yRatio;
-       lLeg = (human.direction ? 0.5 : 0.3)*config.gridInterval*config.yRatio;
+       rLegSize.y = (human.direction ? 0.3 : 0.5)*config.gridInterval*config.yRatio;
+       lLegSize.y = (human.direction ? 0.5 : 0.3)*config.gridInterval*config.yRatio;
        rHandX = x+(config.gridInterval*config.xRatio/2)/moveMod;
       }else{
-       rLeg = (human.direction ? 0.5 : 0.3)*config.gridInterval*config.yRatio;
-       lLeg = (human.direction ? 0.3 : 0.5)*config.gridInterval*config.yRatio;
+       rLegSize.y = (human.direction ? 0.5 : 0.3)*config.gridInterval*config.yRatio;
+       lLegSize.y = (human.direction ? 0.3 : 0.5)*config.gridInterval*config.yRatio;
        lHandX = x+(config.gridInterval*config.xRatio)/moveMod;
        if(!human.direction){
          lHandX = x+(config.gridInterval*config.xRatio/3)/moveMod;
@@ -49,9 +75,9 @@ HumanArt = function(){
     canvasBufferContext.lineWidth=Math.floor(config.xRatio)+"";
     canvasBufferContext.strokeStyle = human.lineColor;
     canvasBufferContext.fillStyle = human.fillColor;
-    canvasBufferContext.rect(x,y,config.gridInterval*config.xRatio,1.5*config.gridInterval*config.yRatio);
-    canvasBufferContext.rect(x,y+(1.5*config.gridInterval*config.yRatio),config.gridInterval*config.xRatio/4,lLeg);
-    canvasBufferContext.rect(x+(config.gridInterval*config.xRatio/4)*3,y+(1.5*config.gridInterval*config.yRatio),config.gridInterval*config.xRatio/4,rLeg);
+    canvasBufferContext.rect(x,y,config.gridInterval*config.xRatio,torsoLength);
+    canvasBufferContext.rect(lLeg.x,lLeg.y,lLegSize.x,lLegSize.y);
+    canvasBufferContext.rect(rLeg.x,rLeg.y,rLegSize.x,rLegSize.y);
     canvasBufferContext.stroke();
     canvasBufferContext.fill();
     //visor / face
@@ -83,124 +109,8 @@ HumanArt = function(){
   }
 
   this.drawWeapon = function(x,y,canvasBufferContext,human){
-    switch(human.activeTool){
-      case 'attack':
-        if(human.weapon){
-          human.weapon.draw(x,y,canvasBufferContext);
-        }
-        break;
-      case 'build':
-        this.drawWrench(x,y,canvasBufferContext,human);
-        break;
-      case 'repair':
-        this.drawWrench(x,y,canvasBufferContext,human);
-        break;
-      case 'delete':
-        this.drawMiningLaser(x,y,canvasBufferContext,human);
-        break;
-    }
-  }
-
-  this.drawWrench = function(x,y,canvasBufferContext,human){
-    var lX = (human.size.x * 1.5) * config.xRatio;
-    var lY = (human.size.y / 1.5) * config.yRatio;
-    var firstPoint;
-    var geometry = [
-      [0   , 0.2],
-      [0.1 , 0.2],
-      [0.4 ,-0.1],
-      [0.5 ,-0.1],
-      [0.6 ,-0.2],
-      [0.55,-0.25],
-      [0.45,-0.2],
-      [0.4,-0.2],
-      [0.4,-0.3],
-      [0.45,-0.35],
-      [0.4,-0.4],
-      [0.3,-0.3],
-      [0.3,-0.2],
-      [0.0, 0.1]
-      ];
-
-    canvasBufferContext.fillStyle = "rgba(50,50,50,0.9)";
-    canvasBufferContext.strokeStyle="rgba(200,200,250,1.0)";
-    canvasBufferContext.lineWidth=config.xRatio/2;
-    canvasBufferContext.beginPath();
-    for(var i = 0; i < geometry.length; i++){
-      var pointX = geometry[i][0]*(human.direction ? 1 : -1);
-      var eX = x+(pointX*lX);
-      var eY = y+(geometry[i][1]*lY);
-      if(i == 0){
-        canvasBufferContext.moveTo(eX,eY);
-        firstPoint = [eX,eY];
-      }else{
-        canvasBufferContext.lineTo(eX,eY);
-      }
-    }
-    canvasBufferContext.lineTo(firstPoint[0],firstPoint[1]);
-    canvasBufferContext.fill();
-    canvasBufferContext.stroke();
-  }
-
-
-  var miningLaserGeo = [
-      [0.0, 0.4],
-      [0.2, 0.4],
-      [0.3, 0.0],
-      [0.4, 0.0],
-      [0.4, 0.4],
-      [0.5, 0.4],
-      [0.5, 0.0],
-      [0.6, 0.0],
-      [0.6,-0.2],
-      [0.8,-0.6],
-      [0.2,-0.6],
-      [0.1,-0.4]
-    ];
-  this.drawMiningLaser = function(x,y,canvasBufferContext,human){
-    var active = human.weaponActive;
-    var lX = config.gridInterval * config.xRatio;
-    var lY = config.gridInterval * config.yRatio;
-    //draw emission
-    //
-    var fX = active ? 1.4 : 0.9;
-    var emGeo = [
-       [0.6,-0.2],
-       [fX ,-0.4],
-       [0.8,-0.6]
-      ];
-    var geometries = [emGeo,miningLaserGeo];
-    var r = Math.floor(200 + (Math.random() * 50));
-    var g = Math.random() > 0.8 ? r : 0;
-    var b = 0;
-    var rgbStr = "rgba("+r+","+g+","+b+",0.9)";
-    canvasBufferContext.fillStyle = rgbStr;
-    var firstPoint;
-    for(var g = 0; g < geometries.length; g++){
-      var geometry = geometries[g];
-      canvasBufferContext.beginPath();
-      for(var i = 0; i < geometry.length; i++){
-        var points = utils.rotate(geometry[i][0],geometry[i][1],human.weaponTheta);
-        points[0] = points[0]*(human.direction ? 1 : -1);
-        var eX = x+(points[0]*lX);
-        var eY = y+(points[1]*lY);
-        if(i == 0){
-          canvasBufferContext.moveTo(eX,eY);
-          firstPoint = [eX,eY];
-        }else{
-          canvasBufferContext.lineTo(eX,eY);
-        }
-      }
-      canvasBufferContext.lineTo(firstPoint[0],firstPoint[1]);
-      canvasBufferContext.fill();
-      if(g == 0){
-        //style for second geo
-        canvasBufferContext.fillStyle = "rgba(50,50,50,1.0)";
-        canvasBufferContext.strokeStyle="rgba(200,200,250,1.0)";
-        canvasBufferContext.lineWidth=config.xRatio/4;
-      }else{
-        canvasBufferContext.stroke();
-      }
+    if(human.currentTool){
+      human.currentTool.draw(x,y,canvasBufferContext);
     }
   }
 

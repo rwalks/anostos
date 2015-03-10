@@ -1,7 +1,8 @@
 var GameScene = function (strs,trn,shp,nam,bg,als){
   var heroName = nam;
-  var sceneUtils = new SceneUtils(bg);
-  var stars = strs ? strs : sceneUtils.generateStars();
+  var sceneUtils = new SceneUtils();
+  this.stars = strs ? strs : sceneUtils.generateStars();
+  this.bgs = bg ? bg : [];
   this.terrain = trn ? trn : new Terrain();
   var ship = shp;
   var camera = new Camera(5000,6500);
@@ -67,9 +68,22 @@ var GameScene = function (strs,trn,shp,nam,bg,als){
         break;
       case 17:
         //cntrl
-        if(keyDown){
-          this.focusNextHuman(true);
-        }
+        playerInput = 'crouch';
+        break;
+      case 65:
+        //A
+        this.player.equipTool('attack');
+        break;
+      case 83:
+        //S
+        this.player.equipTool('drill');
+        break;
+      case 68:
+        //D
+        this.player.equipTool('repair');
+        break;
+      case 68:
+        //F
         break;
       case 32:
         //spacebar - might not work in ie9?
@@ -110,28 +124,22 @@ var GameScene = function (strs,trn,shp,nam,bg,als){
       var update = false;
       var deletes = [];
 
-      for (var a = this.ammos.length-1; a >= 0; a--){
-        if(this.ammos[a].update(this.terrain)){
-          this.ammos.splice(a,1);
-        }
-      }
-      var entityTypes = ['humans','aliens'];
+      var newEntityMap = {};
+      var entityTypes = ['ammos','humans','aliens'];
       for(var et = 0; et < entityTypes.length; et++){
         var entityType = entityTypes[et];
         var entityList = this[entityType];
         for (var e = entityList.length-1; e >= 0; e--){
           var entity = entityList[e];
-          var oldPos = [entity.position.x,entity.position.y];
-          var newPos = false;
           var updateMsg = entity.update(this.terrain);
-          if(!entity.dead){
-            newPos = [entity.position.x,entity.position.y];
+          if(!entity.dead && entity.type != 'ammo'){
+            this.terrain.updateEntityMap(entity,newEntityMap);
           }
-          this.terrain.updateEntityMap(entity,newPos,oldPos);
           update = this.handleEntityUpdate(entityType,updateMsg,e);
           regenBuildings = update || regenBuildings;
         }
       }
+      this.terrain.entityMap = newEntityMap;
       for(var c = this.corpses.length-1; c >= 0; c--){
         var collect = this.corpses[c].update(this.terrain,this.humans);
         if(collect){
@@ -158,6 +166,9 @@ var GameScene = function (strs,trn,shp,nam,bg,als){
       case 'humans':
         ret = this.handleHumanUpdate(update,eIndex);
         break;
+      case 'ammos':
+        ret = this.handleAmmoUpdate(update,eIndex);
+        break;
     }
     return ret;
   }
@@ -175,9 +186,10 @@ var GameScene = function (strs,trn,shp,nam,bg,als){
           break;
         case 'build':
           var obj = ret.obj;
-          if(this.terrain.purchase(obj.cost) && this.terrain.isClear(obj)){
-            reg = this.terrain.addTile(obj);
-          }
+          reg = this.terrain.purchaseBuilding(buildTarget,coords);
+          break;
+        case 'repair':
+          reg = ret.built;
           break;
         case 'fire':
           var ammoRet = ret.obj;
@@ -188,10 +200,29 @@ var GameScene = function (strs,trn,shp,nam,bg,als){
         case 'die':
           this.addCorpse(this.humans[hIndex]);
           this.humans.splice(hIndex,1);
-          if(this.humans.length < 1){
+          if(this.player.dead){
             messageIndex = 0;
             gameOver = timeElapsed;
           }
+          break;
+      }
+    }
+    return reg;
+  }
+
+  this.handleAmmoUpdate = function(ret,aIndex){
+    var reg = false;
+    if(ret){
+      switch(ret.action){
+        case 'delete':
+          var obj = ret.obj;
+          if(this.terrain.canDestroy(obj)){
+            this.addCorpse(obj);
+            reg = this.terrain.removeTile(obj);
+          }
+          break;
+        case 'die':
+          this.ammos.splice(aIndex,1);
           break;
       }
     }
@@ -266,10 +297,15 @@ var GameScene = function (strs,trn,shp,nam,bg,als){
             var tCoords = clickToCoord(clickPos,true);
             var tX = tCoords.x;
             var tY = tCoords.y;
-            var obj = this.terrain.getEntity(tX,tY);
-            if(obj){
-              if(!obj.pointWithin(x,y)){
-                obj = false;
+            var obj = false;
+            var objs = this.terrain.getEntities(tX,tY);
+            if(objs){
+              for(var oi = 0; oi < objs.length; oi++){
+                var entity = objs[oi];
+                if(entity.pointWithin(x,y)){
+                  obj = entity;
+                  break;
+                }
               }
             }
             if(!obj){
@@ -281,8 +317,9 @@ var GameScene = function (strs,trn,shp,nam,bg,als){
           case "build":
             if(buildTarget){
               var coords = clickToCoord(clickPos,true);
-              var obj = buildTarget.clone(coords);
-              this.terrain.placeBuilding(obj);
+              if(this.terrain.purchaseBuilding(buildTarget,coords)){
+                this.terrain.regenBuildings();
+              }
             }
             break;
         }
@@ -309,8 +346,8 @@ var GameScene = function (strs,trn,shp,nam,bg,als){
   }
 
   this.draw = function(canvasBufferContext){
-    sceneUtils.drawStars(stars, camera, clockCycle, canvasBufferContext);
-    sceneUtils.drawBG(camera,clockCycle,canvasBufferContext);
+    sceneArt.drawStars(this.stars, camera, clockCycle, canvasBufferContext);
+    sceneArt.drawBG(camera,this.bgs,clockCycle,canvasBufferContext);
     if(sceneUtils.onScreen(ship,camera)){
       ship.draw(camera,canvasBufferContext);
     }
@@ -325,16 +362,17 @@ var GameScene = function (strs,trn,shp,nam,bg,als){
       }
     }
     if(gamePaused){
-      sceneUtils.drawPause(canvasBufferContext);
+      sceneArt.drawPause(canvasBufferContext);
     }else{
       if(this.uiMode == "build" && buildTarget){
         var bPos = clickToCoord(mousePos,true);
-        var obj = buildTarget.clone(bPos);
-        var clear = this.terrain.isClear(obj,this.humans);
-        drawBuildCursor(obj,canvasBufferContext,clear);
+        var clear = this.terrain.validBuild(buildTarget,bPos);
+        sceneArt.drawBuildCursor(buildTarget,bPos,clear,camera,canvasBufferContext);
       }
       if(gameOver){
-        this.drawText(gameOverMsg(gameOver),canvasBufferContext);
+        var msg = gameOverMsg(gameOver);
+        messageIndex += ((this.count % 3 == 0) && (messageIndex < (msg[0].length+msg[1].length))) ? 1 : 0;
+        sceneArt.drawText(msg,messageIndex,canvasBufferContext);
       }else{
         gui.draw(camera,canvasBufferContext);
       }
@@ -366,53 +404,12 @@ var GameScene = function (strs,trn,shp,nam,bg,als){
     }
   }
 
-  var drawBuildCursor = function(obj,canvasBufferContext,clear){
-    if(clear){
-      canvasBufferContext.fillStyle = "rgba(0,200,10,0.9)";
-      canvasBufferContext.strokeStyle="rgba(0,250,20,1.0)";
-    }else{
-      canvasBufferContext.fillStyle = "rgba(200,0,10,0.9)";
-      canvasBufferContext.strokeStyle="rgba(250,0,20,1.0)";
-    }
-    canvasBufferContext.beginPath();
-    canvasBufferContext.lineWidth=Math.floor(config.xRatio)+"";
-    var originX = (obj.position.x-camera.xOff)*config.xRatio;
-    var originY = (obj.position.y-camera.yOff)*config.yRatio;
-    var lX = obj.size.x*config.xRatio;
-    var lY = obj.size.y*config.yRatio;
-    canvasBufferContext.rect(originX,originY,lX,lY);
-    canvasBufferContext.fill();
-    canvasBufferContext.stroke();
-  }
-
-  this.drawText = function(msg,canvasBufferContext){
-    messageIndex += ((this.count % 5 == 0) && (messageIndex < (msg[0].length+msg[1].length))) ? 1 : 0;
-    var x = config.canvasWidth / 14;
-    var y = config.canvasHeight * 0.4;
-    var fontSize = config.canvasWidth / (msg[0].length * 0.9) ;
-    canvasBufferContext.beginPath();
-    canvasBufferContext.lineWidth=Math.floor(config.xRatio)+"";
-    canvasBufferContext.fillStyle = "rgba(100,100,100,0.6)";
-    canvasBufferContext.strokeStyle="rgba(200,200,200,0.8)";
-    canvasBufferContext.rect(x-fontSize,y-fontSize,msg[0].length*0.63*fontSize,3*fontSize);
-    canvasBufferContext.stroke();
-    canvasBufferContext.fill();
-    canvasBufferContext.font = fontSize + 'px Courier New';
-    canvasBufferContext.fillStyle = "rgba(50,250,200,0.9)";
-    if(messageIndex < msg[0].length){
-      canvasBufferContext.fillText(msg[0].slice(0,messageIndex),x,y);
-    }else{
-      canvasBufferContext.fillText(msg[0],x,y);
-      canvasBufferContext.fillText(msg[1].slice(0,messageIndex-msg[0].length),x,y+fontSize*1.2);
-    }
-  }
-
   var gameOverMsg = function(endTime){
     var totalSecs = Math.floor(endTime / config.fps);
     var minutes = Math.floor(totalSecs / 60);
     var seconds = totalSecs % 60;
     var timeString = (minutes > 9 ? minutes : "0" + minutes) + ":" + (seconds > 9 ? seconds : "0" + seconds);
-    return ["All colonists eliminated. Justice: Served","You survived for " +timeString+"."];
+    return ["You have been eliminated. Justice: Served","You survived for " +timeString+"."];
   }
 
   this.initialSpawn();

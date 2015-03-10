@@ -9,8 +9,9 @@ HiveAlien = function(x,y,size,id,hive) {
   this.thetaTarget = 0;
   this.thetaDelta = 0.2;
 
-  this.size = size ? size : this.size;
-  this.hive = hive ? hive : false;
+  this.size = size || this.size;
+  this.hitBoxSize = new Vector(this.size.x,this.size.y);
+  this.hive = hive || false;
   this.xFlip = false;
 
   this.classUpdate = function(){
@@ -93,6 +94,13 @@ HiveAlien = function(x,y,size,id,hive) {
     }
   }
 
+  this.hitBoxes = function(){
+    var boxes = [];
+    var rotBox = new RotHitBox(this.center(),this.hitBoxSize,this.theta);
+    boxes.push(rotBox);
+    return boxes;
+  }
+
   this.validNode = function(node,terrain){
   //  var digger = (this.targetObj && this.targetObj != this.hive);
   //  return pathfinder.validSpace(node[0],node[1],terrain,this.size,true,digger);
@@ -107,10 +115,11 @@ HiveWorker = function(x,y,hive,id) {
   //inherit hive alien
   HiveAlien.call(this,x,y,size,id,hive);
 //generic alien vars
-  this.name = ["Hive","Worker"];
+  this.name.set("Hive","Worker");
   this.maxHealth = 100; this.currentHealth = 100;
   this.moveAccel = config.gridInterval/6;
   this.maxV = config.gridInterval/4;
+  this.hitBoxSize = new Vector(this.size.x*1.5,this.size.y);
 //specific vars
 
   this.biting = false;
@@ -284,7 +293,7 @@ HiveWorker = function(x,y,hive,id) {
 HiveWarrior = function(x,y) {
   HiveAlien.call(this,x,y);
 
-  this.name = ["Hive","Hunter"];
+  this.name.set("Hive","Hunter");
   this.maxHealth = 100; this.currentHealth = 100;
   this.moveAccel = config.gridInterval/2;
   this.size = {'x':1*config.gridInterval,'y':1*config.gridInterval};
@@ -298,10 +307,11 @@ HiveWarrior = function(x,y) {
 HiveNest = function(x,y) {
   HiveAlien.call(this,x,y);
 //alien vars
-  this.name = ["Hive","Nest"];
+  this.name.set("Hive","Nest");
   this.maxHealth = 100; this.currentHealth = 100;
   this.moveAccel = config.gridInterval/2;
-  this.size = {'x':4*config.gridInterval,'y':6*config.gridInterval};
+  this.size = new Vector(4*config.gridInterval,6*config.gridInterval);
+  this.hitBoxSize = new Vector(this.size.x,this.size.y);
 //specific vars
   this.lastMetal;
 
@@ -388,7 +398,7 @@ HiveNest = function(x,y) {
 HiveQueen = function(x,y) {
   HiveAlien.call(this,x,y);
 
-  this.name = ["Hive","Queen"];
+  this.name.set("Hive","Queen");
   this.maxHealth = 100; this.currentHealth = 100;
   this.moveAccel = config.gridInterval/2;
   this.size = {'x':1*config.gridInterval,'y':1*config.gridInterval};

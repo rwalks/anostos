@@ -1,23 +1,22 @@
 BuildingArt = function(){
-  this.drawChemicalBattery = function(x,y,canvasBufferContext,size,scl){
+  this.drawChemicalBattery = function(x,y,alpha,canvasBufferContext,obj,scl){
     var scale = scl ? scl : 1;
     var oX = x;
     var oY = y;
-    var lX = size.x*config.xRatio*scale;
-    var lY = size.y*config.yRatio*scale;
+    var lX = obj.size.x*config.xRatio*scale;
+    var lY = obj.size.y*config.yRatio*scale;
     for(var ex=oX+(lX*0.1);ex<oX+(lX*0.8);ex+=lX*0.2){
-      var dr = Math.floor(Math.random() * 50);
-      var dg = Math.floor(Math.random() * 50);
-      var db = Math.floor(Math.random() * 50);
-      var da = Math.floor(Math.random() * 0.1) + 0.9;
+      var dr = obj.active ? Math.floor(Math.random() * 50) : 0;
+      var dg = obj.active ? Math.floor(Math.random() * 50) : 0;
+      var db = obj.active ? Math.floor(Math.random() * 50) : 0;
+      var da = (Math.floor(Math.random() * 0.1) + 0.9) * alpha;
       var rgbaString = "rgba("+(200+dr)+","+(200+dg)+","+(80+db)+","+da+")";
       canvasBufferContext.beginPath();
       canvasBufferContext.fillStyle = rgbaString;
       canvasBufferContext.rect(ex,oY+lY*0.1,lX*0.2,lY*0.8);
       canvasBufferContext.fill();
-
     }
-    var capRGB = "rgba(180,180,190,1.0)";
+    var capRGB = "rgba(180,180,190,"+alpha+")";
     //topcap
     canvasBufferContext.beginPath();
     canvasBufferContext.lineWidth=Math.floor(config.xRatio)+"";
@@ -42,17 +41,17 @@ BuildingArt = function(){
     canvasBufferContext.stroke();
   }
 
-  this.drawWaterCistern = function(x,y,canvasBufferContext,size,scl){
+  this.drawWaterCistern = function(x,y,alpha,canvasBufferContext,obj,scl){
     var scale = scl ? scl : 1;
     var oX = x;
     var oY = y;
-    var lX = size.x*config.xRatio*scale;
-    var lY = size.y*config.yRatio*scale;
+    var lX = obj.size.x*config.xRatio*scale;
+    var lY = obj.size.y*config.yRatio*scale;
     //energybarz
     var points = [[lX*0.3,lY*0.1],[lX*0.1,lY*0.3],[lX*0.3,lY*0.6],[lX*0.6,lY*0.3]];
     for(p in points){
-      var db = Math.floor(Math.random() * 50);
-      var da = Math.floor(Math.random() * 0.1) + 0.9;
+      var db = obj.active ? Math.floor(Math.random() * 50) : 0;
+      var da = (Math.floor(Math.random() * 0.1) + 0.9) * alpha;
       var rgbaString = "rgba(0,0,"+(200+db)+","+da+")";
       canvasBufferContext.beginPath();
       canvasBufferContext.fillStyle = rgbaString;
@@ -68,7 +67,7 @@ BuildingArt = function(){
       canvasBufferContext.fill();
 
     }
-    var capRGB = "rgba(180,180,190,1.0)";
+    var capRGB = "rgba(180,180,190,"+alpha+")";
     //topcap
     canvasBufferContext.beginPath();
     canvasBufferContext.lineWidth=Math.floor(config.xRatio)+"";
@@ -83,13 +82,13 @@ BuildingArt = function(){
     canvasBufferContext.stroke();
   }
 
-  this.drawOxygenTank = function(x,y,canvasBufferContext,size,scl){
+  this.drawOxygenTank = function(x,y,alpha,canvasBufferContext,obj,scl){
     var scale = scl ? scl : 1;
     var oX = x;
     var oY = y;
-    var lX = size.x*config.xRatio*scale;
-    var lY = size.y*config.yRatio*scale;
-    var capRGB = "rgba(180,180,190,1.0)";
+    var lX = obj.size.x*config.xRatio*scale;
+    var lY = obj.size.y*config.yRatio*scale;
+    var capRGB = "rgba(180,180,190,"+alpha+")";
     //topcap
     canvasBufferContext.beginPath();
     canvasBufferContext.lineWidth=Math.floor(config.xRatio)+"";
@@ -104,8 +103,8 @@ BuildingArt = function(){
     canvasBufferContext.stroke();
     //energybarz
     for(var ey=oY+(lY*0.25);ey<oY+(lY*0.6);ey+=lY*0.3){
-      var dr = Math.floor(Math.random() * 30);
-      var da = Math.floor(Math.random() * 0.1) + 0.9;
+      var dr = obj.active ? Math.floor(Math.random() * 30) : 0;
+      var da = (Math.floor(Math.random() * 0.1) + 0.9) * alpha;
       var rgbaString = "rgba("+(230+dr)+","+(230+dr)+","+(230+dr)+","+da+")";
       canvasBufferContext.beginPath();
       canvasBufferContext.fillStyle = rgbaString;
@@ -114,16 +113,16 @@ BuildingArt = function(){
     }
   }
 
-  this.drawDryStorage = function(x,y,canvasBufferContext,size,scl){
+  this.drawDryStorage = function(x,y,alpha,canvasBufferContext,obj,scl){
     var scale = scl ? scl : 1;
     var oX = x;
     var oY = y;
-    var lX = size.x*config.xRatio*scale;
-    var lY = size.y*config.yRatio*scale;
+    var lX = obj.size.x*config.xRatio*scale;
+    var lY = obj.size.y*config.yRatio*scale;
     //topcap
     canvasBufferContext.beginPath();
     canvasBufferContext.lineWidth=Math.floor(config.xRatio)+"";
-    canvasBufferContext.fillStyle= "rgba(200,50,70,1.0)";
+    canvasBufferContext.fillStyle= "rgba(200,50,70,"+alpha+")";
     canvasBufferContext.strokeStyle= "rgba(200,150,100,1.0)";
     canvasBufferContext.moveTo(oX,oY);
     var points = [
@@ -142,8 +141,8 @@ BuildingArt = function(){
     var sx = lX*0.1;
     var sy = lY*0.8;
     for(var ex=oX+(lX*0.2);ex<oX+(lX*0.9);ex+=lX*0.2){
-      var dr = Math.floor(Math.random() * 30);
-      var da = Math.floor(Math.random() * 0.1) + 0.9;
+      var dr = obj.active ? Math.floor(Math.random() * 30) : 0;
+      var da = (Math.floor(Math.random() * 0.1) + 0.9) * alpha;
       var rgbaString = "rgba("+(100+dr)+","+(40+dr)+","+dr+","+da+")";
       canvasBufferContext.beginPath();
       canvasBufferContext.fillStyle = rgbaString;
@@ -152,13 +151,13 @@ BuildingArt = function(){
     }
   }
 
-  this.drawAirVent = function(x,y,canvasBufferContext,size,scl){
+  this.drawAirVent = function(x,y,alpha,canvasBufferContext,obj,scl){
     var scale = scl ? scl : 1;
     var oX = x;
     var oY = y;
-    var lX = size.x*config.xRatio*scale;
-    var lY = size.y*config.yRatio*scale;
-    var capRGB = "rgba(180,180,190,1.0)";
+    var lX = obj.size.x*config.xRatio*scale;
+    var lY = obj.size.y*config.yRatio*scale;
+    var capRGB = "rgba(180,180,190,"+alpha+")";
     canvasBufferContext.strokeStyle= "rgba(140,140,140,1.0)";
     //topcap
     canvasBufferContext.beginPath();
@@ -173,8 +172,8 @@ BuildingArt = function(){
     canvasBufferContext.stroke();
     //energybarz
     for(dy=oY+(lY*0.3);dy<oY+(lY*0.7);dy+=lY*0.3){
-      var db = Math.floor(Math.random() * 50);
-      var da = Math.floor(Math.random() * 0.1) + 0.9;
+      var db = obj.active ? Math.floor(Math.random() * 50) : 0;
+      var da = (Math.floor(Math.random() * 0.1) + 0.9) * alpha;
       var rgbaString = "rgba("+(200+db)+","+(200+db)+","+(200+db)+","+da+")";
       canvasBufferContext.fillStyle = rgbaString;
       canvasBufferContext.beginPath();
@@ -183,13 +182,13 @@ BuildingArt = function(){
     }
   }
 
-  this.drawWaterPipe = function(x,y,canvasBufferContext,size,scl){
+  this.drawWaterPipe = function(x,y,alpha,canvasBufferContext,obj,scl){
     var scale = scl ? scl : 1;
     var oX = x;
     var oY = y;
-    var lX = size.x*config.xRatio*scale;
-    var lY = size.y*config.yRatio*scale;
-    var capRGB = "rgba(180,180,190,1.0)";
+    var lX = obj.size.x*config.xRatio*scale;
+    var lY = obj.size.y*config.yRatio*scale;
+    var capRGB = "rgba(180,180,190,"+alpha+")";
     canvasBufferContext.strokeStyle= "rgba(140,140,140,1.0)";
     //pipes
     canvasBufferContext.beginPath();
@@ -214,8 +213,8 @@ BuildingArt = function(){
     canvasBufferContext.fill();
     canvasBufferContext.stroke();
     //energybarz
-    var db = Math.floor(Math.random() * 50);
-    var da = Math.floor(Math.random() * 0.1) + 0.9;
+    var db = obj.active ? Math.floor(Math.random() * 50) : 0;
+    var da = (Math.floor(Math.random() * 0.1) + 0.9) * alpha;
     var rgbaString = "rgba(0,0,"+(200+db)+","+da+")";
     canvasBufferContext.fillStyle = rgbaString;
     canvasBufferContext.beginPath();
@@ -227,16 +226,16 @@ BuildingArt = function(){
     canvasBufferContext.fill();
   }
 
-  this.drawConveyorTube = function(x,y,canvasBufferContext,size,scl){
+  this.drawConveyorTube = function(x,y,alpha,canvasBufferContext,obj,scl){
     var scale = scl ? scl : 1;
     var oX = x;
     var oY = y;
-    var lX = size.x*config.xRatio*scale;
-    var lY = size.y*config.yRatio*scale;
+    var lX = obj.size.x*config.xRatio*scale;
+    var lY = obj.size.y*config.yRatio*scale;
     //topcap
     canvasBufferContext.beginPath();
     canvasBufferContext.lineWidth=Math.floor(config.xRatio)+"";
-    canvasBufferContext.fillStyle= "rgba(130,100,100,1.0)";
+    canvasBufferContext.fillStyle= "rgba(130,100,100,"+alpha+")";
     canvasBufferContext.strokeStyle= "rgba(200,150,100,1.0)";
     canvasBufferContext.moveTo(oX,oY+(lY*0.2));
     var points = [[lX*0.3,lY*-0.1],[lX*0.7,lY*-0.1],[lX*1.1,lY*0.3],[lX*1.1,lY*0.7],[lX*0.8,lY],[lX*0.7,lY*0.9],[lX*0.3,lY*0.9],[lX*0.2,lY],[0,lY*0.8],[lX*0.1,lY*0.7],[lX*0.1,lY*0.3],[0,lY*0.2]];
@@ -251,8 +250,8 @@ BuildingArt = function(){
     var sx = lX*0.2;
     var sy = lY*0.6;
     for(var ex=oX+(lX*0.3);ex<oX+(lX*0.7);ex+=lX*0.3){
-      var dr = Math.floor(Math.random() * 30);
-      var da = Math.floor(Math.random() * 0.1) + 0.9;
+      var dr = obj.active ? Math.floor(Math.random() * 30) : 0;
+      var da = (Math.floor(Math.random() * 0.1) + 0.9) * alpha;
       var rgbaString = "rgba("+(100+dr)+","+(40+dr)+","+dr+","+da+")";
       canvasBufferContext.beginPath();
       canvasBufferContext.fillStyle = rgbaString;
@@ -261,13 +260,13 @@ BuildingArt = function(){
     }
   }
 
-  this.drawSoilEvaporator = function(x,y,canvasBufferContext,size,scl){
+  this.drawSoilEvaporator = function(x,y,alpha,canvasBufferContext,obj,scl){
     var scale = scl ? scl : 1;
     var oX = x;
     var oY = y;
-    var lX = size.x*config.xRatio*scale;
-    var lY = size.y*config.yRatio*scale;
-    var capRGB = "rgba(180,180,190,1.0)";
+    var lX = obj.size.x*config.xRatio*scale;
+    var lY = obj.size.y*config.yRatio*scale;
+    var capRGB = "rgba(180,180,190,"+alpha+")";
     canvasBufferContext.strokeStyle= "rgba(140,140,140,1.0)";
     //topcap
     canvasBufferContext.beginPath();
@@ -282,29 +281,28 @@ BuildingArt = function(){
     canvasBufferContext.fill();
     canvasBufferContext.stroke();
     //water
-    var db = Math.floor(Math.random() * 100);
-    var da = Math.floor(Math.random() * 0.1) + 0.9;
+    var db = obj.active ? Math.floor(Math.random() * 100) : 0;
+    var da = (Math.floor(Math.random() * 0.1) + 0.9) * alpha;
     var rgbaString = "rgba("+(150+db)+","+(150+db)+","+(150+db)+","+da+")";
     canvasBufferContext.fillStyle = rgbaString;
     canvasBufferContext.beginPath();
     canvasBufferContext.rect(oX+(lX*0.2),oY+(lY*0.2),lX*0.6,lY*0.2);
     canvasBufferContext.fill();
     //soil
-    var rgbaString = "rgba(20,200,150,0.9)";
+    var rgbaString = "rgba(20,200,150,"+(0.9*alpha)+")";
     canvasBufferContext.fillStyle = rgbaString;
     canvasBufferContext.beginPath();
     canvasBufferContext.rect(oX+(lX*0.2),oY+(lY*0.4),lX*0.6,lY*0.4);
     canvasBufferContext.fill();
     //red
-    var dr = Math.floor(Math.random() * 50);
-    var dg = Math.floor(Math.random() * 50);
-    var da = Math.floor(Math.random() * 0.1) + 0.9;
+    var dr = obj.active ? Math.floor(Math.random() * 50) : 0;
+    var dg = obj.active ? Math.floor(Math.random() * 50) : 0;
     var rgbaString = "rgba("+(200+dr)+","+(200+dg)+","+20+","+da+")";
     canvasBufferContext.fillStyle = rgbaString;
     canvasBufferContext.beginPath();
     canvasBufferContext.rect(oX+(lX*0.4),oY+(lY*0.2),lX*0.2,lY*0.6);
     canvasBufferContext.fill();
-    var rgbaString = "rgba(100,100,100,0.9)";
+    var rgbaString = "rgba(100,100,100,"+alpha+")";
     canvasBufferContext.fillStyle = rgbaString;
     for(var dx=0;dx<=lX*0.80;dx+=lX*0.80){
       for(var dy=lY*0.2;dy<=lY*0.7;dy+=lY*0.5){
@@ -315,13 +313,13 @@ BuildingArt = function(){
     }
   }
 
-  this.drawOxygenCondenser = function(x,y,canvasBufferContext,size,scl){
+  this.drawOxygenCondenser = function(x,y,alpha,canvasBufferContext,obj,scl){
     var scale = scl ? scl : 1;
     var oX = x;
     var oY = y;
-    var lX = size.x*config.xRatio*scale;
-    var lY = size.y*config.yRatio*scale;
-    var capRGB = "rgba(180,180,190,1.0)";
+    var lX = obj.size.x*config.xRatio*scale;
+    var lY = obj.size.y*config.yRatio*scale;
+    var capRGB = "rgba(180,180,190,"+alpha+")";
     canvasBufferContext.strokeStyle= "rgba(140,140,140,1.0)";
     //topcap
     canvasBufferContext.beginPath();
@@ -337,8 +335,8 @@ BuildingArt = function(){
 
     for(var eY = oY; eY < oY+(lY*0.75); eY += lY*0.1){
       //energybarz
-      var dr = Math.floor(Math.random() * 100);
-      var da = Math.floor(Math.random() * 0.1) + 0.9;
+      var dr = obj.active ? Math.floor(Math.random() * 100) : 0;
+      var da = (Math.floor(Math.random() * 0.1) + 0.9) * alpha;
       var rgbaString = "rgba("+(150+dr)+","+(150+dr)+","+(255)+","+da+")";
       canvasBufferContext.fillStyle = rgbaString;
       canvasBufferContext.beginPath();
@@ -347,16 +345,16 @@ BuildingArt = function(){
     }
   }
 
-  this.drawSmeltingChamber = function(x,y,canvasBufferContext,size,scl){
+  this.drawSmeltingChamber = function(x,y,alpha,canvasBufferContext,obj,scl){
     var scale = scl ? scl : 1;
     var oX = x;
     var oY = y;
-    var lX = size.x*config.xRatio*scale;
-    var lY = size.y*config.yRatio*scale;
+    var lX = obj.size.x*config.xRatio*scale;
+    var lY = obj.size.y*config.yRatio*scale;
     //topcap
     canvasBufferContext.lineWidth=Math.floor(config.xRatio)+"";
     canvasBufferContext.beginPath();
-    canvasBufferContext.fillStyle= "rgba(10,5,7,1.0)";
+    canvasBufferContext.fillStyle= "rgba(10,5,7,"+alpha+")";
     canvasBufferContext.strokeStyle= "rgba(200,150,100,1.0)";
     canvasBufferContext.moveTo(oX,oY+(lY*0.05));
     var points = [
@@ -368,7 +366,7 @@ BuildingArt = function(){
     canvasBufferContext.stroke();
     //boilerdoor
     canvasBufferContext.beginPath();
-    canvasBufferContext.fillStyle= "rgba(100,100,100,0.6)";
+    canvasBufferContext.fillStyle= "rgba(100,100,100,"+(0.6*alpha)+")";
     canvasBufferContext.strokeStyle= "rgba(50,50,50,1.0)";
     canvasBufferContext.moveTo(oX+(lX*0.05),oY+(lY*0.3));
     var points = [
@@ -380,8 +378,8 @@ BuildingArt = function(){
     canvasBufferContext.stroke();
     //energybarz
     canvasBufferContext.beginPath();
-    var dr = Math.floor(Math.random() * 80);
-    var da = Math.floor(Math.random() * 0.1) + 0.9;
+    var dr = obj.active ? Math.floor(Math.random() * 80) : 0;
+    var da = (Math.floor(Math.random() * 0.1) + 0.9) * alpha;
     var rgbaString = "rgba("+(170+dr)+",0,0,"+da+")";
     canvasBufferContext.fillStyle = rgbaString;
     canvasBufferContext.moveTo(oX+(lX*0.15),oY+(lY*0.35));
@@ -392,8 +390,7 @@ BuildingArt = function(){
     }
     canvasBufferContext.fill();
     canvasBufferContext.beginPath();
-    var dr = Math.floor(Math.random() * 80);
-    var da = Math.floor(Math.random() * 0.1) + 0.9;
+    var dr = obj.active ? Math.floor(Math.random() * 80) : 0;
     var rgbaString = "rgba("+(170+dr)+",0,0,"+da+")";
     canvasBufferContext.fillStyle = rgbaString;
     canvasBufferContext.moveTo(oX+(lX*0.85),oY+(lY*0.35));
@@ -407,8 +404,8 @@ BuildingArt = function(){
     var sx = lX*0.125;
     var sy = lY*0.6;
     for(var ex=oX+(lX*0.35);ex<oX+(lX*0.6);ex+=lX*0.175){
-      var dr = Math.floor(Math.random() * 80);
-      var da = Math.floor(Math.random() * 0.1) + 0.9;
+      var dr = obj.active ? Math.floor(Math.random() * 80) : 0;
+      var da = (Math.floor(Math.random() * 0.1) + 0.9) * alpha;
       var rgbaString = "rgba("+(170+dr)+",0,0,"+da+")";
       canvasBufferContext.beginPath();
       canvasBufferContext.fillStyle = rgbaString;
@@ -417,22 +414,22 @@ BuildingArt = function(){
     }
   }
 
-  this.drawSolarPanel = function(x,y,canvasBufferContext,size,scl){
+  this.drawSolarPanel = function(x,y,alpha,canvasBufferContext,obj,scl){
     var scale = scl ? scl : 1;
     var oX = x;
     var oY = y;
-    var lX = size.x*config.xRatio*scale;
-    var lY = size.y*config.yRatio*scale;
+    var lX = obj.size.x*config.xRatio*scale;
+    var lY = obj.size.y*config.yRatio*scale;
     //energybarz
     for(var ex=oX;ex<oX+lX*0.9;ex+=lX*0.2){
-      var dr = Math.floor(Math.random() * 30);
+      var dr = obj.active ? Math.floor(Math.random() * 30) : 0;
       var rgbaString = "rgba("+(100+dr)+","+(100+dr)+","+(200+dr)+",0.9)";
       canvasBufferContext.beginPath();
       canvasBufferContext.fillStyle = rgbaString;
       canvasBufferContext.rect(ex,oY+lY*0.2,lX*0.2,lY*0.4);
       canvasBufferContext.fill();
     }
-    var baseRGB = "rgba(180,180,190,1.0)";
+    var baseRGB = "rgba(180,180,190,"+alpha+")";
     //base
     canvasBufferContext.beginPath();
     canvasBufferContext.lineWidth=Math.floor(config.xRatio)+"";
@@ -447,7 +444,7 @@ BuildingArt = function(){
     canvasBufferContext.stroke();
   }
 
-  this.drawBuilding = function(x,y,canvasBufferContext,size,scl){
+  this.drawBuilding = function(x,y,alpha,canvasBufferContext,obj,scl){
 
   }
 }

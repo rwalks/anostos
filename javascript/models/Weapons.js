@@ -1,55 +1,34 @@
 Weapon = function(owner){
-  this.owner = owner;
-  this.name = ["Unknown","Weapon"];
-  this.cooldownTimer = 0;
-  this.cooldownCost;
-  this.range = config.gridInterval;
+  Tool.call(this,owner);
+  this.type = 'attack';
 
-  this.draw = function(x,y,canvasContext){
-    this.drawWeapon(x,y,canvasContext);
-  }
-
-  this.drawWeapon = function(x,y,buffer){};
-
-  this.fire = function(){
-    var ret = false;
-    var origin = utils.clonePos(this.owner.center());
-    if(!this.cooldownTimer){
-      this.cooldownTimer += this.cooldownCost;
-      var theta = this.owner.direction ? Math.PI : 0;
-      theta += this.owner.weaponTheta * (this.owner.direction ? 1 : -1);
-      ret = this.spawnAmmo(origin,theta);
-    }
-    return ret;
+  this.typeActivate = function(orig,theta,terrain){
+    var ammoRet = this.spawnAmmo(orig,theta);
+    return {'action':'fire','obj':ammoRet};
   }
 
   this.spawnAmmo = function(orig,theta){
   }
-
-  this.update = function(){
-    if(this.cooldownTimer > 0){
-      this.cooldownTimer -= 1;
-    }
-  }
-
 }
 
 BasicBlaster = function(owner){
   Weapon.call(this,owner);
 
-  this.name = ["Basic","Blaster"];
-  this.cooldownCost = 20;
+  this.name.set("Basic","Blaster");
+  this.cooldownCost = 10;
   this.range = config.gridInterval * 20;
+  this.actionOffset.x = config.gridInterval * 0.9;
+  this.actionOffset.y = config.gridInterval * -0.2;
 
-  this.drawWeapon = function(x,y,buffer){
+  this.drawTool = function(x,y,buffer){
     weaponArt.drawBlaster(x,y,buffer,this.owner);
   }
 
   this.spawnAmmo = function(orig,theta){
-    return [new BlastAmmo(orig,theta)];
+    return [new BlastAmmo(orig,theta,this.owner.type)];
   }
 
-  this.clone = function(pos){
-    return new BasicBlaster(pos);
+  this.clone = function(owner){
+    return new BasicBlaster(owner);
   }
 }

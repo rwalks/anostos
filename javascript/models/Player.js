@@ -7,24 +7,32 @@ Player = function(x,y,name) {
     'up' : false,
     'down' : false,
     'fire' : false,
+    'crouch' : false,
     'jump' : false
   };
 
+  this.equipment.attack = new BasicBlaster(this);
+  this.equipment.repair = new Wrench(this);
+  this.equipment.drill = new PlasmaTorch(this);
+
+  this.currentTool = this.equipment.drill;
+
   this.walkAccel = config.gridInterval/8;
-  this.airAccel = config.gridInterval/10;
+  this.airAccel = config.gridInterval/8;
   this.jumpAccel = config.gridInterval * 0.75;
   this.groundMaxX = config.gridInterval / 2;
-  this.airMaxX = config.gridInterval / 4;
+  this.airMaxX = config.gridInterval / 3;
 
-  this.setInput = function(dir,keyDown){
-    this.input[dir] = keyDown;
-    var xInput = (dir == 'left' || dir == 'right');
+  this.setInput = function(action,keyDown){
+    var xInput = (action == 'left' || action == 'right');
     if(keyDown && xInput){
-      this.direction = (dir == 'right') ? true : false;
+      this.direction = (action == 'right');
     }
+    this.input[action] = keyDown;
   }
 
   this.updateMove = function(){
+    this.crouching = this.input.crouch;
     //sideways
     var accel = this.onGround ? this.walkAccel : this.airAccel;
     var max = this.groundMaxX;
@@ -32,12 +40,13 @@ Player = function(x,y,name) {
       accel = this.airAccel;
       max = this.airMaxX;
     }
-
     var dX = (this.input.left ? -accel : 0);
     dX += (this.input.right ? accel : 0);
-    var maxLateral = Math.abs(this.velocity.x + dX) - max;
-    if(maxLateral <= 0){
-      this.velocity.x += dX;
+    if(!this.crouching){
+      var maxLateral = Math.abs(this.velocity.x + dX) - max;
+      if(maxLateral <= 0){
+        this.velocity.x += dX;
+      }
     }
     //jump
     if(this.input.jump && this.onGround){
@@ -45,11 +54,11 @@ Player = function(x,y,name) {
     }
     //aiming
     if(this.input.up){
-      this.weaponTheta = (dX ? -0.5 : -1) * Math.PI/2;
+      this.toolTheta = (dX ? -0.5 : -1) * Math.PI/2;
     }else if(this.input.down){
-      this.weaponTheta = (dX ? 0.5 : 1) * Math.PI/2;
+      this.toolTheta = (dX ? 0.5 : 1) * Math.PI/2;
     }else{
-      this.weaponTheta = 0;
+      this.toolTheta = 0;
     }
   }
 
@@ -63,25 +72,13 @@ Player = function(x,y,name) {
   }
 
   this.interactTarget = function(terrain){
-
-    this.activeTool = 'delete';
     ret = false;
-    this.weaponActive = this.input.fire;
-    if(this.input.fire){
-      switch(this.activeTool){
-        case 'attack':
-          var ammoRet = this.weapon.fire();
-          if(ammoRet){
-            ret = {'action':'fire','obj':ammoRet};
-          }
-          break;
-      }
+    this.toolActive = this.currentTool && this.input.fire;
+    if(this.toolActive){
+      ret = this.currentTool.activate(terrain);
     }
     return ret;
   }
-
-
-
 
 }
 

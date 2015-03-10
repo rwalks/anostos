@@ -20,7 +20,6 @@ Terrain = function(trMap,sSpawns) {
     'rad':{'max':0,'current':0},
     'fissile':{'max':0,'current':0}
   };
-//
   var updateCount = 0;
   var resourceUpdateInterval = 5;
   var roomFinder = new Roomfinder();
@@ -112,7 +111,7 @@ Terrain = function(trMap,sSpawns) {
   this.update = function(humans,resourceInv){
     for(x in doors){
       for(y in doors[x]){
-        this.terrain[x][y].update(humans);
+        this.terrain[x][y].update(this);
       }
     }
     this.transferResources(resourceInv);
@@ -126,6 +125,16 @@ Terrain = function(trMap,sSpawns) {
   }
 
   this.purchase = function(cost){
+    if(this.canAfford(cost)){
+      for(var r in cost){
+        this.resources[r].current -= cost[r];
+      }
+      return true;
+    }
+    return false;
+  }
+
+  this.canAfford = function(cost){
     var canAfford = true;
     for(var r in cost){
       var rQuant = this.resources[r] ? this.resources[r].current : 0;
@@ -133,13 +142,7 @@ Terrain = function(trMap,sSpawns) {
         canAfford = false;
       }
     }
-    if(canAfford){
-      for(var r in cost){
-        this.resources[r].current -= cost[r];
-      }
-      return true;
-    }
-    return false;
+    return canAfford;
   }
 
   this.getTile = function(x,y){
@@ -150,14 +153,20 @@ Terrain = function(trMap,sSpawns) {
     }
   }
 
-  this.isClear = function(obj){
-    for(x = obj.position.x; x < obj.position.x+(obj.size.x); x += config.gridInterval){
-      for(y = obj.position.y; y < obj.position.y+(obj.size.y); y += config.gridInterval){
-        if(this.terrain[x] && this.terrain[x][y]){
+  this.validBuild = function(obj,coords){
+    return (this.canAfford(obj.cost) && this.validBuildPos(obj,coords));
+  }
+
+  this.validBuildPos = function(obj,coords){
+    //check for no buildings
+    for(x = coords.x; x < coords.x+(obj.size.x); x += config.gridInterval){
+      for(y = coords.y; y < coords.y+(obj.size.y); y += config.gridInterval){
+        if(this.getTile(x,y)){
           return false;
         }
       }
     }
+    //check for support
     return true;
   }
 
@@ -226,48 +235,44 @@ Terrain = function(trMap,sSpawns) {
     return true;
   }
 
-  this.getEntity = function(tX,tY){
-    if(this.entityMap[x] && this.entityMap[x][y]){
-      return this.entityMap[x][y];
+  this.getEntities = function(tX,tY){
+    if(this.entityMap[tX] && this.entityMap[tX][tY]){
+      return this.entityMap[tX][tY];
     }else{
       return false;
     }
   }
 
-  this.updateEntityMap = function(obj,newPos,oldPos){
-    if(newPos){
-      newPos[0] = utils.roundToGrid(newPos[0]);
-      newPos[1] = utils.roundToGrid(newPos[1]);
-    }
-    if(oldPos){
-      oldPos[0] = utils.roundToGrid(oldPos[0]);
-      oldPos[1] = utils.roundToGrid(oldPos[1]);
-      if(newPos && (oldPos[0] == newPos[0]) && (oldPos[1] == newPos[1])){
-        return true;
-      }
-    }
-    for(sx = 0; sx <= obj.size.x; sx += config.gridInterval){
-      for(sy = 0; sy <= obj.size.y; sy += config.gridInterval){
-        if(oldPos){
-          var x = oldPos[0] + sx;
-          var y = oldPos[1] + sy;
-          if(this.entityMap[x]){
-            delete this.entityMap[x][y];
-            if(!Object.keys(this.entityMap[x]).length){
-              delete this.entityMap[x];
-            }
-          }
+  this.updateEntityMap = function(obj,eMap){
+    var tX = utils.roundToGrid(obj.position.x);
+    var tY = utils.roundToGrid(obj.position.y);
+    for(var sx = 0; sx <= obj.size.x; sx += config.gridInterval){
+      for(var sy = 0; sy <= obj.size.y; sy += config.gridInterval){
+        var x = tX + sx;
+        var y = tY + sy;
+        if(!eMap[x]){
+          eMap[x] = {};
         }
-        if(newPos){
-          var x = newPos[0] + sx;
-          var y = newPos[1] + sy;
-          if(!this.entityMap[x]){
-            this.entityMap[x] = {};
-          }
-          this.entityMap[x][y] = obj;
+        if(!eMap[x][y]){
+          eMap[x][y] = [obj];
+        }else{
+          eMap[x][y].push(obj);
         }
       }
     }
+  }
+
+  this.purchaseBuilding = function(obj,coords){
+    var regen = false;
+    //check if clear
+    var clear = this.validBuildPos(obj,coords);
+    //purchase then place
+    if(clear && this.purchase(obj.cost)){
+      var newObj = obj.clone(coords.x,coords.y);
+      newObj.setNewHealth();
+      regen = this.addTile(newObj);
+    }
+    return regen;
   }
 
   this.buildGeneratorNetwork = function(obj,markedObjs){
@@ -311,7 +316,7 @@ Terrain = function(trMap,sSpawns) {
         for(var vx = x+l[0]; vx < x + config.gridInterval+l[1]; vx += config.gridInterval+l[2]){
           for(var vy = y+l[3]; vy < y + current.size.y+l[4]; vy += config.gridInterval + l[5]){
             var node = this.terrain[vx][vy];
-            if(node){
+            if(node && node.built){
               if(oxType){
                 var r = tileInRoom(node,this.rooms);
                 if(r){
@@ -387,7 +392,8 @@ Terrain = function(trMap,sSpawns) {
     var markedNodes = {};
     for(x in generators){
       for(y in generators[x]){
-        if(!(markedNodes[x] && markedNodes[x][y])){
+        var built = generators[x][y].built;
+        if(built && !(markedNodes[x] && markedNodes[x][y])){
           this.buildGeneratorNetwork(this.terrain[x][y],markedNodes);
         }
       }
@@ -397,14 +403,15 @@ Terrain = function(trMap,sSpawns) {
   this.regenRooms = function(){
     var newRooms = [];
     var rId = 0;
-    for(x in airtightWalls){
-      for(y in airtightWalls[x]){
-        if(!tileInRoom(this.terrain[x][y],newRooms)){
+    for(var x in airtightWalls){
+      for(var y in airtightWalls[x]){
+        var til = this.terrain[x][y];
+        if(til.built && !tileInRoom(til,newRooms)){
           var rm = roomFinder.findRoom(~~x,~~y,this.terrain);
           if(rm.length > 0){
             if(uniqueRoom(rm,newRooms)){
               var newRoom = new Room(rm);
-              var tRoom = tileInRoom(this.terrain[x][y],this.rooms);
+              var tRoom = tileInRoom(til,this.rooms);
               if(tRoom){
                 newRoom.oxygen = tRoom.oxygen;
                 newRoom.containers = tRoom.containers;

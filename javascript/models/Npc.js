@@ -83,14 +83,7 @@ Npc = function(x,y,name) {
     this.targetRange = false;
     if(this.targetObj){
       var targCoords = [this.targetObj.position.x+(this.targetObj.size.x/2),this.targetObj.position.y+(this.targetObj.size.y/2)];
-      var range = config.gridInterval * 3;
-      if(this.action == 'build'){
-        range = config.gridInterval * 3;
-      }else if(this.action == 'attack'){
-        if(this.weapon){
-          range = this.weapon.range;
-        }
-      }
+      var range = this.interactRange();
       if(nodeDistance(targCoords,this.center()) < range){
         this.targetRange = true;
         switch(this.action){
