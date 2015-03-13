@@ -146,6 +146,26 @@ SceneArt = function() {
     canvasBufferContext.fill();
   }
 
+  this.drawAmbientLight = function(light,canvasBufferContext){
+    //dark mask
+    canvasBufferContext.fillStyle = "rgba(0,0,0,0.8)";
+    canvasBufferContext.beginPath();
+    canvasBufferContext.rect(0,0,config.canvasWidth,config.canvasHeight);
+    canvasBufferContext.fill();
+  }
+
+  this.drawLight = function(x,y,camera,canvasBufferContext,alpha){
+    var oX = (x - camera.xOff) * config.xRatio;
+    var oY = (y - camera.yOff) * config.yRatio;
+    var lX = config.gridInterval * config.xRatio;
+    var lY = config.gridInterval * config.yRatio;
+    var fillColor = alpha ? "rgba(255,255,255,"+(alpha/4)+")" : "rgba(0,0,0,0.8)";
+    canvasBufferContext.fillStyle = fillColor;
+    canvasBufferContext.beginPath();
+    canvasBufferContext.rect(oX,oY,lX,lY);
+    canvasBufferContext.fill();
+  }
+
   this.drawHitBoxes = function(boxes,camera,canvasBufferContext){
     canvasBufferContext.lineWidth=Math.floor(config.xRatio)+"";
     canvasBufferContext.strokeStyle="rgba(250,0,0,0.9)";

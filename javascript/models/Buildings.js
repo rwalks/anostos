@@ -12,31 +12,30 @@ Building = function(x,y){
   this.resourceConnections = {};
   this.built = false;
   this.active = false;
+  this.baseAlpha = 0.2;
+  this.healthAlpha = 0.7;
 
   this.collision = function(){return false;}
 
-  this.draw = function(camera,canvasBufferContext,count){
+  this.draw = function(camera,canvasBufferContext,count,terrain){
     //draw less often
     if(count > this.lastDrawn || Math.abs(count - this.lastDrawn) > 1){
       this.lastDrawn = count;
       var x = (this.position.x-camera.xOff)*config.xRatio;
       var y = (this.position.y-camera.yOff)*config.yRatio;
-      var healthPercent = this.currentHealth / this.maxHealth;
-      var alpha = 0.4 + (healthPercent*0.6);
+      var cent = this.center();
+      var lightX = utils.roundToGrid(cent.x);
+      var lightY = utils.roundToGrid(cent.y);
+      var light = terrain.getLight(lightX,lightY) || 0;
+      var alpha = this.baseAlpha + (this.healthPercent()*this.healthAlpha*light);
       this.drawBlock(x,y,alpha,canvasBufferContext,1);
-      this.drawHealth(x,y,healthPercent,canvasBufferContext);
+      this.drawStatus(x,y,count,canvasBufferContext);
     }
   }
 
-  this.drawHealth = function(x,y,canvasBufferContext){
-    var barColor;
-    if(!this.built){
-
-    }else if(this.currentHealth < this.maxHealth){
-
-    }
-    if(barColor){
-
+  this.drawStatus = function(x,y,count,canvasBufferContext){
+    if(!this.built || (this.healthPercent() < (2/3))){
+      bArt.drawHealthIcon(x,y,count,this,canvasBufferContext);
     }
   }
 
@@ -47,6 +46,8 @@ Building = function(x,y){
     var scale = (xSize*0.4) / (this.size.x*config.xRatio);
     this.drawBlock(oX+(xSize*0.3),oY+(ySize*0.2),1.0,canvasBufferContext,scale);
   }
+
+  this.healthPercent = function(){return this.currentHealth / this.maxHealth;}
 
   this.clone = function(x,y){
     return new Building(x,y);

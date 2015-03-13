@@ -1,5 +1,5 @@
 Human = function(x,y,name) {
-
+  this.hasDrawn = false;
   var rdbaString;
   this.spaceSuit = true;
   this.type = "human";
@@ -21,6 +21,9 @@ Human = function(x,y,name) {
   this.maxHealth = 100; this.currentHealth = 100;
   this.maxOxygen = 20; this.currentOxygen = 20;
 
+  this.light = false;
+  this.lightRadius = 10;
+
   var oxygenConsumptionRate = 0.03;
 
   this.currentTool = false;
@@ -40,20 +43,23 @@ Human = function(x,y,name) {
   this.actionButtons = ["select","delete","build"];
 
   this.name = name ? name : utils.nameGenerator();
+  this.baseAlpha = 0.2;
+  this.healthAlpha = 0.75;
 
   //suit color
   var r = Math.floor(Math.random()*250);
   var g = Math.floor(Math.random()*250);
   var b = Math.floor(Math.random()*250);
-  this.fillColor = "rgba("+r+","+g+","+b+",0.9)";
+  this.fillColor = new Color(r,g,b,0.9);
   r = (r >= g && r >= b) ? 250 : 0;
   g = (g >= r && g >= b) ? 250 : 0;
   b = (b >= g && b >= r) ? 250 : 0;
-  this.lineColor = "rgba("+r+","+g+","+b+",1.0)";
+  this.lineColor = new Color(r,g,b,1.0);
 
   this.update = function(terrain){
+    this.hasDrawn = false;
     this.count += 1;
-    if(this.count > 100){ this.count = 0; }
+    if(this.count >= 100){ this.count = 0; }
 
     if(this.currentHealth <= 0 && !this.dead){
       this.dead = true;
@@ -202,11 +208,19 @@ Human = function(x,y,name) {
     this.currentTool = this.equipment[toolType];
   }
 
-  this.draw = function(camera,canvasContext){
-    var x = (this.position.x-camera.xOff)*config.xRatio;
-    var y = (this.position.y-camera.yOff)*config.yRatio;
-    humanArt.drawHuman(x,y,canvasContext,this);
-   // humanArt.drawPath(this.path,canvasContext,camera);
+  this.draw = function(camera,canvasContext,terrain){
+    if(!this.hasDrawn){
+      this.hasDrawn = true;
+      var cent = this.center();
+      var lightX = utils.roundToGrid(cent.x);
+      var lightY = utils.roundToGrid(cent.y);
+      var light = terrain.getLight(lightX,lightY);
+      var x = (this.position.x-camera.xOff)*config.xRatio;
+      var y = (this.position.y-camera.yOff)*config.yRatio;
+      var alpha = this.baseAlpha + (this.healthAlpha * light);
+      humanArt.drawHuman(x,y,canvasContext,this,camera,alpha);
+     // humanArt.drawPath(this.path,canvasContext,camera);
+    }
   }
 
   this.wound = function(damage){

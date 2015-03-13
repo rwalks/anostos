@@ -14,7 +14,7 @@ WeaponArt = function() {
       [0.2,-0.6],
       [0.1,-0.4]
     ];
-  this.drawBlaster = function(x,y,buffCon,owner){
+  this.drawBlaster = function(x,y,buffCon,owner,alpha){
     var lX = config.gridInterval * config.xRatio;
     var lY = config.gridInterval * config.yRatio;
     //draw emission
@@ -29,7 +29,7 @@ WeaponArt = function() {
     var r = Math.random() > 0.8 ? r : 0;
     var g = Math.floor(200 + (Math.random() * 50));
     var b = 0;
-    var rgbStr = "rgba("+g+","+g+","+b+",0.9)";
+    var rgbStr = "rgba("+g+","+g+","+b+","+alpha+")";
     buffCon.fillStyle = rgbStr;
     var firstPoint;
     for(var g = 0; g < geometries.length; g++){
@@ -51,8 +51,8 @@ WeaponArt = function() {
       buffCon.fill();
       if(g == 0){
         //style for second geo
-        buffCon.fillStyle = "rgba(50,50,50,1.0)";
-        buffCon.strokeStyle="rgba(200,200,250,1.0)";
+        buffCon.fillStyle = "rgba(50,50,50,"+alpha+")";
+        buffCon.strokeStyle="rgba(200,200,250,"+alpha+")";
         buffCon.lineWidth=config.xRatio/4;
       }else{
         buffCon.stroke();
@@ -60,9 +60,23 @@ WeaponArt = function() {
     }
   }
 
-  this.drawWrench = function(x,y,canvasBufferContext,owner){
-    var lX = (owner.size.x * 1.5) * config.xRatio;
-    var lY = (owner.size.y / 1.5) * config.yRatio;
+  this.drawWrench = function(x,y,canvasBufferContext,tool,camera,alpha){
+    //draw heal beam
+    if(tool.owner.toolActive && tool.repairBeam){
+      var dX = (tool.repairBeam.x-camera.xOff) * config.xRatio;
+      var dY = (tool.repairBeam.y-camera.yOff) * config.yRatio;
+      canvasBufferContext.strokeStyle="rgba(0,250,0,"+alpha+")";
+      canvasBufferContext.lineWidth=config.xRatio*3;
+      canvasBufferContext.beginPath();
+      canvasBufferContext.moveTo(x,y);
+      canvasBufferContext.lineTo(dX,dY);
+      canvasBufferContext.stroke();
+    }
+    //draw wrench
+    var animTheta = ((tool.animationFrame - 10) / 10) * (Math.PI / 4);
+    var theta = tool.owner.toolTheta + animTheta;
+    var lX = (tool.owner.size.x * 1.5) * config.xRatio;
+    var lY = (tool.owner.size.y / 1.5) * config.yRatio;
     var firstPoint;
     var geometry = [
       [0   , 0.2],
@@ -81,14 +95,15 @@ WeaponArt = function() {
       [0.0, 0.1]
       ];
 
-    canvasBufferContext.fillStyle = "rgba(50,50,50,0.9)";
-    canvasBufferContext.strokeStyle="rgba(200,200,250,1.0)";
+    canvasBufferContext.fillStyle = "rgba(50,50,50,"+alpha+")";
+    canvasBufferContext.strokeStyle="rgba(200,200,250,"+alpha+")";
     canvasBufferContext.lineWidth=config.xRatio/2;
     canvasBufferContext.beginPath();
     for(var i = 0; i < geometry.length; i++){
-      var pointX = geometry[i][0]*(owner.direction ? 1 : -1);
-      var eX = x+(pointX*lX);
-      var eY = y+(geometry[i][1]*lY);
+      var points = utils.rotate(geometry[i][0],geometry[i][1],theta);
+      points[0] = points[0]*(tool.owner.direction ? 1 : -1);
+      var eX = x+(points[0]*lX);
+      var eY = y+(points[1]*lY);
       if(i == 0){
         canvasBufferContext.moveTo(eX,eY);
         firstPoint = [eX,eY];
@@ -116,7 +131,7 @@ WeaponArt = function() {
       [0.2,-0.6],
       [0.1,-0.4]
     ];
-  this.drawPlasmaTorch = function(x,y,canvasBufferContext,owner){
+  this.drawPlasmaTorch = function(x,y,canvasBufferContext,owner,alpha){
     var active = owner.toolActive;
     var lX = config.gridInterval * config.xRatio;
     var lY = config.gridInterval * config.yRatio;
@@ -132,7 +147,7 @@ WeaponArt = function() {
     var r = Math.floor(200 + (Math.random() * 50));
     var g = Math.random() > 0.8 ? r : 0;
     var b = 0;
-    var rgbStr = "rgba("+r+","+g+","+b+",0.9)";
+    var rgbStr = "rgba("+r+","+g+","+b+","+alpha+")";
     canvasBufferContext.fillStyle = rgbStr;
     var firstPoint;
     for(var g = 0; g < geometries.length; g++){
@@ -154,8 +169,8 @@ WeaponArt = function() {
       canvasBufferContext.fill();
       if(g == 0){
         //style for second geo
-        canvasBufferContext.fillStyle = "rgba(50,50,50,1.0)";
-        canvasBufferContext.strokeStyle="rgba(200,200,250,1.0)";
+        canvasBufferContext.fillStyle = "rgba(50,50,50,"+alpha+")";
+        canvasBufferContext.strokeStyle="rgba(200,200,250,"+alpha+")";
         canvasBufferContext.lineWidth=config.xRatio/4;
       }else{
         canvasBufferContext.stroke();

@@ -20,8 +20,8 @@ BasicBlaster = function(owner){
   this.actionOffset.x = config.gridInterval * 0.9;
   this.actionOffset.y = config.gridInterval * -0.2;
 
-  this.drawTool = function(x,y,buffer){
-    weaponArt.drawBlaster(x,y,buffer,this.owner);
+  this.drawTool = function(x,y,buffer,camera,alpha){
+    weaponArt.drawBlaster(x,y,buffer,this.owner,alpha);
   }
 
   this.spawnAmmo = function(orig,theta){

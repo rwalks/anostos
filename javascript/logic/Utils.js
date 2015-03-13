@@ -112,10 +112,16 @@ Name = function(firstName,lastName){
 }
 
 Color = function(r,g,b,a){
-  this.r = r || Math.floor((Math.random() * 255));
-  this.g = g || Math.floor((Math.random() * 255));
-  this.b = b || Math.floor((Math.random() * 255));
+  this.r = Math.floor(r) || 0;
+  this.g = Math.floor(g) || 0;
+  this.b = Math.floor(b) || 0;
   this.a = a || 1.0;
+
+  this.randomize = function(){
+    this.r = Math.floor(Math.random() * 255);
+    this.g = Math.floor(Math.random() * 255);
+    this.b = Math.floor(Math.random() * 255);
+  }
 
   this.colorStr = function(){
     return "rgba("+this.r+","+this.g+","+this.b+","+this.a+")";

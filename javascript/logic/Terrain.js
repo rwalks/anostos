@@ -2,6 +2,7 @@ Terrain = function(trMap,sSpawns) {
 
   this.terrain = trMap ? trMap : {};
   this.entityMap = {};
+  this.lightMap = {};
 //construct holders
   this.rooms = [];
 //tile reference holders
@@ -182,21 +183,9 @@ Terrain = function(trMap,sSpawns) {
   }
 
   this.draw = function(canvasBufferContext,camera,count){
-    if(this.terrain){
-      //drawRooms
-      for (var r = 0; r < this.rooms.length; r++){
-        this.rooms[r].draw(camera,canvasBufferContext);
-      }
-      //drawTiles
-      for(var x=camera.xOff-(camera.xOff%config.gridInterval);x<camera.xOff+config.cX;x+=config.gridInterval){
-        if(this.terrain[x]){
-          for(var y=(camera.yOff-(camera.yOff%config.gridInterval));y<camera.yOff+config.cY;y+=config.gridInterval){
-            if(this.terrain[x][y]){
-              this.terrain[x][y].draw(camera,canvasBufferContext,count);
-            }
-          }
-        }
-      }
+    //drawRooms
+    for (var r = 0; r < this.rooms.length; r++){
+      this.rooms[r].draw(camera,canvasBufferContext);
     }
   }
 
@@ -240,6 +229,44 @@ Terrain = function(trMap,sSpawns) {
       return this.entityMap[tX][tY];
     }else{
       return false;
+    }
+  }
+
+  this.getLight = function(tX,tY){
+    if(this.lightMap[tX] && this.lightMap[tX][tY]){
+      return this.lightMap[tX][tY];
+    }else{
+      return false;
+    }
+  }
+
+  this.updateLightMap = function(obj,lMap){
+    var cent = obj.center();
+    var tX = utils.roundToGrid(cent.x);
+    var tY = utils.roundToGrid(cent.y);
+    var radius = obj.lightRadius || 12;
+    for(var xFlip = -1; xFlip <= 1; xFlip += 2){
+      var height = radius;
+      for(var x = 0; x < radius; x += 1){
+        for(var yFlip = -1; yFlip <= 1; yFlip += 2){
+          for(var y = 0; y <= height; y += 1){
+            var lX = tX + ((x * config.gridInterval) * xFlip);
+            var lY = tY + ((y * config.gridInterval) * yFlip);
+            var til = this.getTile(lX,lY);
+            if(til){
+              til.hidden = false;
+            }
+            if(!lMap[lX]){
+              lMap[lX] = {};
+            }
+            var d = x + y;
+            var alpha = 1 - (0.9 * (d/radius));
+            var alpha = lMap[lX][lY] ? Math.max(lMap[lX][lY],alpha) : alpha;
+            lMap[lX][lY] = alpha;
+          }
+        }
+        height -= 1;
+      }
     }
   }
 

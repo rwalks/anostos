@@ -12,17 +12,6 @@ Npc = function(x,y,name) {
 
   this.weapon = new BasicBlaster(this);
 
-  //suit color
-  var r = Math.floor(Math.random()*250);
-  var g = Math.floor(Math.random()*250);
-  var b = Math.floor(Math.random()*250);
-  this.fillColor = "rgba("+r+","+g+","+b+",0.9)";
-  r = (r >= g && r >= b) ? 250 : 0;
-  g = (g >= r && g >= b) ? 250 : 0;
-  b = (b >= g && b >= r) ? 250 : 0;
-  this.lineColor = "rgba("+r+","+g+","+b+",1.0)";
-
-
   this.updateMove = function(){
     //move path
     if(this.path.length){

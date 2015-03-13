@@ -82,8 +82,11 @@ var GameScene = function (strs,trn,shp,nam,bg,als){
         //D
         this.player.equipTool('repair');
         break;
-      case 68:
+      case 70:
         //F
+        if(keyDown){
+          this.player.light = !this.player.light;
+        }
         break;
       case 32:
         //spacebar - might not work in ie9?
@@ -125,36 +128,35 @@ var GameScene = function (strs,trn,shp,nam,bg,als){
       var deletes = [];
 
       var newEntityMap = {};
-      var entityTypes = ['ammos','humans','aliens'];
+      var newLightMap = {};
+      var entityTypes = ['ammos','humans','aliens','corpses'];
       for(var et = 0; et < entityTypes.length; et++){
         var entityType = entityTypes[et];
         var entityList = this[entityType];
         for (var e = entityList.length-1; e >= 0; e--){
           var entity = entityList[e];
-          var updateMsg = entity.update(this.terrain);
-          if(!entity.dead && entity.type != 'ammo'){
+          var updateMsg = entityType == 'corpses' ? entity.update(this.terrain,this.humans) : entity.update(this.terrain);
+          if(!entity.dead){
             this.terrain.updateEntityMap(entity,newEntityMap);
+
+            if(sceneUtils.onScreen(entity,camera) && entity.light){
+              this.terrain.updateLightMap(entity,newLightMap);
+            }
           }
           update = this.handleEntityUpdate(entityType,updateMsg,e);
           regenBuildings = update || regenBuildings;
         }
       }
       this.terrain.entityMap = newEntityMap;
-      for(var c = this.corpses.length-1; c >= 0; c--){
-        var collect = this.corpses[c].update(this.terrain,this.humans);
-        if(collect){
-          this.loot(this.corpses[c]);
-          this.corpses.splice(c,1);
-        }
-      }
+      this.terrain.lightMap = newLightMap;
       this.terrain.update(this.humans,this.inventory);
       var npcs = this.humans.slice(1);
-      gui.update(focusTarget,npcs,buildTarget,this.uiMode,timeElapsed,this.terrain.resources);
+      gui.update(focusTarget,npcs,buildTarget,this.uiMode,timeElapsed,this.terrain.resources,this.player);
       if(regenBuildings){
         this.terrain.regenBuildings();
       }
     }
-    this.count = (this.count > 100) ? 0 : this.count + 1;
+    this.count = (this.count >= 100) ? 0 : this.count + 1;
   }
 
   this.handleEntityUpdate = function(eType,update,eIndex){
@@ -168,6 +170,12 @@ var GameScene = function (strs,trn,shp,nam,bg,als){
         break;
       case 'ammos':
         ret = this.handleAmmoUpdate(update,eIndex);
+        break;
+      case 'corpses':
+        if(update){
+          this.loot(this.corpses[eIndex]);
+          this.corpses.splice(eIndex,1);
+        }
         break;
     }
     return ret;
@@ -351,13 +359,33 @@ var GameScene = function (strs,trn,shp,nam,bg,als){
     if(sceneUtils.onScreen(ship,camera)){
       ship.draw(camera,canvasBufferContext);
     }
+    sceneArt.drawAmbientLight(this.ambientLight,canvasBufferContext);
     this.terrain.draw(canvasBufferContext,camera,this.count);
-    var objTypes = [this.aliens,this.corpses,this.humans,this.ammos];
-    for(var typ = 0; typ < objTypes.length; typ ++){
-      var objs = objTypes[typ];
-      for (var o = 0; o < objs.length; o++){
-        if(sceneUtils.onScreen(objs[o],camera)){
-          objs[o].draw(camera,canvasBufferContext);
+    //drawLights
+    for(var x=camera.xOff-(camera.xOff%config.gridInterval);x<camera.xOff+config.cX;x+=config.gridInterval){
+      if(this.terrain.lightMap[x]){
+        var yKeys = Object.keys(this.terrain.lightMap[x]);
+        for(var yI=0;yI<yKeys.length;yI+=1){
+          var y = yKeys[yI];
+          if(y >= camera.yOff && y <= (camera.yOff+config.cY)){
+            var alpha = this.terrain.getLight(x,y);
+            sceneArt.drawLight(x,y,camera,canvasBufferContext,alpha);
+          }
+        }
+      }
+    }
+    //drawTiles
+    for(var x=camera.xOff-(camera.xOff%config.gridInterval);x<camera.xOff+config.cX;x+=config.gridInterval){
+      for(var y=(camera.yOff-(camera.yOff%config.gridInterval));y<camera.yOff+config.cY;y+=config.gridInterval){
+        var entities = this.terrain.getEntities(x,y);
+        if(entities){
+          for(var e = 0; e < entities.length; e++){
+            entities[e].draw(camera,canvasBufferContext,this.terrain);
+          }
+        }
+        var til = this.terrain.getTile(x,y);
+        if(til){
+          til.draw(camera,canvasBufferContext,this.count,this.terrain);
         }
       }
     }

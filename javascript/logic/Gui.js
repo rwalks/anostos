@@ -27,11 +27,11 @@ Gui = function() {
     var pos = {};
     switch(type){
       case "resourcesLeft":
-        pos.x = (config.canvasWidth / 2.5) - (config.canvasWidth/13.9);
+        pos.x = (config.canvasWidth / 3) - (config.canvasWidth/13.9);
         pos.y = config.canvasHeight * (5/6);
         break;
       case "resourcesRight":
-        pos.x = config.canvasWidth * (5.85/8);
+        pos.x = config.canvasWidth * 2/3;
         pos.y = config.canvasHeight * (5/6);
         break;
       case "timer":
@@ -39,7 +39,7 @@ Gui = function() {
         pos.y = config.canvasHeight * 0.1;
         break;
       case "target":
-        pos.x = config.canvasWidth / 2.5;
+        pos.x = config.canvasWidth / 3;
         pos.y = config.canvasHeight * (5/6);
         break;
       case "build":
@@ -53,6 +53,10 @@ Gui = function() {
       case "inventory":
         pos.x = config.canvasWidth *0.1;
         pos.y = config.canvasHeight * 0.1;
+        break;
+      case "player":
+        pos.x = config.canvasWidth * 0.425;
+        pos.y = config.canvasHeight * 0.0;
         break;
     }
     return pos;
@@ -84,6 +88,10 @@ Gui = function() {
       case "roster":
         size.x = config.canvasWidth / 8;
         size.y = config.canvasHeight * 0.6;
+        break;
+      case "player":
+        size.x = config.canvasWidth * 0.15;
+        size.y = config.canvasHeight * 0.1;
         break;
     }
     return size;
@@ -180,11 +188,12 @@ Gui = function() {
     }
   }
 
-  this.update = function(target,humans,buildTarget,uiMode,deltaT,rStats){
+  this.update = function(target,humans,buildTarget,uiMode,deltaT,rStats,player){
     this.target = target;
     this.roster = humans;
     this.buildTarget = buildTarget;
     this.uiMode = uiMode;
+    this.player = player;
     timeElapsed = deltaT;
     resourceStats = rStats;
   }
@@ -224,6 +233,7 @@ Gui = function() {
     this.drawTarget(this.size("target"),this.position("target"),canvasBufferContext);
     this.drawRoster(this.size("roster"),this.position("roster"),canvasBufferContext);
     this.drawTimer(this.size("timer"),this.position("timer"),canvasBufferContext);
+    this.drawPlayer(this.size("player"),this.position("player"),canvasBufferContext);
   }
 
   this.drawTimer = function(size,pos,canvasBufferContext){
@@ -263,6 +273,40 @@ Gui = function() {
       canvasBufferContext.fillText(secondString,x,y);
     }
 
+  }
+
+  this.drawPlayer = function(size,pos,canvasBufferContext){
+    canvasBufferContext.beginPath();
+    canvasBufferContext.lineWidth=Math.floor(config.xRatio)+"";
+    canvasBufferContext.fillStyle = "rgba(150,0,200,0.9)";
+    canvasBufferContext.strokeStyle="rgba(200,0,250,1.0)";
+    canvasBufferContext.rect(pos.x,pos.y,size.x,size.y);
+    canvasBufferContext.fill();
+    canvasBufferContext.stroke();
+    var xBuf = Math.floor(config.xRatio) * 2;
+    var yBuf = Math.floor(config.yRatio) * 2;
+    var xIndex = pos.x + xBuf;
+    var yIndex = pos.y + yBuf;
+    var xSize = size.x-(2*xBuf);
+    var ySize = size.y-(2*yBuf);
+    canvasBufferContext.beginPath();
+    canvasBufferContext.lineWidth=Math.floor(config.xRatio)+"";
+    canvasBufferContext.fillStyle = "rgba(20,0,50,0.9)";
+    canvasBufferContext.strokeStyle="rgba(20,0,75,1.0)";
+    canvasBufferContext.rect(xIndex,yIndex,xSize,ySize);
+    canvasBufferContext.fill();
+    //draw portrait
+    var xSize = size.x * 0.5;
+    var ySize = size.y-(2*yBuf);
+    var pX = pos.x + (size.x / 4);
+    canvasBufferContext.beginPath();
+    canvasBufferContext.lineWidth=Math.floor(config.xRatio)+"";
+    canvasBufferContext.strokeStyle="rgba(200,0,250,1.0)";
+    canvasBufferContext.rect(pX,0,xSize,size.y);
+    canvasBufferContext.stroke();
+    if(this.player){
+      this.player.drawTargetPortrait(pX,0,xSize,ySize,canvasBufferContext);
+    }
   }
 
   this.drawGrid = function(camera,canvasBufferContext){

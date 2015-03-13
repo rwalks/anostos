@@ -29,7 +29,7 @@ Block = function(type,x,y) {
   this.collision = function(){return true;}
 
   this.drawBlock = function(x,y,alpha,canvasBufferContext,scl){
-    fillRGB.a = alpha - 0.1;
+    fillRGB.a = alpha;
     canvasBufferContext.beginPath();
     canvasBufferContext.lineWidth=Math.floor(config.xRatio)+"";
     canvasBufferContext.fillStyle = fillRGB.colorStr();
@@ -52,12 +52,15 @@ Corpse = function(pos,inventory,cost){
   this.name.set("Dessicated","Remains");
   this.cost = cost ? cost : {};
   this.maxVelocity = config.gridInterval / 3;
+  this.lightRadius = 2;
+  this.hasDrawn = false;
 
   var target = false;
 
   this.type = "corpse";
 
   this.update = function(terrain,humans){
+    this.hasDrawn = false;
     if(target){
       var d = utils.objectDistance(target,this);
       if(d < config.pickUpRange){
@@ -101,9 +104,12 @@ Corpse = function(pos,inventory,cost){
   }
 
   this.draw = function(camera,canvasBufferContext,count){
-    var x = (this.position.x-camera.xOff)*config.xRatio;
-    var y = (this.position.y-camera.yOff)*config.yRatio;
-    this.drawBlock(x,y,canvasBufferContext);
+    if(!this.hasDrawn){
+      this.hasDrawn = true;
+      var x = (this.position.x-camera.xOff)*config.xRatio;
+      var y = (this.position.y-camera.yOff)*config.yRatio;
+      this.drawBlock(x,y,canvasBufferContext);
+    }
   }
 
   this.drawBlock = function(x,y,canvasBufferContext,scl){
@@ -235,16 +241,20 @@ TerrainTile = function(x,y,type){
       strokeStyle = new Color(20,150,150,1.0);
       break;
   }
-  this.draw = function(camera,canvasBufferContext,count){
-    //draw less often
+  this.draw = function(camera,canvasBufferContext,count,terrain){
     if(count > this.lastDrawn || Math.abs(count - this.lastDrawn) > 1){
+      var cent = this.center();
+      var lightX = utils.roundToGrid(cent.x);
+      var lightY = utils.roundToGrid(cent.y);
+      var light = terrain.getLight(lightX,lightY) || 0;
       if(this.plant){
         this.plant.draw(camera,canvasBufferContext);
       }
       this.lastDrawn = count;
       var healthPercent = (this.currentHealth/this.maxHealth);
-      var alpha = 0.4 + (healthPercent*0.6);
+      var alpha = this.baseAlpha + (healthPercent*this.healthAlpha*light);
       fillStyle.a = alpha;
+      strokeStyle.a = alpha;
       canvasBufferContext.beginPath();
       canvasBufferContext.lineWidth=Math.floor(config.xRatio)+"";
       canvasBufferContext.fillStyle = fillStyle.colorStr();
@@ -254,18 +264,22 @@ TerrainTile = function(x,y,type){
       var lX = this.size.x*config.xRatio;
       var lY = this.size.y*config.yRatio;
       canvasBufferContext.rect(originX,originY,lX,lY);
-      canvasBufferContext.fill();
+      if(!this.hidden){
+        canvasBufferContext.fill();
+      }
       canvasBufferContext.stroke();
       if(this.topLayer){
         canvasBufferContext.fillStyle = "rgba(100,0,100,"+alpha+")";
-        canvasBufferContext.strokeStyle = "rgba(250,0,250,1.0)";
+        canvasBufferContext.strokeStyle = "rgba(250,0,250,"+alpha+")";
         canvasBufferContext.beginPath();
         canvasBufferContext.moveTo(originX,originY);
         var points = [[lX,0],[lX,lY*0.4],[lX*0.9,lY*0.2],[lX*0.8,lY*0.4],[lX*0.7,lY*0.2],[lX*0.6,lY*0.4],[lX*0.5,lY*0.2],[lX*0.4,lY*0.4],[lX*0.3,lY*0.2],[lX*0.2,lY*0.4],[lX*0.1,lY*0.2],[0,lY*0.4],[0,0]];
         for(var p = 0; p < points.length; p++){
           canvasBufferContext.lineTo(originX+points[p][0],originY+points[p][1]);
         }
-        canvasBufferContext.fill();
+        if(!this.hidden){
+          canvasBufferContext.fill();
+        }
         canvasBufferContext.stroke();
       }
     }

@@ -14,6 +14,10 @@ Tile = function(x,y) {
   this.currentHealth = 100;
   this.built = true;
   this.active = true;
+  this.hidden = true;
+
+  this.baseAlpha = 0.2;
+  this.healthAlpha = 0.6;
 
   this.setNewHealth = function(){
     this.currentHealth = this.maxHealth * this.initialHealth;

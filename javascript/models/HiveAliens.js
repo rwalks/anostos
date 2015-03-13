@@ -284,8 +284,8 @@ HiveWorker = function(x,y,hive,id) {
     }
   }
 
-  this.drawAlien = function(x,y,canvasBufferContext,scale){
-    alienArt.drawHiveWorker(x,y,this,canvasBufferContext,scale,this.counter);
+  this.drawAlien = function(x,y,canvasBufferContext,illum,scale){
+    alienArt.drawHiveWorker(x,y,this,canvasBufferContext,illum,scale,this.counter);
   }
 
 }
@@ -389,8 +389,8 @@ HiveNest = function(x,y) {
     }
   }
 
-  this.drawAlien = function(x,y,canvasBufferContext,scale){
-    alienArt.drawHiveNest(x,y,this,canvasBufferContext,scale,this.counter);
+  this.drawAlien = function(x,y,canvasBufferContext,illum,scale){
+    alienArt.drawHiveNest(x,y,this,canvasBufferContext,illum,scale,this.counter);
   }
 
 }

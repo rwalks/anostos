@@ -1,12 +1,12 @@
 HumanArt = function(){
 
-  var skinRGB = "rgba(208,146,110,1.0)";
 
-  this.drawHuman = function(x,y,canvasBufferContext,human){
+  this.drawHuman = function(x,y,canvasBufferContext,human,camera,alpha){
     var active = human.targetObj && human.targetRange;
     var animate = Math.abs(human.velocity.x) > 0.1;
     var crouchMod = human.crouching ? human.crouchOffset : 0;
     y += (crouchMod * config.yRatio);
+    var skinRGB = "rgba(208,146,110,"+alpha+")";
 
   //animation variables
     //legs
@@ -61,7 +61,7 @@ HumanArt = function(){
       }
     }
 
-    var handRGB = human.spaceSuit ? "rgba(0,0,200,0.9)" : skinRGB;
+    var handRGB = human.spaceSuit ? "rgba(0,0,200,"+alpha+")" : skinRGB;
     //lHand
     canvasBufferContext.beginPath();
     canvasBufferContext.strokeStyle= handRGB;
@@ -73,30 +73,32 @@ HumanArt = function(){
     //body -> lLeg -> rLeg
     canvasBufferContext.beginPath();
     canvasBufferContext.lineWidth=Math.floor(config.xRatio)+"";
-    canvasBufferContext.strokeStyle = human.lineColor;
-    canvasBufferContext.fillStyle = human.fillColor;
+    var strokeColor = new Color(human.lineColor.r,human.lineColor.g,human.lineColor.b,alpha);
+    var fillColor = new Color(human.fillColor.r,human.fillColor.g,human.fillColor.b,alpha);
+    canvasBufferContext.strokeStyle = strokeColor.colorStr();
+    canvasBufferContext.fillStyle = fillColor.colorStr();
     canvasBufferContext.rect(x,y,config.gridInterval*config.xRatio,torsoLength);
     canvasBufferContext.rect(lLeg.x,lLeg.y,lLegSize.x,lLegSize.y);
     canvasBufferContext.rect(rLeg.x,rLeg.y,rLegSize.x,rLegSize.y);
     canvasBufferContext.stroke();
     canvasBufferContext.fill();
     //visor / face
-    var faceRGB = human.spaceSuit ? "rgba(0,200,0,0.9)" : skinRGB;
+    var faceRGB = human.spaceSuit ? "rgba(0,200,0,"+alpha+")" : skinRGB;
     canvasBufferContext.beginPath();
-    canvasBufferContext.strokeStyle= human.spaceSuit ? "rgba(0,250,0,1.0)" : skinRGB;
+    canvasBufferContext.strokeStyle= human.spaceSuit ? "rgba(0,250,0,"+alpha+")" : skinRGB;
     canvasBufferContext.fillStyle = faceRGB;
     canvasBufferContext.rect(helmX,y+(config.gridInterval*config.yRatio/6),(config.gridInterval*config.xRatio)*(2/3),0.6*config.gridInterval*config.yRatio);
     canvasBufferContext.stroke();
     canvasBufferContext.fill();
     if(!human.spaceSuit){
       canvasBufferContext.beginPath();
-      canvasBufferContext.fillStyle = "rgba(0,0,0,0.9)";
+      canvasBufferContext.fillStyle = "rgba(0,0,0,"+alpha+")";
       canvasBufferContext.rect(eyeX,y+(config.gridInterval*config.yRatio/4),(config.gridInterval*config.xRatio)/6,0.2*config.gridInterval*config.yRatio);
       canvasBufferContext.rect(eyeX+(config.gridInterval*config.xRatio/3),y+(config.gridInterval*config.yRatio/4),(config.gridInterval*config.xRatio)/6,0.2*config.gridInterval*config.yRatio);
       canvasBufferContext.fill();
     }
     //weapon under right hand
-    this.drawWeapon(rHandX,handY,canvasBufferContext,human);
+    this.drawWeapon(rHandX,handY,canvasBufferContext,human,camera,alpha);
     //rHand
     canvasBufferContext.beginPath();
     canvasBufferContext.strokeStyle= handRGB;
@@ -108,9 +110,9 @@ HumanArt = function(){
 
   }
 
-  this.drawWeapon = function(x,y,canvasBufferContext,human){
+  this.drawWeapon = function(x,y,canvasBufferContext,human,camera,alpha){
     if(human.currentTool){
-      human.currentTool.draw(x,y,canvasBufferContext);
+      human.currentTool.draw(x,y,canvasBufferContext,camera,alpha);
     }
   }
 
@@ -133,10 +135,11 @@ HumanArt = function(){
   }
 
   this.drawTargetPortrait = function(x,y,xSize,ySize,canvasBufferContext,human){
+    var skinRGB = "rgba(208,146,110,1.0)";
     canvasBufferContext.beginPath();
     canvasBufferContext.lineWidth=Math.floor(config.xRatio)+"";
-    canvasBufferContext.strokeStyle = human.lineColor;
-    canvasBufferContext.fillStyle = human.fillColor;
+    canvasBufferContext.strokeStyle = human.lineColor.colorStr();
+    canvasBufferContext.fillStyle = human.fillColor.colorStr();
     canvasBufferContext.rect(x+(xSize*0.1),y+(ySize*0.1),xSize*0.8,ySize*0.9);
     canvasBufferContext.stroke();
     canvasBufferContext.fill();
@@ -158,8 +161,8 @@ HumanArt = function(){
   this.drawRosterPortrait = function(x,y,xSize,ySize,canvasBufferContext,human){
     canvasBufferContext.beginPath();
     canvasBufferContext.lineWidth=Math.floor(config.xRatio)+"";
-    canvasBufferContext.strokeStyle = human.lineColor;
-    canvasBufferContext.fillStyle = human.fillColor;
+    canvasBufferContext.strokeStyle = human.lineColor.colorStr();
+    canvasBufferContext.fillStyle = human.fillColor.colorStr();
     canvasBufferContext.rect(x+(xSize*0.05),y+(ySize*0.3),xSize*0.15,ySize*0.5);
     canvasBufferContext.stroke();
     canvasBufferContext.fill();

@@ -1,6 +1,6 @@
 AlienArt = function() {
 
-  this.drawHiveNest = function(ox,oy,obj,canvasBufferContext,scale,counter){
+  this.drawHiveNest = function(ox,oy,obj,canvasBufferContext,illum,scale,counter){
     var size = obj.size;
     var scale = scale ? scale : 1;
     var lX = size.x*config.xRatio*scale;
@@ -9,7 +9,7 @@ AlienArt = function() {
     var redShift = Math.floor(55 * healthPercent);
     var r = 255 - redShift;
     var g = 4 * redShift;
-    var a = 0.8 * healthPercent;
+    var a = illum;
     var bugFill = new Color(r,g,20,a);
 
     var geometry = [[-0.5,0.5],[-0.45,0.3],[-0.4,0.2],[-0.32,-0.125],[-0.3,0.1],
@@ -20,7 +20,7 @@ AlienArt = function() {
     canvasBufferContext.beginPath();
     canvasBufferContext.lineWidth=Math.floor(config.xRatio)+"";
     canvasBufferContext.fillStyle = bugFill.colorStr();
-    canvasBufferContext.strokeStyle="rgba(250,200,25,1)";
+    canvasBufferContext.strokeStyle="rgba(250,200,25,"+(illum+0.1)+")";
     var firstPoint = false;
     for(i in geometry){
       var x = ox+(geometry[i][0] * lX);
@@ -36,7 +36,9 @@ AlienArt = function() {
       canvasBufferContext.lineTo(firstPoint[0],firstPoint[1]);
     }
     canvasBufferContext.stroke();
-    canvasBufferContext.fill();
+    if(illum){
+      canvasBufferContext.fill();
+    }
 
     var eyes = [[0.1,-0.275,0.05],[-0.25,0.25,0.1],[0.15,0.3,0.15],[0,-0.05,0.03]];
     for(var e = 0; e < eyes.length; e++){
@@ -45,14 +47,16 @@ AlienArt = function() {
       var x = ox + (eyePos[0] * lX);
       var y = oy + (eyePos[1] * lY);
       canvasBufferContext.beginPath();
-      canvasBufferContext.fillStyle = "rgba(0,0,50,0.8)";
+      canvasBufferContext.fillStyle = "rgba(0,0,50,"+illum+")";
       canvasBufferContext.arc(x,y,eyeSize,0,2*Math.PI,obj.xFlip);
       canvasBufferContext.closePath();
-      canvasBufferContext.fill();
+      if(illum){
+        canvasBufferContext.fill();
+      }
     }
   }
 
-  this.drawHiveWorker = function(ox,oy,obj,canvasBufferContext,scale,counter){
+  this.drawHiveWorker = function(ox,oy,obj,canvasBufferContext,illum,scale,counter){
     var size = obj.size;
     var theta = obj.theta;
     var scale = scale ? scale : 1;
@@ -63,7 +67,7 @@ AlienArt = function() {
     var redShift = Math.floor(55 * healthPercent);
     var r = 255 - redShift;
     var g = 4 * redShift;
-    var a = 0.8 * healthPercent;
+    var a = illum;
     var bugFill = new Color(r,g,20,a);
 
     //draw back eye
@@ -71,10 +75,12 @@ AlienArt = function() {
     eyePos = rotate(eyePos[0],eyePos[1],theta);
     var eyeSize = Math.min(lX*0.2,lY*0.3);
     canvasBufferContext.beginPath();
-    canvasBufferContext.fillStyle = "rgba(0,0,50,0.6)";
+    canvasBufferContext.fillStyle = "rgba(0,0,50,"+illum+")";
     canvasBufferContext.arc(ox+eyePos[0],oy+eyePos[1],eyeSize,0,2*Math.PI,obj.xFlip);
     canvasBufferContext.closePath();
-    canvasBufferContext.fill();
+    if(illum){
+      canvasBufferContext.fill();
+    }
 
     var bodyGeo = [[lX*0.6,lY*0.1],[lX*0.55,lY*0.2],[0,lY*0.4],[-lX*0.6,lY*0.35],[-lX,lY*0.1],
                    [-lX*0.7,-lY*0.3],[0,-lY*0.5]];
@@ -92,7 +98,7 @@ AlienArt = function() {
     canvasBufferContext.beginPath();
     canvasBufferContext.lineWidth=Math.floor(config.xRatio)+"";
     canvasBufferContext.fillStyle = bugFill.colorStr();
-    canvasBufferContext.strokeStyle="rgba(250,200,25,1)";
+    canvasBufferContext.strokeStyle="rgba(250,200,25,"+(illum+0.1)+")";
     var firstPoint = false;
     for(i in geometry){
       geometry[i][0] = geometry[i][0] * xFlip;
@@ -110,20 +116,24 @@ AlienArt = function() {
       canvasBufferContext.lineTo(firstPoint[0],firstPoint[1]);
     }
     canvasBufferContext.stroke();
-    canvasBufferContext.fill();
+    if(illum){
+      canvasBufferContext.fill();
+    }
 
     //draw front eye
     var eyePos = [lX*0.1*xFlip,-lY*0.275];
     eyePos = rotate(eyePos[0],eyePos[1],theta);
     var eyeSize = Math.min(lX*0.25,lY*0.35);
     canvasBufferContext.beginPath();
-    canvasBufferContext.fillStyle = "rgba(0,0,50,0.8)";
+    canvasBufferContext.fillStyle = "rgba(0,0,50,"+illum+")";
     canvasBufferContext.arc(ox+eyePos[0],oy+eyePos[1],eyeSize,0,2*Math.PI,obj.xFlip);
     canvasBufferContext.closePath();
-    canvasBufferContext.fill();
+    if(illum){
+      canvasBufferContext.fill();
+    }
 
     //draw frontlegs
-    canvasBufferContext.strokeStyle="rgba(0,0,100,0.8)";
+    canvasBufferContext.strokeStyle="rgba(0,0,100,"+illum+")";
     var legOrigins = [[-lX*0.4,lY*0.1],[-lX*0.2,lY*0.1],[0,lY*0.1]];
     var legDests = [[-lX*0.4,lY*0.5],[-lX*0.2,lY*0.5],[0,lY*0.5]];
     var legAnimationOffset = 0;
@@ -144,7 +154,7 @@ AlienArt = function() {
     }
 
     //draw antenna
-    canvasBufferContext.strokeStyle="rgba(0,0,100,0.8)";
+    canvasBufferContext.strokeStyle="rgba(0,0,100,"+illum+")";
     var ants = [[[-lX*0.2,-lY*0.45],[-lX*0.05,-lY*0.7],[lX*0.25,-lY*0.85]],[[0,-lY*0.5],[lX*0.25,-lY*0.7],[lX*0.7,-lY*0.85]]];
     var antAnimationOffset = (Math.sin(counter / 10) * lY*0.2) - lY*0.1;
     for(var i in ants){

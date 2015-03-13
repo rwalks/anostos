@@ -1,5 +1,6 @@
 Alien = function(x,y) {
 
+  this.hasDrawn = false;
   this.counter = 0;
   this.type = "alien";
   this.position = new Vector(x,y);
@@ -29,26 +30,38 @@ Alien = function(x,y) {
   this.size = new Vector(1*config.gridInterval,1*config.gridInterval);
   this.jump = new Vector(1,1);
 
+  this.baseAlpha = 0.2;
+  this.healthAlpha = 0.7;
+
+  this.healthPercent = function(){return this.currentHealth / this.maxHealth;}
+
 
   //class specific functions
   this.findTarget = function(terrain){}
   this.interactTarget = function(terrain){}
 
-  this.draw = function(camera,canvasContext){
-    var cent = this.center();
-    var x = (cent.x-camera.xOff)*config.xRatio;
-    var y = (cent.y-camera.yOff)*config.yRatio;
-    this.drawAlien(x,y,canvasContext,1);
-    //this.drawPath(this.path,canvasContext,camera);
-    //sceneArt.drawHitBoxes(this.hitBoxes(),camera,canvasContext);
+  this.draw = function(camera,canvasContext,terrain){
+    if(!this.hasDrawn){
+      this.hasDrawn = true;
+      var cent = this.center();
+      var lightX = utils.roundToGrid(cent.x);
+      var lightY = utils.roundToGrid(cent.y);
+      var light = terrain.getLight(lightX,lightY);
+      var alpha = light ? this.baseAlpha + (this.healthPercent()*this.healthAlpha*light) : 0;
+      var x = (cent.x-camera.xOff)*config.xRatio;
+      var y = (cent.y-camera.yOff)*config.yRatio;
+      this.drawAlien(x,y,canvasContext,alpha,1);
+      //this.drawPath(this.path,canvasContext,camera);
+      //sceneArt.drawHitBoxes(this.hitBoxes(),camera,canvasContext);
+    }
   }
 
   this.drawTargetPortrait = function(oX,oY,xSize,ySize,canvasBufferContext){
     var scale = (xSize*0.4) / (this.size.x*config.xRatio);
-    this.drawAlien(oX+(xSize*0.3),oY+(ySize*0.2),canvasBufferContext,scale);
+    this.drawAlien(oX+(xSize*0.3),oY+(ySize*0.2),canvasBufferContext,0.9,scale);
   }
 
-  this.drawAlien = function(x,y,buffer,scale){};
+  this.drawAlien = function(x,y,buffer,alpha,scale){};
 
   this.classUpdate = function(){};
 
@@ -57,6 +70,7 @@ Alien = function(x,y) {
   }
 
   this.update = function(terrain){
+    this.hasDrawn = false;
     var ret = false;
     this.counter += 1;
     if(this.counter > 100){ this.counter = 0; }
