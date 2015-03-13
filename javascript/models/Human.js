@@ -20,10 +20,6 @@ Human = function(x,y,name) {
   this.distress = false;
   this.maxHealth = 100; this.currentHealth = 100;
   this.maxOxygen = 20; this.currentOxygen = 20;
-
-  this.light = false;
-  this.lightRadius = 10;
-
   var oxygenConsumptionRate = 0.03;
 
   this.currentTool = false;
@@ -55,6 +51,10 @@ Human = function(x,y,name) {
   g = (g >= r && g >= b) ? 250 : 0;
   b = (b >= g && b >= r) ? 250 : 0;
   this.lineColor = new Color(r,g,b,1.0);
+
+  this.light = false;
+  this.lightRadius = 10;
+  this.lightColor = this.fillColor;
 
   this.update = function(terrain){
     this.hasDrawn = false;
