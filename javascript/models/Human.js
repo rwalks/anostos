@@ -75,7 +75,7 @@ Human = function(x,y,name) {
       this.applyMove();
       //update weapon
       if(this.currentTool){
-        this.currentTool.update();
+        this.currentTool.update(terrain);
       }
       return this.interactTarget(terrain);
     }
@@ -215,11 +215,21 @@ Human = function(x,y,name) {
       var lightX = utils.roundToGrid(cent.x);
       var lightY = utils.roundToGrid(cent.y);
       var light = terrain.getLight(lightX,lightY);
+      light = light ? light[0] : 0;
       var x = (this.position.x-camera.xOff)*config.xRatio;
       var y = (this.position.y-camera.yOff)*config.yRatio;
       var alpha = this.baseAlpha + (this.healthAlpha * light);
       humanArt.drawHuman(x,y,canvasContext,this,camera,alpha);
      // humanArt.drawPath(this.path,canvasContext,camera);
+    }
+  }
+
+  this.updateLight = function(terrain,lMap){
+    if(this.light){
+      terrain.updateLightMap(this.center(),this.lightRadius,lMap,this.lightColor);
+    }
+    if(this.currentTool){
+      this.currentTool.updateLight(terrain,lMap);
     }
   }
 

@@ -138,9 +138,8 @@ var GameScene = function (strs,trn,shp,nam,bg,als){
           var updateMsg = entityType == 'corpses' ? entity.update(this.terrain,this.humans) : entity.update(this.terrain);
           if(!entity.dead){
             this.terrain.updateEntityMap(entity,newEntityMap);
-
-            if(sceneUtils.onScreen(entity,camera) && entity.light){
-              this.terrain.updateLightMap(entity,newLightMap);
+            if(sceneUtils.onScreen(entity,camera)){
+              entity.updateLight(this.terrain,newLightMap);
             }
           }
           update = this.handleEntityUpdate(entityType,updateMsg,e);
@@ -368,8 +367,8 @@ var GameScene = function (strs,trn,shp,nam,bg,als){
         for(var yI=0;yI<yKeys.length;yI+=1){
           var y = yKeys[yI];
           if(y >= camera.yOff && y <= (camera.yOff+config.cY)){
-            var alpha = this.terrain.getLight(x,y);
-            sceneArt.drawLight(x,y,camera,canvasBufferContext,alpha);
+            var light = this.terrain.getLight(x,y);
+            sceneArt.drawLight(x,y,camera,canvasBufferContext,light);
           }
         }
       }

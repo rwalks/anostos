@@ -246,7 +246,8 @@ TerrainTile = function(x,y,type){
       var cent = this.center();
       var lightX = utils.roundToGrid(cent.x);
       var lightY = utils.roundToGrid(cent.y);
-      var light = terrain.getLight(lightX,lightY) || 0;
+      var light = terrain.getLight(lightX,lightY);
+      light = light ? light[0] : 0;
       if(this.plant){
         this.plant.draw(camera,canvasBufferContext);
       }

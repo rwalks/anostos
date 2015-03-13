@@ -154,13 +154,14 @@ SceneArt = function() {
     canvasBufferContext.fill();
   }
 
-  this.drawLight = function(x,y,camera,canvasBufferContext,alpha){
+  this.drawLight = function(x,y,camera,canvasBufferContext,light){
     var oX = (x - camera.xOff) * config.xRatio;
     var oY = (y - camera.yOff) * config.yRatio;
     var lX = config.gridInterval * config.xRatio;
     var lY = config.gridInterval * config.yRatio;
-    var fillColor = alpha ? "rgba(255,255,255,"+(alpha/4)+")" : "rgba(0,0,0,0.8)";
-    canvasBufferContext.fillStyle = fillColor;
+    var fillColor = light[1] ? light[1] : new Color(255,255,255,0);
+    fillColor.a = light[0]/4;
+    canvasBufferContext.fillStyle = fillColor.colorStr();
     canvasBufferContext.beginPath();
     canvasBufferContext.rect(oX,oY,lX,lY);
     canvasBufferContext.fill();

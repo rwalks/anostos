@@ -16,6 +16,7 @@ Ammo = function(orig,theta,ownTyp){
   this.velocity.y = velo[1];
   this.light = true;
   this.lightRadius = 4;
+  this.lightColor = new Color(0,25,200,1);
 
 
   this.draw = function(camera,canvasContext){
@@ -25,6 +26,10 @@ Ammo = function(orig,theta,ownTyp){
       var y = (this.position.y-camera.yOff)*config.yRatio;
       this.drawAmmo(x,y,canvasContext);
     }
+  }
+
+  this.updateLight = function(terrain,lMap){
+    terrain.updateLightMap(this.center(),this.lightRadius,lMap,this.lightColor);
   }
 
   this.drawAmmo = function(x,y,buffer){};

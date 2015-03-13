@@ -240,11 +240,10 @@ Terrain = function(trMap,sSpawns) {
     }
   }
 
-  this.updateLightMap = function(obj,lMap){
-    var cent = obj.center();
+  this.updateLightMap = function(cent,lRadius,lMap,color){
     var tX = utils.roundToGrid(cent.x);
     var tY = utils.roundToGrid(cent.y);
-    var radius = obj.lightRadius || 12;
+    var radius = lRadius || 12;
     for(var xFlip = -1; xFlip <= 1; xFlip += 2){
       var height = radius;
       for(var x = 0; x < radius; x += 1){
@@ -261,8 +260,8 @@ Terrain = function(trMap,sSpawns) {
             }
             var d = x + y;
             var alpha = 1 - (0.9 * (d/radius));
-            var alpha = lMap[lX][lY] ? Math.max(lMap[lX][lY],alpha) : alpha;
-            lMap[lX][lY] = alpha;
+            var alpha = lMap[lX][lY] ? Math.max(lMap[lX][lY][0],alpha) : alpha;
+            lMap[lX][lY] = [alpha,color];
           }
         }
         height -= 1;

@@ -26,7 +26,8 @@ Building = function(x,y){
       var cent = this.center();
       var lightX = utils.roundToGrid(cent.x);
       var lightY = utils.roundToGrid(cent.y);
-      var light = terrain.getLight(lightX,lightY) || 0;
+      var light = terrain.getLight(lightX,lightY);
+      light = light ? light[0] : 0;
       var alpha = this.baseAlpha + (this.healthPercent()*this.healthAlpha*light);
       this.drawBlock(x,y,alpha,canvasBufferContext,1);
       this.drawStatus(x,y,count,canvasBufferContext);

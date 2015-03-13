@@ -43,6 +43,12 @@ Tile = function(x,y) {
     return false;
   }
 
+  this.updateLight = function(terrain,lMap){
+    if(this.light){
+      terrain.updateLightMap(this.center(),this.lightRadius,lMap,this.lightColor);
+    }
+  }
+
   this.repair = function(amount){
     if(this.currentHealth >= this.maxHealth){
       this.currentHealth = this.maxHealth;

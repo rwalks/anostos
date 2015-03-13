@@ -47,12 +47,19 @@ Alien = function(x,y) {
       var lightX = utils.roundToGrid(cent.x);
       var lightY = utils.roundToGrid(cent.y);
       var light = terrain.getLight(lightX,lightY);
+      light = light ? light[0] : 0;
       var alpha = light ? this.baseAlpha + (this.healthPercent()*this.healthAlpha*light) : 0;
       var x = (cent.x-camera.xOff)*config.xRatio;
       var y = (cent.y-camera.yOff)*config.yRatio;
       this.drawAlien(x,y,canvasContext,alpha,1);
       //this.drawPath(this.path,canvasContext,camera);
       //sceneArt.drawHitBoxes(this.hitBoxes(),camera,canvasContext);
+    }
+  }
+
+  this.updateLight = function(terrain,lMap){
+    if(this.light){
+      terrain.updateLightMap(this.center(),this.lightRadius,lMap,this.lightColor);
     }
   }
 

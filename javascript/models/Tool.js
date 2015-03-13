@@ -30,13 +30,14 @@ Tool = function(owner){
     return ret;
   }
 
-  this.update = function(){
+  this.update = function(terrain){
     if(this.cooldownTimer > 0){
       this.cooldownTimer -= 1;
     }
-    this.typeUpdate();
+    this.typeUpdate(terrain);
   }
-  this.typeUpdate = function(){};
+  this.typeUpdate = function(terrain){};
+  this.updateLight = function(terrain,lMap){};
 }
 
 RepairTool = function(owner){
@@ -89,7 +90,7 @@ Wrench = function(owner){
   this.animationFrame = 0;
   this.animationLength = 20;
 
-  this.typeUpdate = function(){
+  this.typeUpdate = function(terrain){
     if(this.owner.toolActive){
       this.animationDir = this.animationDir || 1;
     }else{
@@ -154,6 +155,18 @@ PlasmaTorch = function(owner){
 
   this.drawTool = function(x,y,buffer,camera,alpha){
     weaponArt.drawPlasmaTorch(x,y,buffer,this.owner,alpha);
+  }
+
+  this.updateLight = function(terrain,lMap){
+    if(this.owner.toolActive){
+      var cent = this.owner.center();
+      var lX = cent.x;
+      var lY = cent.y + this.actionOffset.y;
+      var orig = new Vector(lX,lY);
+      var lRad = 5;
+      lColor = new Color(255,100,0,1);
+      terrain.updateLightMap(orig,lRad,lMap,lColor);
+    }
   }
 
   this.clone = function(owner){
