@@ -43,10 +43,7 @@ Tile = function(x,y) {
     return false;
   }
 
-  this.updateLight = function(terrain,lMap){
-    if(this.light){
-      terrain.updateLightMap(this.center(),this.lightRadius,lMap,this.lightColor);
-    }
+  this.updateLight = function(terrain){
   }
 
   this.repair = function(amount){

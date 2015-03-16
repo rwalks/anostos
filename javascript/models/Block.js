@@ -103,7 +103,7 @@ Corpse = function(pos,inventory,cost){
     this.position.y += dY;
   }
 
-  this.draw = function(camera,canvasBufferContext,count){
+  this.draw = function(camera,canvasBufferContext,terrain){
     if(!this.hasDrawn){
       this.hasDrawn = true;
       var x = (this.position.x-camera.xOff)*config.xRatio;
@@ -241,17 +241,16 @@ TerrainTile = function(x,y,type){
       strokeStyle = new Color(20,150,150,1.0);
       break;
   }
-  this.draw = function(camera,canvasBufferContext,count,terrain){
-    if(count > this.lastDrawn || Math.abs(count - this.lastDrawn) > 1){
-      var cent = this.center();
-      var lightX = utils.roundToGrid(cent.x);
-      var lightY = utils.roundToGrid(cent.y);
-      var light = terrain.getLight(lightX,lightY);
-      light = light ? light[0] : 0;
+  this.draw = function(camera,canvasBufferContext,terrain){
+    if(terrain.count > this.lastDrawn){
+      this.lastDrawn = terrain.count;
       if(this.plant){
         this.plant.draw(camera,canvasBufferContext);
       }
-      this.lastDrawn = count;
+      var cent = this.center();
+      var lightX = utils.roundToGrid(cent.x);
+      var lightY = utils.roundToGrid(cent.y);
+      var light = terrain.getAlpha(lightX,lightY);
       var healthPercent = (this.currentHealth/this.maxHealth);
       var alpha = this.baseAlpha + (healthPercent*this.healthAlpha*light);
       fillStyle.a = alpha;
@@ -283,7 +282,9 @@ TerrainTile = function(x,y,type){
         }
         canvasBufferContext.stroke();
       }
+      return true;
     }
+    return false;
   }
 
   this.drawTargetPortrait = function(oX,oY,xSize,ySize,canvasBufferContext){

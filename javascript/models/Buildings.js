@@ -17,21 +17,22 @@ Building = function(x,y){
 
   this.collision = function(){return false;}
 
-  this.draw = function(camera,canvasBufferContext,count,terrain){
+  this.draw = function(camera,canvasBufferContext,terrain){
     //draw less often
-    if(count > this.lastDrawn || Math.abs(count - this.lastDrawn) > 1){
-      this.lastDrawn = count;
+    if(terrain.count > this.lastDrawn){
+      this.lastDrawn = terrain.count;
       var x = (this.position.x-camera.xOff)*config.xRatio;
       var y = (this.position.y-camera.yOff)*config.yRatio;
       var cent = this.center();
       var lightX = utils.roundToGrid(cent.x);
       var lightY = utils.roundToGrid(cent.y);
-      var light = terrain.getLight(lightX,lightY);
-      light = light ? light[0] : 0;
+      var light = terrain.getAlpha(lightX,lightY);
       var alpha = this.baseAlpha + (this.healthPercent()*this.healthAlpha*light);
       this.drawBlock(x,y,alpha,canvasBufferContext,1);
-      this.drawStatus(x,y,count,canvasBufferContext);
+      this.drawStatus(x,y,terrain.count,canvasBufferContext);
+      return true;
     }
+    return false;
   }
 
   this.drawStatus = function(x,y,count,canvasBufferContext){

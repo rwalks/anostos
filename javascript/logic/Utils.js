@@ -34,11 +34,21 @@ var Utils = function (){
   }
 
   this.objectDistance = function(obj1, obj2) {
-    return Math.sqrt(Math.pow((obj2.position.x - obj1.position.x),2)+Math.pow((obj2.position.y-obj1.position.y),2));
+    return this.vectorDistance(obj1.position,obj2.position);
+  }
+
+  this.vectorDistance = function(v1, v2) {
+    return Math.sqrt(Math.pow((v2.x - v1.x),2)+Math.pow((v2.y-v1.y),2));
   }
 
   this.roundToGrid = function(x){
     return (x - (x % config.gridInterval));
+  }
+
+  this.roundVector = function(v){
+    var x = this.roundToGrid(v.x);
+    var y = this.roundToGrid(v.y);
+    return new Vector(x,y);
   }
 
   this.rotate = function(x,y,theta){
@@ -87,6 +97,17 @@ var Utils = function (){
     var iY = p0[1] + (t * s10Y);
     return [iX,iY];
   }
+
+  this.blendColors = function(c1,c2){
+    var totalA = c1.a + c2.a;
+    var w1 = c1.a / totalA;
+    var w2 = c2.a / totalA;
+    var r = (c1.r * w1) + (c2.r * w2) ;
+    var g = (c1.g * w1) + (c2.g * w2) ;
+    var b = (c1.b * w1) + (c2.b * w2) ;
+    var a = Math.max(c1.a,c2.a);
+    return new Color(r,g,b,a);
+  }
 }
 
 Vector = function(x,y){
@@ -111,6 +132,7 @@ Name = function(firstName,lastName){
   }
 }
 
+
 Color = function(r,g,b,a){
   this.r = Math.floor(r) || 0;
   this.g = Math.floor(g) || 0;
@@ -126,4 +148,14 @@ Color = function(r,g,b,a){
   this.colorStr = function(){
     return "rgba("+this.r+","+this.g+","+this.b+","+this.a+")";
   }
+
+  this.clone = function(){
+    return new Color(this.r,this.g,this.b,this.a);
+  }
+}
+
+LightPoint = function(created,color){
+  this.createdAt = created;
+  this.color = color;
+  this.fade = 0.05;
 }

@@ -275,6 +275,7 @@ Gui = function() {
 
   }
 
+  var gaugeCapGeo = [[0,0],[0.75,0],[1.0,0.5],[1,1],[0.75,0.75],[0.25,0.75],[0,1]];
   this.drawPlayer = function(size,pos,canvasBufferContext){
     canvasBufferContext.beginPath();
     canvasBufferContext.lineWidth=Math.floor(config.xRatio)+"";
@@ -307,6 +308,68 @@ Gui = function() {
     if(this.player){
       this.player.drawTargetPortrait(pX,0,xSize,ySize,canvasBufferContext);
     }
+    //health / o2 bars
+    var lX = (size.x / 4);
+    var lY = (size.y / 5);
+    var oX = pos.x - xBuf/2;
+    var firstPoint;
+    var barY1 = size.y / 6;
+    var barY2 = size.y - barY1;
+    var oxPercent = 0;
+    var healthPercent = 0;
+    //draw gauges
+    if(this.player){
+      var oxPercent = this.player.currentOxygen / this.player.maxOxygen;
+      var healthPercent = this.player.currentHealth / this.player.maxHealth;
+    }
+    //covers
+    for(var xFlip = -1; xFlip <= 1; xFlip += 2){
+      //bars
+      canvasBufferContext.fillStyle= (xFlip > 0) ? "rgba(250,0,0,0.5)" : "rgba(250,250,250,0.5)";
+      canvasBufferContext.beginPath();
+      var barFill = xFlip > 0 ? healthPercent : oxPercent;
+      barFill = barFill * (barY1 - barY2);
+      canvasBufferContext.rect(oX,barY2,lX*xFlip,barFill);
+      canvasBufferContext.fill();
+      //edges
+      canvasBufferContext.strokeStyle= (xFlip > 0) ? "rgba(250,0,0,0.4)" : "rgba(250,250,250,0.4)";
+      for(var bX = 0; bX <= 1; bX += 0.25){
+        var barX = oX + (bX * xFlip * lX);
+        canvasBufferContext.beginPath();
+        canvasBufferContext.moveTo(barX,barY1);
+        canvasBufferContext.lineTo(barX,barY2);
+        canvasBufferContext.stroke();
+        if(bX == 0.25){
+          bX = 0.5;
+        }
+      }
+      //caps
+      canvasBufferContext.strokeStyle="rgba(200,200,250,1)";
+      canvasBufferContext.fillStyle = "rgba(50,50,50,1)";
+      var oY = size.y;
+      for(var yFlip = -1; yFlip <= 1; yFlip += 2){
+        canvasBufferContext.beginPath();
+        for(var p = 0; p < gaugeCapGeo.length; p++){
+          var point = gaugeCapGeo[p];
+          var eX = point[0]*xFlip*lX;
+          var eY = point[1]*yFlip*lY;
+          eX = oX+eX;
+          eY = oY+eY;
+          if(p == 0){
+            canvasBufferContext.moveTo(eX,eY);
+            firstPoint = [eX,eY];
+          }else{
+            canvasBufferContext.lineTo(eX,eY);
+          }
+        }
+        canvasBufferContext.lineTo(firstPoint[0],firstPoint[1]);
+        canvasBufferContext.fill();
+        canvasBufferContext.stroke();
+        oY = 0;
+      }
+      oX += size.x + xBuf;
+    }
+
   }
 
   this.drawGrid = function(camera,canvasBufferContext){

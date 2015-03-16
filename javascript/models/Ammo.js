@@ -14,9 +14,10 @@ Ammo = function(orig,theta,ownTyp){
   var velo = utils.rotate(1,0,theta);
   this.velocity.x = velo[0];
   this.velocity.y = velo[1];
+  this.scout = false;
   this.light = true;
   this.lightRadius = 4;
-  this.lightColor = new Color(0,25,200,1);
+  this.lightColor = new Color(0,25,200,0.5);
 
 
   this.draw = function(camera,canvasContext){
@@ -28,8 +29,8 @@ Ammo = function(orig,theta,ownTyp){
     }
   }
 
-  this.updateLight = function(terrain,lMap){
-    terrain.updateLightMap(this.center(),this.lightRadius,lMap,this.lightColor);
+  this.updateLight = function(terrain){
+    terrain.updateLightMap(this.center(),this.lightRadius,this.lightColor,this.scout,this.light);
   }
 
   this.drawAmmo = function(x,y,buffer){};
@@ -87,5 +88,7 @@ BlastAmmo = function(orig,theta,ownTyp){
   this.tileDamage = 5;
   this.maxVelocity = 6;
   this.maxAge = 25;
+  this.lightRadius = 3;
+  this.lightColor = new Color(0,25,200,0.8);
 
 }

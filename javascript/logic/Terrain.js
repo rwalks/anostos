@@ -3,6 +3,8 @@ Terrain = function(trMap,sSpawns) {
   this.terrain = trMap ? trMap : {};
   this.entityMap = {};
   this.lightMap = {};
+  this.ambientLight = 1;
+  this.ambientProgress = -0.01;
 //construct holders
   this.rooms = [];
 //tile reference holders
@@ -21,7 +23,7 @@ Terrain = function(trMap,sSpawns) {
     'rad':{'max':0,'current':0},
     'fissile':{'max':0,'current':0}
   };
-  var updateCount = 0;
+  this.count = 0;
   var resourceUpdateInterval = 5;
   var roomFinder = new Roomfinder();
   this.surfaceSpawns = sSpawns ? sSpawns : [];
@@ -109,18 +111,24 @@ Terrain = function(trMap,sSpawns) {
     this.addContainer(obj,true);
   }
 
-  this.update = function(humans,resourceInv){
+  this.update = function(humans,resourceInv,count){
+    this.count = count;
+    if(this.count % 20 == 0){
+      this.ambientLight += this.ambientProgress;
+      if(this.ambientLight >= 1){
+        this.ambientProgress = -0.01;
+      }else if(this.ambientLight <= 0){
+        this.ambientProgress = 0.01;
+      }
+    }
     for(x in doors){
       for(y in doors[x]){
         this.terrain[x][y].update(this);
       }
     }
     this.transferResources(resourceInv);
-    if(updateCount >= resourceUpdateInterval){
+    if((this.count % resourceUpdateInterval) == 0){
       this.updateBuildings();
-      updateCount = 0;
-    }else{
-      updateCount += 1;
     }
 
   }
@@ -182,11 +190,13 @@ Terrain = function(trMap,sSpawns) {
     return true;
   }
 
-  this.draw = function(canvasBufferContext,camera,count){
+  this.draw = function(canvasBufferContext,camera){
     //drawRooms
     for (var r = 0; r < this.rooms.length; r++){
       this.rooms[r].draw(camera,canvasBufferContext);
     }
+    //lights
+    this.drawLights(canvasBufferContext,camera);
   }
 
   this.updateBuildings = function(){
@@ -233,38 +243,95 @@ Terrain = function(trMap,sSpawns) {
   }
 
   this.getLight = function(tX,tY){
+    //var amLight = 1 - this.ambientLight;
+    var light = false;
     if(this.lightMap[tX] && this.lightMap[tX][tY]){
-      return this.lightMap[tX][tY];
+      light = this.lightMap[tX][tY];
+    }
+    return light;
+  }
+
+  this.getAlpha = function(tX,tY){
+    var ret = this.getLight(tX,tY);
+    if(ret && ret.color){
+      ret = Math.max(ret.color.a,this.ambientLight);
     }else{
-      return false;
+      ret = this.ambientLight;
+    }
+    return ret;
+  }
+
+  this.updateLightMap = function(origin,lRadius,color,scout,light){
+    if(light){
+      var cent = utils.roundVector(origin);
+      var radius = lRadius || 2;
+      var height = radius;
+      var xInit = 0;
+      for(var xFlip = -1; xFlip <= 1; xFlip += 2){
+        for(var x = xInit; x <= radius; x += 1){
+          var lX = cent.x + ((x * config.gridInterval) * xFlip);
+          var yInit = 0;
+          for(var yFlip = -1; yFlip <= 1; yFlip += 2){
+            for(var y = yInit; y <= height; y += 1){
+              var lY = cent.y + (y * config.gridInterval * yFlip);
+              if(light){
+                if(!this.lightMap[lX]){
+                  this.lightMap[lX] = {};
+                }
+                var d = Math.abs(x) + Math.abs(y);
+                var baseAlpha = 1 - (this.ambientLight/2);
+                var alpha = baseAlpha - ((baseAlpha*0.9) * (d/radius));
+                var blendColor = color.clone();
+                blendColor.a = blendColor.a * alpha;
+                var existingColor = this.lightMap[lX][lY];
+                if(existingColor){
+                  blendColor = utils.blendColors(blendColor,existingColor.color);
+                }
+                this.lightMap[lX][lY] = new LightPoint(this.count,blendColor);
+              }
+            }
+            yInit = 1;
+          }
+          height -= 1;
+        }
+        var height = radius - 1;
+        var xInit = 1;
+      }
     }
   }
 
-  this.updateLightMap = function(cent,lRadius,lMap,color){
-    var tX = utils.roundToGrid(cent.x);
-    var tY = utils.roundToGrid(cent.y);
-    var radius = lRadius || 12;
-    for(var xFlip = -1; xFlip <= 1; xFlip += 2){
-      var height = radius;
-      for(var x = 0; x < radius; x += 1){
-        for(var yFlip = -1; yFlip <= 1; yFlip += 2){
-          for(var y = 0; y <= height; y += 1){
-            var lX = tX + ((x * config.gridInterval) * xFlip);
-            var lY = tY + ((y * config.gridInterval) * yFlip);
-            var til = this.getTile(lX,lY);
-            if(til){
-              til.hidden = false;
+  this.drawLights = function(canvasBufferContext,camera){
+    for(var x=camera.xOff-(camera.xOff%config.gridInterval);x<camera.xOff+config.cX;x+=config.gridInterval){
+      if(this.lightMap[x]){
+        var yKeys = Object.keys(this.lightMap[x]);
+        for(var yI=0;yI<yKeys.length;yI+=1){
+          var y = yKeys[yI];
+          if(y >= camera.yOff && y <= (camera.yOff+config.cY)){
+            var light = this.getLight(x,y);
+            if(light){
+              var dimming = (this.count - light.createdAt) * light.fade;
+              light.color.a -= light.fade;
+              if(light.color.a > 0){
+                var shading = light.color.clone();
+                var til = this.getTile(x,y);
+                if(til){
+                  til.draw(camera,canvasBufferContext,this);
+                  shading.a = shading.a * 0.7;
+                }else{
+                  shading.a = Math.min(shading.a * 1.2,1);
+                }
+                sceneArt.drawLight(x,y,camera,canvasBufferContext,shading);
+              }else{
+                delete this.lightMap[x][y];
+              }
             }
-            if(!lMap[lX]){
-              lMap[lX] = {};
-            }
-            var d = x + y;
-            var alpha = 1 - (0.9 * (d/radius));
-            var alpha = lMap[lX][lY] ? Math.max(lMap[lX][lY][0],alpha) : alpha;
-            lMap[lX][lY] = [alpha,color];
+          }else if(y > (camera.yOff+config.cY)){
+            break;
           }
         }
-        height -= 1;
+        if(!Object.keys(this.lightMap[x]).length){
+          delete this.lightMap[x];
+        }
       }
     }
   }

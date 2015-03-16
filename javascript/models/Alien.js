@@ -44,11 +44,14 @@ Alien = function(x,y) {
     if(!this.hasDrawn){
       this.hasDrawn = true;
       var cent = this.center();
-      var lightX = utils.roundToGrid(cent.x);
-      var lightY = utils.roundToGrid(cent.y);
-      var light = terrain.getLight(lightX,lightY);
-      light = light ? light[0] : 0;
-      var alpha = light ? this.baseAlpha + (this.healthPercent()*this.healthAlpha*light) : 0;
+      if(terrain){
+        var lightX = utils.roundToGrid(cent.x);
+        var lightY = utils.roundToGrid(cent.y);
+        var light = terrain.getAlpha(lightX,lightY);
+      }else{
+        var light = 1;
+      }
+      var alpha = this.baseAlpha + (this.healthPercent()*this.healthAlpha*light);
       var x = (cent.x-camera.xOff)*config.xRatio;
       var y = (cent.y-camera.yOff)*config.yRatio;
       this.drawAlien(x,y,canvasContext,alpha,1);
@@ -57,10 +60,7 @@ Alien = function(x,y) {
     }
   }
 
-  this.updateLight = function(terrain,lMap){
-    if(this.light){
-      terrain.updateLightMap(this.center(),this.lightRadius,lMap,this.lightColor);
-    }
+  this.updateLight = function(terrain){
   }
 
   this.drawTargetPortrait = function(oX,oY,xSize,ySize,canvasBufferContext){

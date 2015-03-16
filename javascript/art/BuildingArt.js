@@ -2,6 +2,7 @@ BuildingArt = function(){
 
   this.drawHealthIcon = function(x,y,count,obj,canvasBufferContext){
     var healthPercent = obj.currentHealth / obj.maxHealth;
+    count = count % 100;
     var modCount = (count >= 50) ? (100-count) : count;
     var a = 0.6 + (0.2 * (modCount/50));
     var r=0;var g=0;var b=0;

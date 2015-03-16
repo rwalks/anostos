@@ -23,6 +23,9 @@ Player = function(x,y,name) {
   this.groundMaxX = config.gridInterval / 2;
   this.airMaxX = config.gridInterval / 3;
 
+  this.scout = true;
+  this.scoutRange = config.gridInterval * 15;
+
   this.setInput = function(action,keyDown){
     var xInput = (action == 'left' || action == 'right');
     if(keyDown && xInput){

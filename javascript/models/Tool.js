@@ -13,19 +13,23 @@ Tool = function(owner){
 
   this.drawTool = function(x,y,buffer,camera,alpha){};
 
+  this.pointOfAction = function(){
+    var origin = this.owner.center();
+    var theta = this.owner.toolTheta || 0;
+    var dir = this.owner.direction ? 1 : -1;
+    var poA = utils.rotate(this.actionOffset.x,this.actionOffset.y,theta);
+    origin.x += poA[0] * dir;
+    origin.y += poA[1];
+    return origin;
+  }
+
   this.activate = function(terrain){
     var ret = false;
-    var origin = this.owner.center();
     if(!this.cooldownTimer){
-      var theta = this.owner.toolTheta;
       this.cooldownTimer += this.cooldownCost;
-      var theta = this.owner.toolTheta;
       //find point of action
-      var poA = utils.rotate(this.actionOffset.x,this.actionOffset.y,theta);
-      origin.x += poA[0] * (this.owner.direction ? 1 : -1);
-      origin.y += poA[1];
-      theta = this.owner.direction ? theta : Math.PI - theta;
-      ret = this.typeActivate(origin,theta,terrain);
+      var origin = this.pointOfAction();
+      ret = this.typeActivate(origin,terrain);
     }
     return ret;
   }
@@ -47,7 +51,7 @@ RepairTool = function(owner){
   this.entityDamage = 10;
   this.repairBeam;
 
-  this.typeActivate = function(origin,theta,terrain){
+  this.typeActivate = function(origin,terrain){
     this.repairBeam = false;
     var tX = utils.roundToGrid(origin.x);
     var tY = utils.roundToGrid(origin.y);
@@ -122,7 +126,7 @@ DrillTool = function(owner){
   this.entityDamage;
   this.tileDamage;
 
-  this.typeActivate = function(origin,theta,terrain){
+  this.typeActivate = function(origin,terrain){
     var tX = utils.roundToGrid(origin.x);
     var tY = utils.roundToGrid(origin.y);
     var entities = terrain.getEntities(tX,tY);
@@ -150,22 +154,33 @@ PlasmaTorch = function(owner){
   this.name.set("Plasma","Torch");
   this.cooldownCost = 10;
   this.range = config.gridInterval * 2;
-  this.actionOffset.x = config.gridInterval * 1.5;
+  this.actionOffset.x = config.gridInterval * 1.3;
   this.actionOffset.y = config.gridInterval * -0.2;
 
   this.drawTool = function(x,y,buffer,camera,alpha){
     weaponArt.drawPlasmaTorch(x,y,buffer,this.owner,alpha);
   }
 
-  this.updateLight = function(terrain,lMap){
+  this.updateLight = function(terrain){
     if(this.owner.toolActive){
-      var cent = this.owner.center();
-      var lX = cent.x;
-      var lY = cent.y + this.actionOffset.y;
-      var orig = new Vector(lX,lY);
-      var lRad = 5;
-      lColor = new Color(255,100,0,1);
-      terrain.updateLightMap(orig,lRad,lMap,lColor);
+      var orig = this.pointOfAction();
+      var lRad = Math.random() * 2;
+      var a = 0.8 + (Math.random() * 0.2);
+      var rand = Math.random();
+      var r; var g; var b;
+      if(rand > 0.9){
+        r = 255; g = 255; b = 255;
+        lRad = 3;
+      }else if(rand > 0.8){
+        r = 255; g = 255; b = 255;
+        lRad = 2;
+      }else if(rand > 0.333){
+        r = 255; g = 50; b = 0;
+      }else{
+        r = 255; g = 255; b = 0;
+      }
+      lColor = new Color(r,g,b,a);
+      terrain.updateLightMap(orig,lRad,lColor,false,true);
     }
   }
 

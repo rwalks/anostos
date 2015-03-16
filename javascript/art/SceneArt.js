@@ -108,7 +108,6 @@ SceneArt = function() {
         }
         canvasBufferContext.fillStyle = star[0];
         var size = config.canvasWidth / 125;
-        canvasBufferContext.font = star[1]*size +"px Courier";
         canvasBufferContext.fillText("*",xKey*config.xRatio,yKey*config.yRatio);
       }
     }
@@ -148,20 +147,19 @@ SceneArt = function() {
 
   this.drawAmbientLight = function(light,canvasBufferContext){
     //dark mask
-    canvasBufferContext.fillStyle = "rgba(0,0,0,0.8)";
+    var dark = light = 1 - light;
+    canvasBufferContext.fillStyle = "rgba(0,0,0,"+dark+")";
     canvasBufferContext.beginPath();
     canvasBufferContext.rect(0,0,config.canvasWidth,config.canvasHeight);
     canvasBufferContext.fill();
   }
 
-  this.drawLight = function(x,y,camera,canvasBufferContext,light){
+  this.drawLight = function(x,y,camera,canvasBufferContext,color){
     var oX = (x - camera.xOff) * config.xRatio;
     var oY = (y - camera.yOff) * config.yRatio;
     var lX = config.gridInterval * config.xRatio;
     var lY = config.gridInterval * config.yRatio;
-    var fillColor = light[1] ? light[1] : new Color(255,255,255,0);
-    fillColor.a = light[0]/4;
-    canvasBufferContext.fillStyle = fillColor.colorStr();
+    canvasBufferContext.fillStyle = color.colorStr();
     canvasBufferContext.beginPath();
     canvasBufferContext.rect(oX,oY,lX,lY);
     canvasBufferContext.fill();

@@ -2,7 +2,9 @@ Weapon = function(owner){
   Tool.call(this,owner);
   this.type = 'attack';
 
-  this.typeActivate = function(orig,theta,terrain){
+  this.typeActivate = function(orig,terrain){
+    var theta = this.owner.toolTheta;
+    theta = this.owner.direction ? theta : Math.PI - theta;
     var ammoRet = this.spawnAmmo(orig,theta);
     return {'action':'fire','obj':ammoRet};
   }
@@ -25,7 +27,14 @@ BasicBlaster = function(owner){
   }
 
   this.spawnAmmo = function(orig,theta){
-    return [new BlastAmmo(orig,theta,this.owner.type)];
+    var spread = Math.PI/6;
+    var ammos = [];
+    for(var t = theta-spread;t<=theta+spread;t+=spread){
+      var o = new Vector(orig.x,orig.y);
+      var a = new BlastAmmo(o,t,this.owner.type);
+      ammos.push(a);
+    }
+    return ammos;
   }
 
   this.clone = function(owner){

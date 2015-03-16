@@ -43,18 +43,19 @@ Human = function(x,y,name) {
   this.healthAlpha = 0.75;
 
   //suit color
-  var r = Math.floor(Math.random()*250);
-  var g = Math.floor(Math.random()*250);
-  var b = Math.floor(Math.random()*250);
+  var r = Math.floor(Math.random()*255);
+  var g = Math.floor(Math.random()*255);
+  var b = Math.floor(Math.random()*255);
   this.fillColor = new Color(r,g,b,0.9);
-  r = (r >= g && r >= b) ? 250 : 0;
-  g = (g >= r && g >= b) ? 250 : 0;
-  b = (b >= g && b >= r) ? 250 : 0;
+  r = (r >= g && r >= b) ? 255 : 0;
+  g = (g >= r && g >= b) ? 255 : 0;
+  b = (b >= g && b >= r) ? 255 : 0;
   this.lineColor = new Color(r,g,b,1.0);
 
   this.light = false;
-  this.lightRadius = 10;
-  this.lightColor = this.fillColor;
+  this.lightRadius = 6;
+  this.lightColor;
+  this.scout = false;
 
   this.update = function(terrain){
     this.hasDrawn = false;
@@ -214,8 +215,7 @@ Human = function(x,y,name) {
       var cent = this.center();
       var lightX = utils.roundToGrid(cent.x);
       var lightY = utils.roundToGrid(cent.y);
-      var light = terrain.getLight(lightX,lightY);
-      light = light ? light[0] : 0;
+      var light = terrain.getAlpha(lightX,lightY);
       var x = (this.position.x-camera.xOff)*config.xRatio;
       var y = (this.position.y-camera.yOff)*config.yRatio;
       var alpha = this.baseAlpha + (this.healthAlpha * light);
@@ -224,12 +224,10 @@ Human = function(x,y,name) {
     }
   }
 
-  this.updateLight = function(terrain,lMap){
-    if(this.light){
-      terrain.updateLightMap(this.center(),this.lightRadius,lMap,this.lightColor);
-    }
+  this.updateLight = function(terrain){
+    terrain.updateLightMap(this.center(),this.lightRadius,this.lightColor,this.scout,this.light);
     if(this.currentTool){
-      this.currentTool.updateLight(terrain,lMap);
+      this.currentTool.updateLight(terrain);
     }
   }
 
@@ -292,6 +290,18 @@ Human = function(x,y,name) {
   this.drawRosterPortrait = function(x,y,xSize,ySize,canvasBufferContext){
     humanArt.drawRosterPortrait(x,y,xSize,ySize,canvasBufferContext,this);
   }
+
+  this.setLightColor = function(){
+    var lc = this.fillColor.clone();
+    lc.a = 1.0;
+    var colorSum = lc.r + lc.g + lc.b;
+    var colorBase = 100;
+    lc.r = colorBase + (155 * (lc.r/colorSum));
+    lc.g = colorBase + (155 * (lc.g/colorSum));
+    lc.b = colorBase + (155 * (lc.b/colorSum));
+    this.lightColor = lc;
+  }
+  this.setLightColor();
 
 }
 
