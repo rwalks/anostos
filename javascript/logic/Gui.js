@@ -1,6 +1,8 @@
 Gui = function() {
 
-  this.target; this.roster; this.resources;
+  this.target;
+  this.roster = [];
+  this.resources;
   this.rosterOffset = 0;
 
   this.uiMode;

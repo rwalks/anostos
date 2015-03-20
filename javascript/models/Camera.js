@@ -28,6 +28,12 @@ var Camera = function (x,y){
     if((this.yOff + y)>0 && (this.yOff+y)<(config.mapHeight-config.cY)){this.yOff += y;}
   }
 
+  this.offCamera = function(pos,buffer){
+    buffer = buffer || config.gridInterval;
+    return (pos.x < (this.xOff-buffer) || pos.x > (this.xOff+config.cX+buffer) ||
+        pos.y < (this.yOff-buffer) || pos.y > (this.yOff+config.cY+buffer));
+  }
+
   this.focusOn = function(position){
     this.xOff = position.x-(config.cX/2);
     this.yOff = position.y-(config.cY/2);

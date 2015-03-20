@@ -266,8 +266,9 @@ TerrainTile = function(x,y,type){
       canvasBufferContext.rect(originX,originY,lX,lY);
       if(!this.hidden){
         canvasBufferContext.fill();
+      }else{
+        canvasBufferContext.stroke();
       }
-      canvasBufferContext.stroke();
       if(this.topLayer){
         canvasBufferContext.fillStyle = "rgba(100,0,100,"+alpha+")";
         canvasBufferContext.strokeStyle = "rgba(250,0,250,"+alpha+")";
@@ -280,7 +281,7 @@ TerrainTile = function(x,y,type){
         if(!this.hidden){
           canvasBufferContext.fill();
         }
-        canvasBufferContext.stroke();
+//        canvasBufferContext.stroke();
       }
       return true;
     }

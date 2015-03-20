@@ -2,23 +2,21 @@ Ammo = function(orig,theta,ownTyp){
   this.type = 'ammo';
   this.age = 0;
   this.maxAge = 10;
-  this.velocity = {};
   this.size = new Vector(config.gridInterval,config.gridInterval);
   this.position = orig;
-  this.maxVelocity = 1;
   this.entityDamage = 1;
   this.tileDamage = 1;
   this.ownerType = ownTyp;
   this.hasDrawn = false;
 
-  var velo = utils.rotate(1,0,theta);
-  this.velocity.x = velo[0];
-  this.velocity.y = velo[1];
+  this.theta = theta;
+  this.maxVelocity = 1;
+  this.velocity;
+
   this.scout = false;
   this.light = true;
-  this.lightRadius = 4;
+  this.lightRadius = 40;
   this.lightColor = new Color(0,25,200,0.5);
-
 
   this.draw = function(camera,canvasContext){
     if(!this.hasDrawn){
@@ -29,8 +27,8 @@ Ammo = function(orig,theta,ownTyp){
     }
   }
 
-  this.updateLight = function(terrain){
-    terrain.updateLightMap(this.center(),this.lightRadius,this.lightColor,this.scout,this.light);
+  this.updateLight = function(terrain,camera){
+    terrain.updateLightMap(this.center(),this.lightRadius,this.lightColor);
   }
 
   this.drawAmmo = function(x,y,buffer){};
@@ -39,15 +37,25 @@ Ammo = function(orig,theta,ownTyp){
     return {'x':this.position.x,'y':this.position.y};
   }
 
+  this.applyMove = function(){
+    if(!this.velocity){
+      var orientation = utils.rotate(1,0,theta);
+      orientation[0] = orientation[0] * this.maxVelocity;
+      orientation[1] = orientation[1] * this.maxVelocity;
+      this.velocity = new Vector(orientation[0],orientation[1]);
+    }
+    //apply move
+    this.position.x = Math.round(this.position.x + this.velocity.x);
+    this.position.y = Math.round(this.position.y + this.velocity.y);
+  }
+
   this.update = function(terrain){
     this.hasDrawn = false;
     this.age += 1;
     if(this.age > this.maxAge){
       return {'action':'die'};
     }
-    //update position
-    this.position.x += this.velocity.x * this.maxVelocity;
-    this.position.y += this.velocity.y * this.maxVelocity;
+    this.applyMove();
     //bounds
     if(utils.outOfBounds(this.position)){
       return {'action':'die'};
@@ -87,8 +95,8 @@ BlastAmmo = function(orig,theta,ownTyp){
   this.entityDamage = 20;
   this.tileDamage = 5;
   this.maxVelocity = 6;
-  this.maxAge = 25;
-  this.lightRadius = 3;
-  this.lightColor = new Color(0,25,200,0.8);
+  this.maxAge = 40;
+  this.lightRadius = 20;
+  this.lightColor = new Color(0,25,255,0.2);
 
 }

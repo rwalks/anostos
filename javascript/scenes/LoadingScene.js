@@ -125,7 +125,9 @@ var LoadingScene = function (){
     }
   }
 
-  this.draw = function(canvasBufferContext){
+  this.draw = function(canvasHolder){
+    canvasHolder.clearContext(0);
+    var canvasBufferContext = canvasHolder.contexts[0];
     if(loadingMode){
       sceneArt.drawStars(stars, camera, clockCycle, canvasBufferContext);
       loadingArt.drawLoading(canvasBufferContext);

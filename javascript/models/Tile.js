@@ -43,7 +43,7 @@ Tile = function(x,y) {
     return false;
   }
 
-  this.updateLight = function(terrain){
+  this.updateLight = function(terrain,camera){
   }
 
   this.repair = function(amount){

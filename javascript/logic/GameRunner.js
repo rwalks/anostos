@@ -2,35 +2,26 @@ function GameRunner() {
 
     var _canvas;
     var _canvasContext;
-    var _canvasBuffer;
-    var _canvasBufferContext;
     var _scene;
     var mousePos;
+
+    var canvasHolder = new CanvasHolder(5);
 
     this.scene = function(){return _scene;}
     this.Run = function () {
       if (this.initialize()) {
         _scene = new LoadingScene();
         setInterval(function() {document.GameRunner.tick()}, 1000 / config.fps);
-        loadContent();
       }
     }
 
-    this.initialize = function () {
+    this.initialize = function() {
       _canvas = document.getElementById('canvas');
-      if (_canvas && _canvas.getContext) {
-        _canvasContext = _canvas.getContext('2d');
-        _canvasBuffer = document.createElement('canvas');
-        _canvasBufferContext = _canvasBuffer.getContext('2d');
-        updateSizes();
-        bindControls();
-        return true;
-      }
-      return false;
-    }
-
-    function loadContent(){
-
+      _canvasContext = _canvas.getContext('2d');
+      canvasHolder.init();
+      updateSizes();
+      bindControls();
+      return true;
     }
 
     function bindControls () {
@@ -70,11 +61,10 @@ function GameRunner() {
       config.canvasWidth = windowSize.x;
       config.canvasHeight = windowSize.y;
       config.updateRatios();
-      _canvasBuffer.width = config.canvasWidth;
-      _canvasBuffer.height = config.canvasHeight;
+      canvasHolder.updateSizes();
     };
 
-    getWindowSize = function() {
+    var getWindowSize = function() {
       return {
         y: window.innerHeight,
         x:  window.innerWidth
@@ -110,7 +100,7 @@ function GameRunner() {
     this.tick = function(){
       if (_scene){
         _scene.update(mousePos);
-        draw();
+        this.draw();
       }
     }
 
@@ -136,20 +126,13 @@ function GameRunner() {
       }
     }
 
-    var draw = function(){
-      //clear canvas
-      _canvasBufferContext.clearRect(0, 0, config.canvasWidth, config.canvasHeight);
-      _canvasBufferContext.globalCompositeOperation="source-over";
-      _canvasBufferContext.fillStyle = 'rgba(0,0,0,0.7)';
-      _canvasBufferContext.fillRect(0,0,config.canvasWidth,config.canvasHeight);
-
+    this.draw = function(){
       //draw scene
-      _scene.draw(_canvasBufferContext);
-
-      //draw buffer on screen
+      _scene.draw(canvasHolder);
+      //clear canvas
       _canvasContext.clearRect(0, 0, config.canvasWidth, config.canvasHeight);
-      //_canvasBufferContext.globalCompositeOperation="source-atop";
-      _canvasContext.drawImage(_canvasBuffer, 0, 0);
+      //draw buffers on screen
+      canvasHolder.drawAll(_canvasContext);
     }
 
 
@@ -170,4 +153,50 @@ function GameRunner() {
       var y = e.pageY - $(targ).offset().top;
       return {"x": x, "y": y};
     };
+}
+
+function CanvasHolder(num){
+  this.length = num;
+  this.canvases = [];
+  this.contexts = [];
+
+  this.init = function(){
+    for(var c = 0; c < this.length; c++){
+      var can = document.createElement('canvas');
+      this.canvases.push(can);
+      this.contexts.push(can.getContext('2d'));
+    }
+  }
+
+  this.updateSizes = function(){
+    for(var c = 0; c < this.length; c++){
+      this.canvases[c].width = config.canvasWidth;
+      this.canvases[c].height = config.canvasHeight;
+    }
+  }
+
+  this.clearContext = function(id){
+    if(this.contexts[id]){
+      this.contexts[id].clearRect(0, 0, config.canvasWidth, config.canvasHeight);
+    }
+  }
+
+  this.drawAll = function(target){
+
+    var bgCon = this.canvases[0];
+    var terrainCon = this.canvases[1];
+    var entityCon = this.canvases[2];
+    var lightCon = this.canvases[3];
+    var guiCon = this.canvases[4];
+//  this.contexts[1].drawImage(this.canvases[3], 0, 0);
+//    this.contexts[2].drawImage(this.canvases[3], 0, 0);
+    target.drawImage(this.canvases[0],0,0);
+    target.drawImage(this.canvases[1],0,0);
+  //  target.drawImage(this.canvases[2],0,0);
+    target.drawImage(this.canvases[4],0,0);
+
+//    for(var c = 0; c < this.length; c++){
+//      target.drawImage(this.canvases[c], 0, 0);
+//    }
+  }
 }

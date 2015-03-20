@@ -145,24 +145,30 @@ SceneArt = function() {
     canvasBufferContext.fill();
   }
 
-  this.drawAmbientLight = function(light,canvasBufferContext){
+  this.drawAmbientLight = function(darkness,canvasBufferContext){
     //dark mask
-    var dark = light = 1 - light;
-    canvasBufferContext.fillStyle = "rgba(0,0,0,"+dark+")";
+    canvasBufferContext.fillStyle = darkness.colorStr();
     canvasBufferContext.beginPath();
     canvasBufferContext.rect(0,0,config.canvasWidth,config.canvasHeight);
     canvasBufferContext.fill();
   }
 
-  this.drawLight = function(x,y,camera,canvasBufferContext,color){
-    var oX = (x - camera.xOff) * config.xRatio;
-    var oY = (y - camera.yOff) * config.yRatio;
-    var lX = config.gridInterval * config.xRatio;
-    var lY = config.gridInterval * config.yRatio;
+  this.drawLight = function(light,camera,canvasBufferContext,dark){
+    var oX = Math.round(light.position.x - camera.xOff) * config.xRatio;
+    var oY = Math.round(light.position.y - camera.yOff) * config.yRatio;
+    var layers = 2 + Math.ceil(3 * dark);
+    var color = light.color.clone();
+    color.a = 0.05 + (0.1 * dark);
     canvasBufferContext.fillStyle = color.colorStr();
-    canvasBufferContext.beginPath();
-    canvasBufferContext.rect(oX,oY,lX,lY);
-    canvasBufferContext.fill();
+    var rad = light.radius;
+    var rMult = 0.7;
+    for(var l = 0; l < layers; l++){
+      var r = rad + (Math.random() * 2);
+      canvasBufferContext.beginPath();
+      canvasBufferContext.arc(oX,oY,r,0,2*Math.PI,false);
+      canvasBufferContext.fill();
+      rad = rad * rMult;
+    }
   }
 
   this.drawHitBoxes = function(boxes,camera,canvasBufferContext){

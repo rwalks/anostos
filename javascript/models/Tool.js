@@ -41,7 +41,7 @@ Tool = function(owner){
     this.typeUpdate(terrain);
   }
   this.typeUpdate = function(terrain){};
-  this.updateLight = function(terrain,lMap){};
+  this.updateLight = function(terrain){};
 }
 
 RepairTool = function(owner){
@@ -164,23 +164,27 @@ PlasmaTorch = function(owner){
   this.updateLight = function(terrain){
     if(this.owner.toolActive){
       var orig = this.pointOfAction();
-      var lRad = Math.random() * 2;
-      var a = 0.8 + (Math.random() * 0.2);
+      var lRad = 2;
       var rand = Math.random();
-      var r; var g; var b;
+      var r; var g; var b; var a;
       if(rand > 0.9){
         r = 255; g = 255; b = 255;
-        lRad = 3;
+        a = 0.2;
+        lRad = 20;
       }else if(rand > 0.8){
         r = 255; g = 255; b = 255;
-        lRad = 2;
+        a = 0.2;
+        lRad = 5;
       }else if(rand > 0.333){
         r = 255; g = 50; b = 0;
+        a = 0.6;
+        lRad = 3;
       }else{
         r = 255; g = 255; b = 0;
+        a = 0.9;
       }
       lColor = new Color(r,g,b,a);
-      terrain.updateLightMap(orig,lRad,lColor,false,true);
+      terrain.updateLightMap(orig,lRad,lColor);
     }
   }
 

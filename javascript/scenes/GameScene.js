@@ -40,7 +40,7 @@ var GameScene = function (strs,trn,shp,nam,bg,als){
     for(var i=0;i<4;i++){
       var x = (Math.random()*(config.gridInterval*6))-(config.gridInterval*3) + ship.position.x;
       var y = ship.position.y;
-      this.humans.push( new Npc(x,y) );
+ //     this.humans.push( new Npc(x,y) );
     }
     //starting resources
     this.inventory.addItem('metal',250);
@@ -91,7 +91,7 @@ var GameScene = function (strs,trn,shp,nam,bg,als){
       case 81:
         //Q
         if(keyDown){
-         this.terrain.ambientLight = Math.max((this.terrain.ambientLight-0.1),0);
+         this.terrain.ambientLight = Math.max((this.terrain.ambientLight-0.1),0.01);
         }
         break;
       case 87:
@@ -127,6 +127,7 @@ var GameScene = function (strs,trn,shp,nam,bg,als){
     }
   }
 
+//UPDATE FUNCTIONS
   this.update = function(mPos){
     if(!gamePaused){
       this.count += 1;
@@ -141,7 +142,7 @@ var GameScene = function (strs,trn,shp,nam,bg,als){
       var deletes = [];
 
       var newEntityMap = {};
-      var entityTypes = ['ammos','humans','aliens','corpses'];
+      var entityTypes = ['humans','aliens','ammos','corpses'];
       for(var et = 0; et < entityTypes.length; et++){
         var entityType = entityTypes[et];
         var entityList = this[entityType];
@@ -150,9 +151,7 @@ var GameScene = function (strs,trn,shp,nam,bg,als){
           var updateMsg = entityType == 'corpses' ? entity.update(this.terrain,this.humans) : entity.update(this.terrain);
           if(!entity.dead){
             this.terrain.updateEntityMap(entity,newEntityMap);
-            if(sceneUtils.onScreen(entity,camera)){
-              entity.updateLight(this.terrain);
-            }
+            entity.updateLight(this.terrain,camera);
           }
           update = this.handleEntityUpdate(entityType,updateMsg,e);
           regenBuildings = update || regenBuildings;
@@ -266,6 +265,8 @@ var GameScene = function (strs,trn,shp,nam,bg,als){
     return reg;
   }
 
+///
+
   this.loot = function(obj){
     var inv = obj.inventory ? obj.inventory.inv : false;
     if(inv){
@@ -362,20 +363,36 @@ var GameScene = function (strs,trn,shp,nam,bg,als){
     return ret;
   }
 
-  this.draw = function(canvasBufferContext){
-    sceneArt.drawStars(this.stars, camera, clockCycle, canvasBufferContext);
-    sceneArt.drawBG(camera,this.bgs,clockCycle,canvasBufferContext);
-    if(sceneUtils.onScreen(ship,camera)){
-      ship.draw(camera,canvasBufferContext);
+//DRAWING FUNCTIONS
+
+  this.prepBuffers = function(canvasHolder){
+    for(var c = 0; c < canvasHolder.length; c++){
+      canvasHolder.clearContext(c);
     }
-    sceneArt.drawAmbientLight(this.terrain.ambientLight,canvasBufferContext);
-    this.terrain.draw(canvasBufferContext,camera);
-    //drawVisibleGrid
+  }
+
+  this.draw = function(canvasHolder){
+    this.prepBuffers(canvasHolder);
+    var bgCon = canvasHolder.contexts[0];
+    var terrainCon = canvasHolder.contexts[1];
+    var entityCon = canvasHolder.contexts[2];
+    var lightCon = canvasHolder.contexts[3];
+    var guiCon = canvasHolder.contexts[4];
+    sceneArt.drawStars(this.stars, camera, clockCycle, bgCon);
+//    sceneArt.drawBG(camera,this.bgs,clockCycle,bgCon);
+//    if(sceneUtils.onScreen(ship,camera)){
+//      ship.draw(camera,entityCon);
+//    }
+//    sceneArt.drawAmbientLight(this.terrain.ambientLight,canvasBufferContext);
+//    this.terrain.draw(canvasBufferContext,camera);
+//
+//
+    //draw tiles and entities
     for(var x=camera.xOff-(camera.xOff%config.gridInterval);x<camera.xOff+config.cX;x+=config.gridInterval){
       for(var y=(camera.yOff-(camera.yOff%config.gridInterval));y<camera.yOff+config.cY;y+=config.gridInterval){
         var til = this.terrain.getTile(x,y);
         if(til){
-          til.draw(camera,canvasBufferContext,this.terrain);
+          til.draw(camera,terrainCon,this.terrain);
           if(til.hidden){
             var d = Math.abs(this.player.position.x - til.position.x) + Math.abs(this.player.position.y - til.position.y);
             var lightRange = this.player.light ? this.player.lightRadius*config.gridInterval : 3*config.gridInterval;
@@ -389,28 +406,40 @@ var GameScene = function (strs,trn,shp,nam,bg,als){
         var entities = this.terrain.getEntities(x,y);
         if(entities){
           for(var e = 0; e < entities.length; e++){
-            entities[e].draw(camera,canvasBufferContext,this.terrain);
+            entities[e].draw(camera,entityCon,this.terrain);
           }
         }
       }
     }
+    //compose scene
+    terrainCon.drawImage(canvasHolder.canvases[2],0,0);
+    //draw Light
+    this.terrain.drawLights(camera,lightCon);
+    //draw entities to terrain
+    terrainCon.save();
+    terrainCon.globalCompositeOperation = 'source-atop';
+    terrainCon.drawImage(canvasHolder.canvases[3],0,0);
+    terrainCon.restore();
+    //
     if(gamePaused){
-      sceneArt.drawPause(canvasBufferContext);
+      sceneArt.drawPause(guiCon);
     }else{
       if(this.uiMode == "build" && buildTarget){
         var bPos = clickToCoord(mousePos,true);
         var clear = this.terrain.validBuild(buildTarget,bPos);
-        sceneArt.drawBuildCursor(buildTarget,bPos,clear,camera,canvasBufferContext);
+        sceneArt.drawBuildCursor(buildTarget,bPos,clear,camera,guiCon);
       }
       if(gameOver){
         var msg = gameOverMsg(gameOver);
         messageIndex += ((this.count % 3 == 0) && (messageIndex < (msg[0].length+msg[1].length))) ? 1 : 0;
-        sceneArt.drawText(msg,messageIndex,canvasBufferContext);
+        sceneArt.drawText(msg,messageIndex,guiCon);
       }else{
-        gui.draw(camera,canvasBufferContext);
+        gui.draw(camera,guiCon);
       }
     }
   }
+
+//
 
   this.focusNextHuman = function(advance){
     if(!focusTarget && this.humans.length){

@@ -2,7 +2,7 @@ Terrain = function(trMap,sSpawns) {
 
   this.terrain = trMap ? trMap : {};
   this.entityMap = {};
-  this.lightMap = {};
+  this.lights = [];
   this.ambientLight = 1;
   this.ambientProgress = -0.01;
 //construct holders
@@ -113,14 +113,7 @@ Terrain = function(trMap,sSpawns) {
 
   this.update = function(humans,resourceInv,count){
     this.count = count;
-    if(this.count % 20 == 0){
-      this.ambientLight += this.ambientProgress;
-      if(this.ambientLight >= 1){
-        this.ambientProgress = -0.01;
-      }else if(this.ambientLight <= 0){
-        this.ambientProgress = 0.01;
-      }
-    }
+   // this.updateAmbientLight();
     for(x in doors){
       for(y in doors[x]){
         this.terrain[x][y].update(this);
@@ -131,6 +124,17 @@ Terrain = function(trMap,sSpawns) {
       this.updateBuildings();
     }
 
+  }
+
+  this.updateAmbientLight = function(){
+    if(this.count % 20 == 0){
+      this.ambientLight += this.ambientProgress;
+      if(this.ambientLight >= 1){
+        this.ambientProgress = -0.01;
+      }else if(this.ambientLight <= 0){
+        this.ambientProgress = 0.01;
+      }
+    }
   }
 
   this.purchase = function(cost){
@@ -195,8 +199,6 @@ Terrain = function(trMap,sSpawns) {
     for (var r = 0; r < this.rooms.length; r++){
       this.rooms[r].draw(camera,canvasBufferContext);
     }
-    //lights
-    this.drawLights(canvasBufferContext,camera);
   }
 
   this.updateBuildings = function(){
@@ -242,98 +244,31 @@ Terrain = function(trMap,sSpawns) {
     }
   }
 
-  this.getLight = function(tX,tY){
-    //var amLight = 1 - this.ambientLight;
-    var light = false;
-    if(this.lightMap[tX] && this.lightMap[tX][tY]){
-      light = this.lightMap[tX][tY];
-    }
-    return light;
-  }
-
   this.getAlpha = function(tX,tY){
-    var ret = this.getLight(tX,tY);
-    if(ret && ret.color){
-      ret = Math.max(ret.color.a,this.ambientLight);
-    }else{
-      ret = this.ambientLight;
-    }
-    return ret;
+    return 1;
   }
 
-  this.updateLightMap = function(origin,lRadius,color,scout,light){
-    if(light){
-      var cent = utils.roundVector(origin);
-      var radius = lRadius || 2;
-      var height = radius;
-      var xInit = 0;
-      for(var xFlip = -1; xFlip <= 1; xFlip += 2){
-        for(var x = xInit; x <= radius; x += 1){
-          var lX = cent.x + ((x * config.gridInterval) * xFlip);
-          var yInit = 0;
-          for(var yFlip = -1; yFlip <= 1; yFlip += 2){
-            for(var y = yInit; y <= height; y += 1){
-              var lY = cent.y + (y * config.gridInterval * yFlip);
-              if(light){
-                if(!this.lightMap[lX]){
-                  this.lightMap[lX] = {};
-                }
-                var d = Math.abs(x) + Math.abs(y);
-                var baseAlpha = 1 - (this.ambientLight/2);
-                var alpha = baseAlpha - ((baseAlpha*0.9) * (d/radius));
-                var blendColor = color.clone();
-                blendColor.a = blendColor.a * alpha;
-                var existingColor = this.lightMap[lX][lY];
-                if(existingColor){
-                  blendColor = utils.blendColors(blendColor,existingColor.color);
-                }
-                this.lightMap[lX][lY] = new LightPoint(this.count,blendColor);
-              }
-            }
-            yInit = 1;
-          }
-          height -= 1;
-        }
-        var height = radius - 1;
-        var xInit = 1;
-      }
-    }
+  this.updateLightMap = function(origin,radius,col){
+    var color = col.clone();
+    this.lights.push(new LightPoint(origin,radius,color,this.count));
   }
 
-  this.drawLights = function(canvasBufferContext,camera){
-    for(var x=camera.xOff-(camera.xOff%config.gridInterval);x<camera.xOff+config.cX;x+=config.gridInterval){
-      if(this.lightMap[x]){
-        var yKeys = Object.keys(this.lightMap[x]);
-        for(var yI=0;yI<yKeys.length;yI+=1){
-          var y = yKeys[yI];
-          if(y >= camera.yOff && y <= (camera.yOff+config.cY)){
-            var light = this.getLight(x,y);
-            if(light){
-              var dimming = (this.count - light.createdAt) * light.fade;
-              light.color.a -= light.fade;
-              if(light.color.a > 0){
-                var shading = light.color.clone();
-                var til = this.getTile(x,y);
-                if(til){
-                  til.draw(camera,canvasBufferContext,this);
-                  shading.a = shading.a * 0.7;
-                }else{
-                  shading.a = Math.min(shading.a * 1.2,1);
-                }
-                sceneArt.drawLight(x,y,camera,canvasBufferContext,shading);
-              }else{
-                delete this.lightMap[x][y];
-              }
-            }
-          }else if(y > (camera.yOff+config.cY)){
-            break;
-          }
-        }
-        if(!Object.keys(this.lightMap[x]).length){
-          delete this.lightMap[x];
-        }
+  this.drawLights = function(camera,buffCon){
+    var activeLights = [];
+    var darkness = new Color(0,0,0,1-this.ambientLight);
+    sceneArt.drawAmbientLight(darkness,buffCon);
+    buffCon.save();
+    var drawTypes = ['destination-out','source-over'];
+  //  var drawTypes = ['xor'];
+    for(var i = 0; i < drawTypes.length; i++){
+      buffCon.globalCompositeOperation = drawTypes[i];
+      for(var l = 0; l < this.lights.length; l++){
+        var light = this.lights[l];
+        sceneArt.drawLight(light,camera,buffCon,darkness.a);
       }
     }
+    buffCon.restore();
+    this.lights = activeLights;
   }
 
   this.updateEntityMap = function(obj,eMap){

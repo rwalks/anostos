@@ -53,7 +53,7 @@ Human = function(x,y,name) {
   this.lineColor = new Color(r,g,b,1.0);
 
   this.light = false;
-  this.lightRadius = 6;
+  this.lightRadius = 30;
   this.lightColor;
   this.scout = false;
 
@@ -89,8 +89,8 @@ Human = function(x,y,name) {
 
   this.applyMove = function(){
     //apply move
-    this.position.x += this.velocity.x;
-    this.position.y += this.velocity.y;
+    this.position.x = Math.round(this.position.x + this.velocity.x);
+    this.position.y = Math.round(this.position.y + this.velocity.y);
   }
 
   this.updateOxygen = function(terrain){
@@ -212,22 +212,23 @@ Human = function(x,y,name) {
   this.draw = function(camera,canvasContext,terrain){
     if(!this.hasDrawn){
       this.hasDrawn = true;
-      var cent = this.center();
-      var lightX = utils.roundToGrid(cent.x);
-      var lightY = utils.roundToGrid(cent.y);
-      var light = terrain.getAlpha(lightX,lightY);
       var x = (this.position.x-camera.xOff)*config.xRatio;
       var y = (this.position.y-camera.yOff)*config.yRatio;
-      var alpha = this.baseAlpha + (this.healthAlpha * light);
+      var alpha = this.baseAlpha + (this.healthAlpha);
       humanArt.drawHuman(x,y,canvasContext,this,camera,alpha);
      // humanArt.drawPath(this.path,canvasContext,camera);
     }
   }
 
-  this.updateLight = function(terrain){
-    terrain.updateLightMap(this.center(),this.lightRadius,this.lightColor,this.scout,this.light);
-    if(this.currentTool){
-      this.currentTool.updateLight(terrain);
+  this.updateLight = function(terrain,camera){
+    var orig = this.center();
+    if(!camera.offCamera(orig,this.lightRadius)){
+      if(this.light){
+        terrain.updateLightMap(orig,this.lightRadius,this.lightColor);
+      }
+      if(this.currentTool){
+        this.currentTool.updateLight(terrain);
+      }
     }
   }
 
@@ -293,12 +294,7 @@ Human = function(x,y,name) {
 
   this.setLightColor = function(){
     var lc = this.fillColor.clone();
-    lc.a = 1.0;
-    var colorSum = lc.r + lc.g + lc.b;
-    var colorBase = 100;
-    lc.r = colorBase + (155 * (lc.r/colorSum));
-    lc.g = colorBase + (155 * (lc.g/colorSum));
-    lc.b = colorBase + (155 * (lc.b/colorSum));
+    lc.a = 0.1;
     this.lightColor = lc;
   }
   this.setLightColor();

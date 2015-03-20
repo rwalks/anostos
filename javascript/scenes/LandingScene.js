@@ -17,8 +17,6 @@ var LandingScene = function (strs,nam,aud){
   var landIndex = 0;
   var gamePaused = false;
   var lastPaused = false;
-  var debugMode = false;
-  var debugLock = false;
 
 
   //add surface spawns
@@ -31,7 +29,8 @@ var LandingScene = function (strs,nam,aud){
   }
 
   this.update = function(mPos){
-    if(!gamePaused && !debugLock){
+    this.endScene(true);
+    if(!gamePaused){
       camera.focusOn(this.ship.position);
       this.ship.update(this.terrain);
       if(this.ship.altitude < 3000){
@@ -39,13 +38,11 @@ var LandingScene = function (strs,nam,aud){
       }
       this.count += 1;
     }
-    debugLock = debugMode ? true : false;
   }
 
   this.keyPress = function(keyCode,keyDown){
     switch(keyCode){
       case 8:
-        debugMode = !debugMode;
         break;
       case 27:
         if(keyDown){
@@ -152,8 +149,8 @@ var LandingScene = function (strs,nam,aud){
     }else{
       if(this.ship.destroyed){
         this.endScene(false);
-      }else if(true){
-    //  }else if(this.ship.landed){
+    //  }else if(true){
+      }else if(this.ship.landed){
         this.endScene(true);
       }
     }
@@ -169,7 +166,9 @@ var LandingScene = function (strs,nam,aud){
     }
   }
 
-  this.draw = function(canvasBufferContext){
+  this.draw = function(canvasHolder){
+    canvasHolder.clearContext(0);
+    var canvasBufferContext = canvasHolder.contexts[0];
     sceneArt.drawStars(this.stars, camera, clockCycle, canvasBufferContext);
     sceneArt.drawBG(camera,this.sceneUtils.bgs,clockCycle,canvasBufferContext);
     this.ship.draw(camera,canvasBufferContext);

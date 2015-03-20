@@ -57,9 +57,10 @@ var Utils = function (){
     return [rx,ry];
   }
 
-  this.outOfBounds = function(pos){
-    return (pos.x < -config.gridInterval || pos.x > config.mapWidth ||
-        pos.y < -config.gridInterval || pos.y > config.mapHeight);
+  this.outOfBounds = function(pos,buffer){
+    buffer = buffer || config.gridInterval;
+    return (pos.x < -buffer || pos.x > (config.mapWidth+buffer) ||
+        pos.y < -buffer || pos.y > (config.mapHeight+buffer));
   }
 
   this.intersect = function(p0,p1,p2,p3){
@@ -137,7 +138,7 @@ Color = function(r,g,b,a){
   this.r = Math.floor(r) || 0;
   this.g = Math.floor(g) || 0;
   this.b = Math.floor(b) || 0;
-  this.a = a || 1.0;
+  this.a = a || 0;
 
   this.randomize = function(){
     this.r = Math.floor(Math.random() * 255);
@@ -152,10 +153,31 @@ Color = function(r,g,b,a){
   this.clone = function(){
     return new Color(this.r,this.g,this.b,this.a);
   }
+
+  this.whiten = function(amt){
+    var total = this.r + this.g + this.b;
+   // this.r = Math.round(200 + (55 * this.r/total));
+   // this.g = Math.round(200 + (55 * this.g/total));
+   // this.b = Math.round(200 + (55 * this.b/total));
+    var w = 255 * amt;
+    this.r = Math.floor(Math.min(this.r+w,255));
+    this.g = Math.floor(Math.min(this.r+w,255));
+    this.b = Math.floor(Math.min(this.r+w,255));
+  }
 }
 
-LightPoint = function(created,color){
-  this.createdAt = created;
+LightPoint = function(pos,radius,color,created){
+  this.active = true;
+  this.lifeSpan = 1;
+  //
+  this.position = pos;
+  this.radius = radius * config.gridInterval;
   this.color = color;
-  this.fade = 0.05;
+  this.createdAt = created;
+  //
+  this.update = function(){
+    this.lifeSpan -= 1;
+    this.color.a = this.color.a * 0.9;
+    this.active = this.lifeSpan > 0;
+  }
 }

@@ -14,6 +14,7 @@ Plant = function(pos) {
 
   this.draw = function(camera,canvasBufferContext){
     canvasBufferContext.strokeStyle = fillString;
+    canvasBufferContext.lineWidth=Math.floor(config.xRatio)+"";
     swayMod = swayInc ? swayMod + 0.05 : swayMod - 0.05;
     if(swayMod >= 10){
      swayInc = false;
@@ -22,7 +23,9 @@ Plant = function(pos) {
     }
     var x = this.position.x + config.terrainInterval/2;
     var y = this.position.y;
+    canvasBufferContext.beginPath();
     this.drawTree(x,y,-90,5,camera,canvasBufferContext);
+    canvasBufferContext.stroke();
   }
 
   this.drawTree = function(x,y,angle,level,camera,canvasBufferContext){
@@ -35,11 +38,8 @@ Plant = function(pos) {
       var ox2 = (x2-camera.xOff)*config.xRatio;
       var oy2 = (y2-camera.yOff)*config.yRatio;
 
-      canvasBufferContext.beginPath();
       canvasBufferContext.moveTo(ox,oy);
       canvasBufferContext.lineTo(ox2,oy2);
-      canvasBufferContext.closePath();
-      canvasBufferContext.stroke();
 
       var dAngle = angleChange + swayMod;
       this.drawTree(x2, y2, angle - dAngle, level - 1, camera, canvasBufferContext);

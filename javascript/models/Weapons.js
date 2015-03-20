@@ -29,11 +29,15 @@ BasicBlaster = function(owner){
   this.spawnAmmo = function(orig,theta){
     var spread = Math.PI/6;
     var ammos = [];
+    var o = new Vector(orig.x,orig.y);
+    var a = new BlastAmmo(o,theta,this.owner.type);
+    ammos.push(a);
+    /*
     for(var t = theta-spread;t<=theta+spread;t+=spread){
-      var o = new Vector(orig.x,orig.y);
       var a = new BlastAmmo(o,t,this.owner.type);
       ammos.push(a);
     }
+    */
     return ammos;
   }
 

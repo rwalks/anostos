@@ -60,7 +60,7 @@ Alien = function(x,y) {
     }
   }
 
-  this.updateLight = function(terrain){
+  this.updateLight = function(terrain,camera){
   }
 
   this.drawTargetPortrait = function(oX,oY,xSize,ySize,canvasBufferContext){
@@ -90,9 +90,9 @@ Alien = function(x,y) {
         this.followPath(terrain);
       }
       if(this.targetObj){
-        ret = this.interactTarget(terrain);
+ //       ret = this.interactTarget(terrain);
       }else{
-        ret = this.findTarget(terrain);
+ //       ret = this.findTarget(terrain);
       }
       this.applyForces();
       this.applyMaxVelocity();
