@@ -247,29 +247,13 @@ TerrainTile = function(x,y,type){
       if(this.plant){
         this.plant.draw(camera,canvasBufferContext);
       }
-      var cent = this.center();
-      var lightX = utils.roundToGrid(cent.x);
-      var lightY = utils.roundToGrid(cent.y);
-      var light = terrain.getAlpha(lightX,lightY);
       var healthPercent = (this.currentHealth/this.maxHealth);
-      var alpha = this.baseAlpha + (healthPercent*this.healthAlpha*light);
-      fillStyle.a = alpha;
-      strokeStyle.a = alpha;
-      canvasBufferContext.beginPath();
-      canvasBufferContext.lineWidth=Math.floor(config.xRatio)+"";
-      canvasBufferContext.fillStyle = fillStyle.colorStr();
-      canvasBufferContext.strokeStyle = strokeStyle.colorStr();
-      var originX = (this.position.x-camera.xOff)*config.xRatio;
-      var originY = (this.position.y-camera.yOff)*config.yRatio;
-      var lX = this.size.x*config.xRatio;
-      var lY = this.size.y*config.yRatio;
-      canvasBufferContext.rect(originX,originY,lX,lY);
-      if(!this.hidden){
-        canvasBufferContext.fill();
-      }else{
-        canvasBufferContext.stroke();
-      }
+      var alpha = this.baseAlpha + (healthPercent*this.healthAlpha);
+      var art = artHolder.getArt('soilTile');
+      var drawPos = utils.realCoords(this.position,camera);
+      art.draw(drawPos,canvasBufferContext);
       if(this.topLayer){
+        /*
         canvasBufferContext.fillStyle = "rgba(100,0,100,"+alpha+")";
         canvasBufferContext.strokeStyle = "rgba(250,0,250,"+alpha+")";
         canvasBufferContext.beginPath();
@@ -282,6 +266,7 @@ TerrainTile = function(x,y,type){
           canvasBufferContext.fill();
         }
 //        canvasBufferContext.stroke();
+        */
       }
       return true;
     }

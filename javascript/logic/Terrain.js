@@ -113,7 +113,7 @@ Terrain = function(trMap,sSpawns) {
 
   this.update = function(humans,resourceInv,count){
     this.count = count;
-   // this.updateAmbientLight();
+ //   this.updateAmbientLight();
     for(x in doors){
       for(y in doors[x]){
         this.terrain[x][y].update(this);
@@ -259,7 +259,6 @@ Terrain = function(trMap,sSpawns) {
     sceneArt.drawAmbientLight(darkness,buffCon);
     buffCon.save();
     var drawTypes = ['destination-out','source-over'];
-  //  var drawTypes = ['xor'];
     for(var i = 0; i < drawTypes.length; i++){
       buffCon.globalCompositeOperation = drawTypes[i];
       for(var l = 0; l < this.lights.length; l++){

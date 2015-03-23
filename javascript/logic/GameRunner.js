@@ -62,6 +62,7 @@ function GameRunner() {
       config.canvasHeight = windowSize.y;
       config.updateRatios();
       canvasHolder.updateSizes();
+      artHolder.updateSizes();
     };
 
     var getWindowSize = function() {
@@ -183,18 +184,13 @@ function CanvasHolder(num){
 
   this.drawAll = function(target){
 
-    var bgCon = this.canvases[0];
-    var terrainCon = this.canvases[1];
-    var entityCon = this.canvases[2];
-    var lightCon = this.canvases[3];
-    var guiCon = this.canvases[4];
-//  this.contexts[1].drawImage(this.canvases[3], 0, 0);
-//    this.contexts[2].drawImage(this.canvases[3], 0, 0);
+    //draw bg
     target.drawImage(this.canvases[0],0,0);
+    //draw terrain
     target.drawImage(this.canvases[1],0,0);
-  //  target.drawImage(this.canvases[2],0,0);
+    //draw gui
     target.drawImage(this.canvases[4],0,0);
-
+    //draw all
 //    for(var c = 0; c < this.length; c++){
 //      target.drawImage(this.canvases[c], 0, 0);
 //    }
