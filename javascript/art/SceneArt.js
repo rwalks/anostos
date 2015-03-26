@@ -154,18 +154,17 @@ SceneArt = function() {
   }
 
   this.drawLight = function(light,camera,canvasBufferContext,dark){
-    var oX = Math.round(light.position.x - camera.xOff) * config.xRatio;
-    var oY = Math.round(light.position.y - camera.yOff) * config.yRatio;
+    var orig = utils.realCoords(light.position,camera);
     var layers = 2 + Math.ceil(3 * dark);
     var color = light.color.clone();
-    color.a = 0.05 + (0.1 * dark);
+    color.a = 0.05 ;
     canvasBufferContext.fillStyle = color.colorStr();
     var rad = light.radius;
     var rMult = 0.7;
     for(var l = 0; l < layers; l++){
       var r = rad + (Math.random() * 2);
       canvasBufferContext.beginPath();
-      canvasBufferContext.arc(oX,oY,r,0,2*Math.PI,false);
+      canvasBufferContext.arc(orig.x,orig.y,r,0,2*Math.PI,false);
       canvasBufferContext.fill();
       rad = rad * rMult;
     }

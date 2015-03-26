@@ -40,12 +40,12 @@ var Camera = function (x,y){
     if( this.xOff < 0){
       this.xOff = 0;
     }else if(this.xOff > (config.mapWidth - config.cX)){
-      this.xOff = config.mapWidth - config.cX;
+      this.xOff = (config.mapWidth - config.cX);
     }
     if( this.yOff < 0){
       this.yOff = 0;
     }else if(this.yOff > (config.mapHeight - config.cY)){
-      this.yOff = config.mapHeight - config.cY;
+      this.yOff = (config.mapHeight - config.cY);
     }
   }
 

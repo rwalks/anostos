@@ -16,6 +16,9 @@ Gui = function() {
   var timeElapsed;
   var resourceStats;
 
+  this.elements = [];
+  this.elements.push(new PlayerGui());
+
   this.buildings = {
   "construction":[new Block('soil'),new Block('metal'),new Door()],
   "power":[new ChemicalBattery(),new SolarPanel()],
@@ -100,6 +103,14 @@ Gui = function() {
   }
 
   this.click = function(clickPos, target){
+    console.log(clickPos.x + " " + clickPos.y);
+    for(var e = 0; e < this.elements.length; e++){
+      var ret = this.elements[e].click(clickPos);
+      if(ret){
+        return;
+      }
+    }
+    /*
     if(target == "roster"){
       var y = clickPos.y - this.position('roster').y;
       var ySize = this.size('roster').y;
@@ -188,6 +199,7 @@ Gui = function() {
         }
       }
     }
+  */
   }
 
   this.update = function(target,humans,buildTarget,uiMode,deltaT,rStats,player){
@@ -223,7 +235,6 @@ Gui = function() {
     return false;
   }
 
-
   this.draw = function(camera,canvasBufferContext){
     if(this.uiMode == 'build'){
      // this.drawGrid(camera,canvasBufferContext);
@@ -235,7 +246,10 @@ Gui = function() {
     this.drawTarget(this.size("target"),this.position("target"),canvasBufferContext);
     this.drawRoster(this.size("roster"),this.position("roster"),canvasBufferContext);
     this.drawTimer(this.size("timer"),this.position("timer"),canvasBufferContext);
-    this.drawPlayer(this.size("player"),this.position("player"),canvasBufferContext);
+ //   this.drawPlayer(this.size("player"),this.position("player"),canvasBufferContext);
+    for(var e = 0; e < this.elements.length; e++){
+      this.elements[e].draw(canvasBufferContext);
+    }
   }
 
   this.drawTimer = function(size,pos,canvasBufferContext){
@@ -277,43 +291,56 @@ Gui = function() {
 
   }
 
-  var gaugeCapGeo = [[0,0],[0.75,0],[1.0,0.5],[1,1],[0.75,0.75],[0.25,0.75],[0,1]];
-  this.drawPlayer = function(size,pos,canvasBufferContext){
-    canvasBufferContext.beginPath();
-    canvasBufferContext.lineWidth=Math.floor(config.xRatio)+"";
-    canvasBufferContext.fillStyle = "rgba(150,0,200,0.9)";
+  this.drawBorder = function(size,pos,canvasBufferContext){
+    var buffer = config.minRatio;
+    canvasBufferContext.lineWidth = buffer;
+    //outer border
     canvasBufferContext.strokeStyle="rgba(200,0,250,1.0)";
+    canvasBufferContext.beginPath();
     canvasBufferContext.rect(pos.x,pos.y,size.x,size.y);
+    canvasBufferContext.stroke();
+    //inner border + fill
+    canvasBufferContext.fillStyle = "rgba(20,0,50,1.0)";
+    canvasBufferContext.strokeStyle="rgba(76,0,112,1.0)";
+    canvasBufferContext.beginPath();
+    canvasBufferContext.rect(pos.x+buffer,pos.y+buffer,size.x-(2*buffer),size.y-(2*buffer));
     canvasBufferContext.fill();
     canvasBufferContext.stroke();
-    var xBuf = Math.floor(config.xRatio) * 2;
-    var yBuf = Math.floor(config.yRatio) * 2;
-    var xIndex = pos.x + xBuf;
-    var yIndex = pos.y + yBuf;
-    var xSize = size.x-(2*xBuf);
-    var ySize = size.y-(2*yBuf);
-    canvasBufferContext.beginPath();
-    canvasBufferContext.lineWidth=Math.floor(config.xRatio)+"";
-    canvasBufferContext.fillStyle = "rgba(20,0,50,0.9)";
-    canvasBufferContext.strokeStyle="rgba(20,0,75,1.0)";
-    canvasBufferContext.rect(xIndex,yIndex,xSize,ySize);
-    canvasBufferContext.fill();
+  }
+
+  var gaugeCapGeo = [[-0.09,0.1],[0.25,0.3],[0.75,0.3],[1.04,0.7],[1.04,1.0],[0.75,0.75],[0.25,0.75],[-0.055,1],[-0.05,0.8],[0.1,0.5],[-0.09,0.3]];
+  var energyCapGeo = [[-1.3,5.4],[-1.0,5.3],[-0.9,5.7],[-0.5,5.4],[-0.4,5.1],[-0.25,5.1],[-0.38,5.5],[-0.9,6.1],[-1.0,6.6],[-1.3,6.5],[-1.05,6.4],[-1.05,5.5]];
+  this.drawPlayer = function(size,pos,canvasBufferContext){
+    //draw borders
+    var s = new Vector(size.x/4,size.y);
+    var p = new Vector(pos.x,pos.y);
+    //left buttons
+    this.drawBorder(s,p,canvasBufferContext);
+    //right buttons
+    p.x = pos.x + (size.x*0.75);
+    this.drawBorder(s,p,canvasBufferContext);
+    //portrait
+    p.x = pos.x + (size.x*0.25);
+    s.x = size.x / 2;
+    this.drawBorder(s,p,canvasBufferContext);
+    //
+    var xBuf = config.xRatio * 2;
+    var yBuf = config.yRatio * 2;
+    var xIndex = pos.x + xBuf/2;
+    var yIndex = pos.y + yBuf/2;
+    var xSize = size.x-(1*xBuf);
+    var ySize = size.y-(1*yBuf);
     //draw portrait
-    var xSize = size.x * 0.5;
+    var xSize = (size.x - xBuf) * 0.5;
     var ySize = size.y-(2*yBuf);
     var pX = pos.x + (size.x / 4);
-    canvasBufferContext.beginPath();
-    canvasBufferContext.lineWidth=Math.floor(config.xRatio)+"";
-    canvasBufferContext.strokeStyle="rgba(200,0,250,1.0)";
-    canvasBufferContext.rect(pX,0,xSize,size.y);
-    canvasBufferContext.stroke();
     if(this.player){
       this.player.drawTargetPortrait(pX,0,xSize,ySize,canvasBufferContext);
     }
     //health / o2 bars
     var lX = (size.x / 4);
     var lY = (size.y / 5);
-    var oX = pos.x - xBuf/2;
+    var oX = pos.x - (xBuf * 1.5);
     var firstPoint;
     var barY1 = size.y / 6;
     var barY2 = size.y - barY1;
@@ -323,20 +350,21 @@ Gui = function() {
     if(this.player){
       var oxPercent = this.player.currentOxygen / this.player.maxOxygen;
       var healthPercent = this.player.currentHealth / this.player.maxHealth;
+      var energyPercent = this.player.currentEnergy / this.player.maxEnergy;
     }
-    //covers
+    //health and oxygen
     for(var xFlip = -1; xFlip <= 1; xFlip += 2){
       //bars
-      canvasBufferContext.fillStyle= (xFlip > 0) ? "rgba(250,0,0,0.5)" : "rgba(250,250,250,0.5)";
+      canvasBufferContext.fillStyle= (xFlip > 0) ? "rgba(250,0,0,0.7)" : "rgba(250,250,250,0.7)";
       canvasBufferContext.beginPath();
       var barFill = xFlip > 0 ? healthPercent : oxPercent;
       barFill = barFill * (barY1 - barY2);
       canvasBufferContext.rect(oX,barY2,lX*xFlip,barFill);
       canvasBufferContext.fill();
       //edges
-      canvasBufferContext.strokeStyle= (xFlip > 0) ? "rgba(250,0,0,0.4)" : "rgba(250,250,250,0.4)";
+      canvasBufferContext.strokeStyle= (xFlip > 0) ? "rgba(250,0,0,1)" : "rgba(250,250,250,1)";
       for(var bX = 0; bX <= 1; bX += 0.25){
-        var barX = oX + (bX * xFlip * lX);
+        var barX = (oX || 0.02) + (bX * xFlip * lX);
         canvasBufferContext.beginPath();
         canvasBufferContext.moveTo(barX,barY1);
         canvasBufferContext.lineTo(barX,barY2);
@@ -346,32 +374,65 @@ Gui = function() {
         }
       }
       //caps
-      canvasBufferContext.strokeStyle="rgba(200,200,250,1)";
-      canvasBufferContext.fillStyle = "rgba(50,50,50,1)";
+      canvasBufferContext.fillStyle="rgba(50,50,50,1)";
+      canvasBufferContext.strokeStyle = "rgba(150,170,150,1)";
       var oY = size.y;
-      for(var yFlip = -1; yFlip <= 1; yFlip += 2){
-        canvasBufferContext.beginPath();
-        for(var p = 0; p < gaugeCapGeo.length; p++){
-          var point = gaugeCapGeo[p];
-          var eX = point[0]*xFlip*lX;
-          var eY = point[1]*yFlip*lY;
-          eX = oX+eX;
-          eY = oY+eY;
-          if(p == 0){
-            canvasBufferContext.moveTo(eX,eY);
-            firstPoint = [eX,eY];
-          }else{
-            canvasBufferContext.lineTo(eX,eY);
+      var geos = [gaugeCapGeo, energyCapGeo];
+      for(var g = 0; g < geos.length; g++){
+        var geo = geos[g];
+        var yI = g ? 1 : -1;
+        for(var yFlip = yI; yFlip <= 1; yFlip += 2){
+          canvasBufferContext.beginPath();
+          for(var p = 0; p < geo.length; p++){
+            var point = geo[p];
+            var eX = point[0]*xFlip*lX;
+            var eY = point[1]*yFlip*lY;
+            eX = oX+eX;
+            eY = oY+eY;
+            if(p == 0){
+              canvasBufferContext.moveTo(eX,eY);
+              firstPoint = [eX,eY];
+            }else{
+              canvasBufferContext.lineTo(eX,eY);
+            }
           }
+          canvasBufferContext.lineTo(firstPoint[0],firstPoint[1]);
+          canvasBufferContext.fill();
+          canvasBufferContext.stroke();
+          oY = 0;
         }
-        canvasBufferContext.lineTo(firstPoint[0],firstPoint[1]);
-        canvasBufferContext.fill();
-        canvasBufferContext.stroke();
-        oY = 0;
       }
-      oX += size.x + xBuf;
+      oX = pos.x + size.x + (xBuf*1.5);
     }
-
+    //energy
+    var lX = (size.x / 2);
+    var lY = (size.y / 6);
+    var oX = pos.x + (size.x / 4);
+    var oY = pos.y + (size.y * 1.1);
+    canvasBufferContext.fillStyle= "rgba(250,250,0,0.7)";
+    canvasBufferContext.strokeStyle= "rgba(250,250,0,1)";
+    var barFill = energyPercent;
+    barFill = barFill * lX;
+    canvasBufferContext.beginPath();
+    canvasBufferContext.rect(oX,oY,barFill,lY);
+    canvasBufferContext.fill();
+    canvasBufferContext.beginPath();
+    canvasBufferContext.rect(oX,oY,lX,lY);
+    canvasBufferContext.stroke();
+    //edges
+    /*
+    for(var bX = 0; bX <= 1; bX += 0.25){
+      var barX = oX + (bX * xFlip * lX);
+      canvasBufferContext.beginPath();
+      canvasBufferContext.moveTo(barX,barY1);
+      canvasBufferContext.lineTo(barX,barY2);
+      canvasBufferContext.stroke();
+      if(bX == 0.25){
+        bX = 0.5;
+      }
+    }
+    */
+    this.drawPlayerButtons(size,pos,canvasBufferContext);
   }
 
   this.drawGrid = function(camera,canvasBufferContext){
@@ -389,6 +450,117 @@ Gui = function() {
       canvasBufferContext.moveTo(0,y);
       canvasBufferContext.lineTo(config.canvasWidth,y);
       canvasBufferContext.stroke();
+    }
+  }
+
+  var actionButtons = [["select","delete","repair"],["light","upgrades","build"]];
+  this.drawPlayerButtons = function(size,pos,canvasBufferContext){
+    var xBuf = config.xRatio * 2;
+    var yBuf = config.yRatio * 2;
+    var xSize = size.x-(2*xBuf);
+    var ySize = size.y-(2*yBuf);
+    var aX = pos.x + (2*xBuf);
+    var aXSize = (xSize/4) - (3*xBuf);
+    var aYSize = (ySize/3) - (2*yBuf);
+    var buttonSize = Math.min(aXSize,aYSize);
+    for(var s = 0; s < actionButtons.length; s++){
+      var aY = pos.y + (2*yBuf);
+      for(var i = 0; i < actionButtons[s].length; i++){
+        var action = actionButtons[s][i];
+        var cX = aX + (aXSize / 2);
+        var cY = aY + (aYSize / 2);
+        canvasBufferContext.beginPath();
+        var aRed = (action == this.uiMode) ? 200 : 0;
+        canvasBufferContext.fillStyle = "rgba("+aRed+",50,100,0.9)";
+        canvasBufferContext.strokeStyle="rgba("+aRed+",50,175,1.0)";
+        canvasBufferContext.rect(aX,aY,aXSize,aYSize);
+        canvasBufferContext.fill();
+        canvasBufferContext.stroke();
+        switch(action){
+          case "repair":
+            canvasBufferContext.fillStyle = "rgba(250,250,250,0.9)";
+            canvasBufferContext.strokeStyle="rgba(250,250,250,1.0)";
+            canvasBufferContext.beginPath();
+            canvasBufferContext.moveTo(cX + (buttonSize * -0.3), cY + (buttonSize * 0.3));
+            canvasBufferContext.lineTo(cX + (buttonSize * -0.2), cY + (buttonSize * 0.3));
+            canvasBufferContext.lineTo(cX + (buttonSize * 0.1), cY + (buttonSize * 0.0));
+            canvasBufferContext.lineTo(cX + (buttonSize * 0.3), cY + (buttonSize * 0.0));
+            canvasBufferContext.lineTo(cX + (buttonSize * 0.3), cY + (buttonSize * -0.2));
+            canvasBufferContext.lineTo(cX + (buttonSize * 0.2), cY + (buttonSize * -0.1));
+            canvasBufferContext.lineTo(cX + (buttonSize * 0.1), cY + (buttonSize * -0.2));
+            canvasBufferContext.lineTo(cX + (buttonSize * 0.2), cY + (buttonSize * -0.3));
+            canvasBufferContext.lineTo(cX + (buttonSize * 0.0), cY + (buttonSize * -0.3));
+            canvasBufferContext.lineTo(cX + (buttonSize * 0.0), cY + (buttonSize * -0.1));
+            canvasBufferContext.lineTo(cX + (buttonSize * -0.3), cY + (buttonSize * 0.2));
+            canvasBufferContext.lineTo(cX + (buttonSize * -0.3), cY + (buttonSize * 0.3));
+            canvasBufferContext.fill();
+            canvasBufferContext.stroke();
+            break;
+          case "inventory":
+            canvasBufferContext.fillStyle = "rgba(250,250,250,0.9)";
+            canvasBufferContext.strokeStyle="rgba(250,250,250,1.0)";
+            //crates
+            canvasBufferContext.beginPath();
+            canvasBufferContext.rect(cX + (buttonSize * -0.1), cY + (buttonSize * -0.3),buttonSize*0.2,buttonSize*0.2);
+            canvasBufferContext.fill();
+            canvasBufferContext.stroke();
+            canvasBufferContext.beginPath();
+            canvasBufferContext.rect(cX + (buttonSize * -0.3), cY + (buttonSize * 0.1),buttonSize*0.2,buttonSize*0.2);
+            canvasBufferContext.fill();
+            canvasBufferContext.stroke();
+            canvasBufferContext.beginPath();
+            canvasBufferContext.rect(cX + (buttonSize * 0.1), cY + (buttonSize * 0.1),buttonSize*0.2,buttonSize*0.2);
+            canvasBufferContext.fill();
+            canvasBufferContext.stroke();
+            //sides
+            canvasBufferContext.beginPath();
+            canvasBufferContext.rect(cX + (buttonSize * -0.4), cY + (buttonSize * -0.4),buttonSize*0.03,buttonSize*0.8);
+            canvasBufferContext.fill();
+            canvasBufferContext.stroke();
+            canvasBufferContext.beginPath();
+            canvasBufferContext.rect(cX + (buttonSize * -0.4), cY + (buttonSize * 0.4),buttonSize*0.8,buttonSize*0.03);
+            canvasBufferContext.fill();
+            canvasBufferContext.stroke();
+            canvasBufferContext.beginPath();
+            canvasBufferContext.rect(cX + (buttonSize * 0.4), cY + (buttonSize * -0.4),buttonSize*0.03,buttonSize*0.83);
+            canvasBufferContext.fill();
+            canvasBufferContext.stroke();
+            break;
+          case "delete":
+            canvasBufferContext.strokeStyle="rgba(250,250,250,1.0)";
+            canvasBufferContext.beginPath();
+            canvasBufferContext.moveTo(cX + (buttonSize * -0.2), cY + (buttonSize * 0.2));
+            canvasBufferContext.lineTo(cX + (buttonSize * 0.2), cY + (buttonSize * -0.2));
+            canvasBufferContext.stroke();
+            canvasBufferContext.beginPath();
+            canvasBufferContext.moveTo(cX + (buttonSize * -0.2), cY + (buttonSize * -0.2));
+            canvasBufferContext.lineTo(cX + (buttonSize * 0.2), cY + (buttonSize * 0.2));
+            canvasBufferContext.stroke();
+
+            canvasBufferContext.beginPath();
+            canvasBufferContext.rect(cX + (buttonSize * -0.3), cY + (buttonSize * -0.3),buttonSize*0.6,buttonSize*0.6);
+            canvasBufferContext.stroke();
+            break;
+          case "select":
+            canvasBufferContext.strokeStyle="rgba(250,250,250,1.0)";
+            canvasBufferContext.beginPath();
+            canvasBufferContext.moveTo(cX + (buttonSize * -0.3), cY + (buttonSize * 0.0));
+            canvasBufferContext.lineTo(cX + (buttonSize * 0.3), cY + (buttonSize * 0.0));
+            canvasBufferContext.stroke();
+            canvasBufferContext.beginPath();
+            canvasBufferContext.moveTo(cX + (buttonSize * 0.0), cY + (buttonSize * -0.3));
+            canvasBufferContext.lineTo(cX + (buttonSize * 0.0), cY + (buttonSize * 0.3));
+            canvasBufferContext.stroke();
+
+            canvasBufferContext.beginPath();
+            var circRad = buttonSize * 0.2;
+            canvasBufferContext.arc(cX,cY,circRad,0,2*Math.PI,false);
+            canvasBufferContext.stroke();
+            break;
+        }
+        aY += aYSize + (2*yBuf);
+      }
+      aX += size.x * 0.75;
     }
   }
 

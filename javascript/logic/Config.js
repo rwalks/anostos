@@ -18,9 +18,13 @@ var Config = function (){
   this.xRatio = 1;
   this.yRatio = 1;
   this.minRatio = 1;
-  this.updateRatios = function(){
-    this.xRatio = this.canvasWidth / this.cX;
-    this.yRatio = this.canvasHeight / this.cY;
+  this.updateRatios = function(windowSize){
+    this.xRatio = Math.floor(10 * (windowSize.x / this.cX)) / 10;
+    this.yRatio = Math.floor(10 * (windowSize.y / this.cY)) / 10;
+    this.canvasWidth = this.cX * this.xRatio;
+    this.canvasHeight = this.cY * this.yRatio;
+//    this.canvasWidth = windowSize.x;
+//    this.canvasHeight = windowSize.y;
     this.minRatio = Math.min(this.xRatio,this.yRatio);
   }
 

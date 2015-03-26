@@ -1,6 +1,7 @@
 Weapon = function(owner){
   Tool.call(this,owner);
   this.type = 'attack';
+  this.energyCost = 3;
 
   this.typeActivate = function(orig,terrain){
     var theta = this.owner.toolTheta;
@@ -17,10 +18,11 @@ BasicBlaster = function(owner){
   Weapon.call(this,owner);
 
   this.name.set("Basic","Blaster");
-  this.cooldownCost = 10;
   this.range = config.gridInterval * 20;
   this.actionOffset.x = config.gridInterval * 0.9;
   this.actionOffset.y = config.gridInterval * -0.2;
+  this.energyCost = 2;
+  this.cooldownCost = 8;
 
   this.drawTool = function(x,y,buffer,camera,alpha){
     weaponArt.drawBlaster(x,y,buffer,this.owner,alpha);

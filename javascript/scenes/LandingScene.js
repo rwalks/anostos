@@ -29,7 +29,6 @@ var LandingScene = function (strs,nam,aud){
   }
 
   this.update = function(mPos){
-    this.endScene(true);
     if(!gamePaused){
       camera.focusOn(this.ship.position);
       this.ship.update(this.terrain);

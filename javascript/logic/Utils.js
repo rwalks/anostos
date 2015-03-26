@@ -69,6 +69,12 @@ var Utils = function (){
     return new Vector(x,y);
   }
 
+  this.ratioCoords = function(vec){
+    var x = vec.x*config.xRatio;
+    var y = vec.y*config.yRatio;
+    return new Vector(x,y);
+  }
+
   this.intersect = function(p0,p1,p2,p3){
     var s10X = p1[0] - p0[0];
     var s10Y = p1[1] - p0[1];

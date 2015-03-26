@@ -8,7 +8,8 @@ Player = function(x,y,name) {
     'down' : false,
     'fire' : false,
     'crouch' : false,
-    'jump' : false
+    'jump' : false,
+    'jet' : false
   };
 
   this.equipment.attack = new BasicBlaster(this);
@@ -19,7 +20,6 @@ Player = function(x,y,name) {
 
   this.walkAccel = config.gridInterval/8;
   this.airAccel = config.gridInterval/8;
-  this.jumpAccel = config.gridInterval * 0.75;
   this.groundMaxX = config.gridInterval / 2;
   this.airMaxX = config.gridInterval / 3;
 
@@ -31,7 +31,12 @@ Player = function(x,y,name) {
     if(keyDown && xInput){
       this.direction = (action == 'right');
     }
-    this.input[action] = keyDown;
+    if(action == 'jump'){
+      this.input.jet = keyDown && (this.input.jet || !this.input.jump) && !this.onGround;
+      this.input.jump = keyDown;
+    }else{
+      this.input[action] = keyDown;
+    }
   }
 
   this.updateMove = function(){
@@ -52,8 +57,13 @@ Player = function(x,y,name) {
       }
     }
     //jump
-    if(this.input.jump && this.onGround){
-      this.velocity.y -= this.jumpAccel;
+    this.jetPack = this.input.jet;
+    if(this.input.jump){
+      if(this.input.jet){
+        this.activateJetPack();
+      }else if(this.onGround){
+        this.velocity.y -= this.jumpAccel;
+      }
     }
     //aiming
     if(this.input.up){

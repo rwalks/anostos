@@ -254,20 +254,34 @@ Terrain = function(trMap,sSpawns) {
   }
 
   this.drawLights = function(camera,buffCon){
-    var activeLights = [];
-    var darkness = new Color(0,0,0,1-this.ambientLight);
-    sceneArt.drawAmbientLight(darkness,buffCon);
+    this.drawDark(buffCon);
+    var darkA = 1-this.ambientLight;
     buffCon.save();
     var drawTypes = ['destination-out','source-over'];
     for(var i = 0; i < drawTypes.length; i++){
       buffCon.globalCompositeOperation = drawTypes[i];
       for(var l = 0; l < this.lights.length; l++){
         var light = this.lights[l];
-        sceneArt.drawLight(light,camera,buffCon,darkness.a);
+        sceneArt.drawLight(light,camera,buffCon,darkA);
       }
     }
     buffCon.restore();
-    this.lights = activeLights;
+    this.lights = [];
+  }
+
+  this.drawDark = function(buffCon){
+    var overA = (1-this.ambientLight)/6;
+    var overDark = new Color(0,0,0,overA);
+    var outA = this.ambientLight / 6;
+    var outDark = new Color(0,0,0,outA);
+    buffCon.save();
+    var drawTypes = ['destination-out','source-over'];
+    for(var i = 0; i < drawTypes.length; i++){
+      buffCon.globalCompositeOperation = drawTypes[i];
+      var darkC = i ? overDark : outDark;
+      sceneArt.drawAmbientLight(darkC,buffCon);
+    }
+    buffCon.restore();
   }
 
   this.updateEntityMap = function(obj,eMap){

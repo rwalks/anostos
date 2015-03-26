@@ -4,6 +4,7 @@ function GameRunner() {
     var _canvasContext;
     var _scene;
     var mousePos;
+    this.loaded = true;
 
     var canvasHolder = new CanvasHolder(5);
 
@@ -55,12 +56,10 @@ function GameRunner() {
     var updateSizes = function() {
       var windowSize = getWindowSize();
       windowSize.x -= 15;
-      windowSize.y -= 40;
-      $('#canvas').width(windowSize.x).height(windowSize.y);
-      $('#canvas').attr('width', windowSize.x).attr('height', windowSize.y);
-      config.canvasWidth = windowSize.x;
-      config.canvasHeight = windowSize.y;
-      config.updateRatios();
+      windowSize.y -= 20;
+      config.updateRatios(windowSize);
+      _canvas.width = config.canvasWidth;
+      _canvas.height = config.canvasHeight;
       canvasHolder.updateSizes();
       artHolder.updateSizes();
     };
@@ -114,26 +113,42 @@ function GameRunner() {
     }
 
     this.endScene = function(type){
+      this.loaded = false;
       switch(type){
         case 'dead':
           _scene = new LoadingScene();
           break;
         case 'start':
           _scene = new LandingScene(_scene.stars,_scene.heroName,_scene.audio);
+          this.endScene('landing');
+          return;
           break;
         case 'landing':
           _scene = new GameScene(_scene.stars,_scene.terrain,_scene.ship,_scene.heroName,_scene.sceneUtils.bgs,_scene.aliens);
           break;
       }
+      this.loaded = true;
+    }
+
+    this.prepBuffers = function(){
+      //clear main
+      _canvasContext.clearRect(0, 0, config.canvasWidth, config.canvasHeight);
+      //clear layers
+      for(var c = 0; c < canvasHolder.length; c++){
+        if(c != 3){
+        canvasHolder.clearContext(c);
+        }
+      }
     }
 
     this.draw = function(){
-      //draw scene
-      _scene.draw(canvasHolder);
-      //clear canvas
-      _canvasContext.clearRect(0, 0, config.canvasWidth, config.canvasHeight);
-      //draw buffers on screen
-      canvasHolder.drawAll(_canvasContext);
+      if(this.loaded){
+        this.prepBuffers();
+        //draw scene
+        _scene.draw(canvasHolder);
+        //draw buffers on screen
+        canvasHolder.drawAll(_canvasContext);
+      }
     }
 
 
@@ -170,29 +185,35 @@ function CanvasHolder(num){
   }
 
   this.updateSizes = function(){
+    var w = config.canvasWidth;
+    var h = config.canvasHeight;
     for(var c = 0; c < this.length; c++){
-      this.canvases[c].width = config.canvasWidth;
-      this.canvases[c].height = config.canvasHeight;
+      this.canvases[c].width = w;
+      this.canvases[c].height = h;
     }
   }
 
   this.clearContext = function(id){
     if(this.contexts[id]){
-      this.contexts[id].clearRect(0, 0, config.canvasWidth, config.canvasHeight);
+      var sX = this.canvases[id].width;
+      var sY = this.canvases[id].height;
+      this.contexts[id].clearRect(0, 0, sX, sY);
     }
   }
 
   this.drawAll = function(target){
-
+    //compose scene
+    this.contexts[1].drawImage(this.canvases[2],0,0);
+    //draw lights
+    this.contexts[1].save();
+    this.contexts[1].globalCompositeOperation = 'source-atop';
+    this.contexts[1].drawImage(this.canvases[3],0,0);
+    this.contexts[1].restore();
     //draw bg
     target.drawImage(this.canvases[0],0,0);
-    //draw terrain
+    //draw terrain + entities
     target.drawImage(this.canvases[1],0,0);
     //draw gui
     target.drawImage(this.canvases[4],0,0);
-    //draw all
-//    for(var c = 0; c < this.length; c++){
-//      target.drawImage(this.canvases[c], 0, 0);
-//    }
   }
 }

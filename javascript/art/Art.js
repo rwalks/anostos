@@ -1,58 +1,91 @@
 ArtHolder = function(){
   this.loadCount = 0;
 
-  this.artMap = {};
+  this.staticArt = {};
+  this.procArt = {};
 
-  this.artMap['soilTile'] = new SoilTileArt();
+  //procedural art
+  this.procArt['weaponButton'] = new WeaponButtonArt();
+  this.procArt['repairButton'] = new RepairButtonArt();
+  this.procArt['deleteButton'] = new DeleteButtonArt();
+  this.procArt['lightButton'] = new LightButtonArt();
+  this.procArt['guiButton'] = new ButtonArt();
+  //static art
+  this.staticArt['soilTile'] = new SoilTileArt();
+  this.staticArt['topSoilTile'] = new TopSoilTileArt();
+  this.staticArt['rockTile'] = new RockTileArt();
+  this.staticArt['oreTile'] = new OreTileArt();
+  this.staticArt['playerGui'] = new PlayerGuiArt();
 
   this.getArt = function(name){
-    return this.artMap[name];
+    return this.procArt[name] || this.staticArt[name];
   }
 
   this.updateSizes = function(){
-    var artKeys = Object.keys(this.artMap);
+    var artKeys = Object.keys(this.staticArt);
     for(var a = 0; a < artKeys.length; a++){
-      this.artMap[artKeys[a]].updateSize();
+      this.staticArt[artKeys[a]].updateSize();
     }
     return true;
   }
 }
 
-Art = function(sX,sY) {
-  this.size = new Vector(sX,sY);
+Art = function() {
+  this.size;
 
-  this.update = function(){}
+  this.draw = function(obj,canvasContext){};
 
-  this.draw = function(pos,canvasContext){
+  this.drawGeo = function(geo,origin,size,canvasContext,fill,stroke,mod){
+    var firstPoint;
+    mod = mod || new Vector(1,1);
+    canvasContext.beginPath();
+    for(var i = 0; i < geo.length; i++){
+      var point = geo[i];
+      var pX = origin.x + (point[0]*size.x*mod.x);
+      var pY = origin.y + (point[1]*size.y*mod.y);
+      if(!i){
+        canvasContext.moveTo(pX,pY);
+        firstPoint = [pX,pY];
+      }else{
+        canvasContext.lineTo(pX,pY);
+      }
+    }
+    canvasContext.lineTo(firstPoint[0],firstPoint[1]);
+    if(fill){
+      canvasContext.fill();
+    }
+    if(stroke){
+      canvasContext.stroke();
+    }
   }
-
 }
 
-CachedArt = function(sX,sY){
-  Art.call(this,sX,sY);
+CachedArt = function(){
+  Art.call(this);
 
   this.canvas = document.createElement('canvas');
   this.context = this.canvas.getContext('2d');
 
   this.updateSize = function(){
-    var sX = Math.ceil(this.size.x * config.xRatio);
-    var sY = Math.ceil(this.size.y * config.yRatio);
+    var sX = this.size.x * config.xRatio;
+    var sY = this.size.y * config.yRatio;
     this.canvas.width = sX;
     this.canvas.height = sY;
-    this.context.clearRect(0,0,sX,sY);
+    this.context.clearRect(0,0,this.canvas.width,this.canvas.height);
     this.drawCanvas();
   }
 
-  this.drawCanvas = function(){
-  }
+  this.drawCanvas = function(){};
 
-  this.draw = function(pos,canvasContext){
-    canvasContext.drawImage(this.canvas,pos.x,pos.y);
+  this.draw = function(pos,canvasContext,alpha){
+    canvasContext.save();
+    if(alpha){
+      canvasContext.globalAlpha = alpha;
+    }
+    canvasContext.translate(pos.x,pos.y);
+    canvasContext.drawImage(this.canvas,0,0);
+    canvasContext.restore();
   }
-
-  this.update = function(){
-  }
-
 }
 
 

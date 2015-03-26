@@ -127,12 +127,14 @@ var GameScene = function (strs,trn,shp,nam,bg,als){
     }
   }
 
+
 //UPDATE FUNCTIONS
   this.update = function(mPos){
     if(!gamePaused){
       this.count += 1;
       timeElapsed += 1;
       mousePos = mPos;
+      //delayed camera for motion feel
       if(cameraTarget){
         camera.focusOn(cameraTarget.position);
       }
@@ -295,6 +297,8 @@ var GameScene = function (strs,trn,shp,nam,bg,als){
       var coords = clickToCoord(clickPos,false);
       var x = coords.x;
       var y = coords.y;
+      var guiRet = gui.click(clickPos);
+      /*
       var guiClick = gui.pointWithin(clickPos.x,clickPos.y);
       if(guiClick){
         var guiRet = gui.click(clickPos,guiClick);
@@ -342,6 +346,7 @@ var GameScene = function (strs,trn,shp,nam,bg,als){
             break;
         }
       }
+      */
     }
   }
 
@@ -365,27 +370,21 @@ var GameScene = function (strs,trn,shp,nam,bg,als){
 
 //DRAWING FUNCTIONS
 
-  this.prepBuffers = function(canvasHolder){
-    for(var c = 0; c < canvasHolder.length; c++){
-      canvasHolder.clearContext(c);
-    }
-  }
 
+//  this.camera = camera;
   this.draw = function(canvasHolder){
-    this.prepBuffers(canvasHolder);
     var bgCon = canvasHolder.contexts[0];
     var terrainCon = canvasHolder.contexts[1];
     var entityCon = canvasHolder.contexts[2];
     var lightCon = canvasHolder.contexts[3];
     var guiCon = canvasHolder.contexts[4];
+
     sceneArt.drawStars(this.stars, camera, clockCycle, bgCon);
 //    sceneArt.drawBG(camera,this.bgs,clockCycle,bgCon);
 //    if(sceneUtils.onScreen(ship,camera)){
 //      ship.draw(camera,entityCon);
 //    }
-//    sceneArt.drawAmbientLight(this.terrain.ambientLight,canvasBufferContext);
 //    this.terrain.draw(canvasBufferContext,camera);
-//
 //
     //draw tiles and entities
     for(var x=camera.xOff-(camera.xOff%config.gridInterval);x<camera.xOff+config.cX;x+=config.gridInterval){
@@ -393,14 +392,6 @@ var GameScene = function (strs,trn,shp,nam,bg,als){
         var til = this.terrain.getTile(x,y);
         if(til){
           til.draw(camera,terrainCon,this.terrain);
-          if(til.hidden){
-            var d = Math.abs(this.player.position.x - til.position.x) + Math.abs(this.player.position.y - til.position.y);
-            var lightRange = this.player.light ? this.player.lightRadius*config.gridInterval : 3*config.gridInterval;
-            var seeRange = Math.max(this.player.scoutRange * this.terrain.ambientLight,lightRange);
-            if(d < seeRange){
-              til.hidden = false;
-            }
-          }
         }
         //draw entities
         var entities = this.terrain.getEntities(x,y);
@@ -411,16 +402,9 @@ var GameScene = function (strs,trn,shp,nam,bg,als){
         }
       }
     }
-    //compose scene
-    terrainCon.drawImage(canvasHolder.canvases[2],0,0);
     //draw Light
     this.terrain.drawLights(camera,lightCon);
-    //draw entities to terrain
-    terrainCon.save();
-    terrainCon.globalCompositeOperation = 'source-atop';
-    terrainCon.drawImage(canvasHolder.canvases[3],0,0);
-    terrainCon.restore();
-    //
+
     if(gamePaused){
       sceneArt.drawPause(guiCon);
     }else{

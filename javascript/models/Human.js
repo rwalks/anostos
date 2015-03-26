@@ -13,13 +13,19 @@ Human = function(x,y,name) {
   this.velocity = new Vector(0,0);
   this.maxVelocity = config.gridInterval;
   this.walkAccel = config.gridInterval/2;
+  this.jumpAccel = config.gridInterval * 0.75;
+  this.jetAccel = config.gridInterval * 0.1;
   this.count = 0;
   this.path = [];
   this.onGround = false;
+  this.jetPack = false;
+  this.jetEnergyCost = 1;
   this.direction = true;
   this.distress = false;
   this.maxHealth = 100; this.currentHealth = 100;
   this.maxOxygen = 20; this.currentOxygen = 20;
+  this.maxEnergy = 100; this.currentEnergy = 20;
+  this.energyRecharge = 0.1;
   var oxygenConsumptionRate = 0.03;
 
   this.currentTool = false;
@@ -67,6 +73,7 @@ Human = function(x,y,name) {
       return {'action':'die'};
     }
     if(!this.dead){
+      this.updateEnergy();
       this.updateOxygen(terrain);
       this.updateMove();
       this.applyForces();
@@ -89,8 +96,9 @@ Human = function(x,y,name) {
 
   this.applyMove = function(){
     //apply move
-    this.position.x = Math.round(this.position.x + this.velocity.x);
-    this.position.y = Math.round(this.position.y + this.velocity.y);
+    var oldPos = this.position.x;
+    this.position.x = (this.position.x + this.velocity.x);
+    this.position.y = (this.position.y + this.velocity.y);
   }
 
   this.updateOxygen = function(terrain){
@@ -114,6 +122,11 @@ Human = function(x,y,name) {
         }
       }
     }
+  }
+
+  this.updateEnergy = function(){
+    this.currentEnergy += this.energyRecharge;
+    this.currentEnergy = this.currentEnergy > this.maxEnergy ? this.maxEnergy : this.currentEnergy;
   }
 
   this.digTile = function(tile){
@@ -229,6 +242,13 @@ Human = function(x,y,name) {
       if(this.currentTool){
         this.currentTool.updateLight(terrain);
       }
+    }
+  }
+
+  this.activateJetPack = function(){
+    if(this.currentEnergy >= this.jetEnergyCost){
+      this.currentEnergy -= this.jetEnergyCost;
+      this.velocity.y -= this.jetAccel;
     }
   }
 

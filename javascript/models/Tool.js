@@ -6,6 +6,7 @@ Tool = function(owner){
   this.range = config.gridInterval;
   this.actionOffset = new Vector(0,0);
   this.type;
+  this.energyCost = 1;
 
   this.draw = function(x,y,canvasContext,camera,alpha){
     this.drawTool(x,y,canvasContext,camera,alpha);
@@ -25,7 +26,9 @@ Tool = function(owner){
 
   this.activate = function(terrain){
     var ret = false;
-    if(!this.cooldownTimer){
+    var enoughEnergy = (owner.currentEnergy >= this.energyCost);
+    if(!this.cooldownTimer && enoughEnergy){
+      owner.currentEnergy -= this.energyCost;
       this.cooldownTimer += this.cooldownCost;
       //find point of action
       var origin = this.pointOfAction();
@@ -150,6 +153,7 @@ PlasmaTorch = function(owner){
   DrillTool.call(this,owner);
   this.entityDamage = 20;
   this.tileDamage = 30;
+  this.energyCost = 1.5;
 
   this.name.set("Plasma","Torch");
   this.cooldownCost = 10;

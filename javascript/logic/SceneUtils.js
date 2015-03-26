@@ -27,16 +27,17 @@ var SceneUtils = function (bg){
       var rockChance = 0.99;
       var colHeight = (config.mapHeight - yMin);
       for(var y=config.mapHeight;y>=yMin;y-=terrainInterval){
-         var tile = new TerrainTile(x,y,'soil');
+        var topLayer = false;
          if(y < yMin+terrainInterval){
-           tile.topLayer = true;
+           topLayer = true;
            var randAction = Math.random();
            if(Math.random() < 0.01){
              surfaceSpawns.push(tile.position);
            }else if(Math.random() < 0.1){
-             tile.plant = new Plant(tile.position);
+             //tile.plant = new Plant(tile.position);
            }
          }
+         var tile = new SoilTile(x,y,topLayer);
          addTile(tile,tMap,false);
       }
       if(x % (config.gridInterval * 4) == 0){
@@ -61,7 +62,7 @@ var SceneUtils = function (bg){
       if(tMap[x] && tMap[x][y]){
         var oreVeinLength = Math.random() * 10;
         for(var z = 0; z < oreVeinLength; z++){
-          var tile = new TerrainTile(x,y,'ore');
+          var tile = new OreTile(x,y);
           addTile(tile,tMap);
           if(Math.random() > 0.5){
             x += (Math.random() > 0.5) ? config.terrainInterval : -config.terrainInterval;
@@ -86,7 +87,7 @@ var SceneUtils = function (bg){
       var deltaH = (Math.random() * config.mapHeight * 0.01) - (config.mapHeight*0.005);
       lastMin = lastMin - deltaH;
       for(var y = yMax; y > (lastMin - towerHeight); y -= config.terrainInterval){
-        var tile = new TerrainTile(x,y,'rock');
+        var tile = new RockTile(x,y);
         addTile(tile,tMap);
       }
     }
