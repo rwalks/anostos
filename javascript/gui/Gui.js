@@ -1,4 +1,4 @@
-Gui = function() {
+Gui = function(player) {
 
   this.target;
   this.roster = [];
@@ -17,7 +17,7 @@ Gui = function() {
   var resourceStats;
 
   this.elements = [];
-  this.elements.push(new PlayerGui());
+  this.elements.push(new PlayerGui(player));
 
   this.buildings = {
   "construction":[new Block('soil'),new Block('metal'),new Door()],
@@ -103,7 +103,6 @@ Gui = function() {
   }
 
   this.click = function(clickPos, target){
-    console.log(clickPos.x + " " + clickPos.y);
     for(var e = 0; e < this.elements.length; e++){
       var ret = this.elements[e].click(clickPos);
       if(ret){
@@ -242,9 +241,9 @@ Gui = function() {
     }else if(this.uiMode == 'inventory'){
       this.drawInventory(canvasBufferContext);
     };
-    this.drawResources(canvasBufferContext);
-    this.drawTarget(this.size("target"),this.position("target"),canvasBufferContext);
-    this.drawRoster(this.size("roster"),this.position("roster"),canvasBufferContext);
+//    this.drawResources(canvasBufferContext);
+//    this.drawTarget(this.size("target"),this.position("target"),canvasBufferContext);
+//    this.drawRoster(this.size("roster"),this.position("roster"),canvasBufferContext);
     this.drawTimer(this.size("timer"),this.position("timer"),canvasBufferContext);
  //   this.drawPlayer(this.size("player"),this.position("player"),canvasBufferContext);
     for(var e = 0; e < this.elements.length; e++){

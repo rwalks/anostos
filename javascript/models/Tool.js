@@ -128,6 +128,7 @@ DrillTool = function(owner){
   this.type = 'delete';
   this.entityDamage;
   this.tileDamage;
+  this.contact = false;
 
   this.typeActivate = function(origin,terrain){
     var tX = utils.roundToGrid(origin.x);
@@ -139,12 +140,16 @@ DrillTool = function(owner){
         var friendly = (entity.type == this.owner.type || entity.type == 'corpse');
         if(!friendly && entity.pointWithin(origin.x,origin.y)){
           entity.wound(this.entityDamage);
+          this.contact = true;
         }
       }
     }
     var tile = terrain.getTile(tX,tY);
-    if(tile && tile.wound(this.tileDamage)){
-      return {'action':'delete','obj':tile};
+    if(tile){
+      this.contact = true;
+      if(tile.wound(this.tileDamage)){
+        return {'action':'delete','obj':tile};
+      }
     }
   }
 }
@@ -168,29 +173,53 @@ PlasmaTorch = function(owner){
   this.updateLight = function(terrain){
     if(this.owner.toolActive){
       var orig = this.pointOfAction();
-      var lRad = 2;
       var rand = Math.random();
-      var r; var g; var b; var a;
-      if(rand > 0.9){
-        r = 255; g = 255; b = 255;
-        a = 0.2;
-        lRad = 20;
-      }else if(rand > 0.8){
-        r = 255; g = 255; b = 255;
-        a = 0.2;
-        lRad = 5;
-      }else if(rand > 0.333){
-        r = 255; g = 50; b = 0;
-        a = 0.6;
-        lRad = 3;
-      }else{
-        r = 255; g = 255; b = 0;
-        a = 0.9;
+      var lRad = 1 + (rand*rand*6);
+      var lColor = new Color()
+      lColor.randomize('spark');
+      if(this.contact){
+        //spawn particles
+        this.contactEffects(orig,terrain);
       }
-      lColor = new Color(r,g,b,a);
-      terrain.updateLightMap(orig,lRad,lColor);
+    }else{
+      var orig = this.pointOfAction();
+      orig.x += config.gridInterval * (this.owner.direction ? -0.4 : 0.4);
+      var rand = Math.random();
+      var lRad = 0.2 + (rand*0.3);
+      var lColor = new Color()
+      lColor.randomize('fire');
     }
+    terrain.updateLightMap(orig,lRad,lColor);
+    this.contact = false;
   }
+
+  this.contactEffects = function(orig,terrain){
+    var color = new Color()
+    color.randomize('fire');
+    color.a = 0.5;
+    //jet spray
+    var sprays = 8;
+    var sprayMid = Math.floor(sprays/2);
+
+    var theta = 0;
+    var dTheta = Math.PI * 2 / sprays;
+    for(var b = 0; b < sprays; b++){
+      var rand = Math.random();
+      var maxV = 1 + (1*rand);
+      //find velo
+      var t = (rand * dTheta) + theta;
+      var point = utils.rotate(0,-1,t);
+      theta += dTheta;
+      var vX = point[0] * maxV;
+      var vY = point[1] * maxV;
+      var v = new Vector(vX,vY);
+      //radius
+      var rad = 0.2;
+      var duration = 5 + Math.random() * 5;
+      //
+      terrain.addParticle(new PlasmaParticle(orig.clone(),v,duration,rad,'fire'));
+    }
+  };
 
   this.clone = function(owner){
     return new PlasmaTorch(owner);

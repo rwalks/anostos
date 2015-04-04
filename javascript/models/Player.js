@@ -1,6 +1,8 @@
 Player = function(x,y,name) {
   Human.call(this,x,y,name);
 
+  this.jetPack = new JetPack(this);
+
   this.input = {
     'left' : false,
     'right' : false,
@@ -16,7 +18,7 @@ Player = function(x,y,name) {
   this.equipment.repair = new Wrench(this);
   this.equipment.drill = new PlasmaTorch(this);
 
-  this.currentTool = this.equipment.drill;
+//  this.currentTool = this.equipment.drill;
 
   this.walkAccel = config.gridInterval/8;
   this.airAccel = config.gridInterval/8;
@@ -57,13 +59,9 @@ Player = function(x,y,name) {
       }
     }
     //jump
-    this.jetPack = this.input.jet;
-    if(this.input.jump){
-      if(this.input.jet){
-        this.activateJetPack();
-      }else if(this.onGround){
-        this.velocity.y -= this.jumpAccel;
-      }
+    this.jetPack.toggle = this.input.jet;
+    if(this.input.jump && !this.input.jet && this.onGround){
+      this.velocity.y -= this.jumpAccel;
     }
     //aiming
     if(this.input.up){

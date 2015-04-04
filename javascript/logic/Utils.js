@@ -63,6 +63,7 @@ var Utils = function (){
         pos.y < -buffer || pos.y > (config.mapHeight+buffer));
   }
 
+
   this.realCoords = function(vec,camera){
     var x = ((vec.x-camera.xOff)*config.xRatio);
     var y = ((vec.y-camera.yOff)*config.yRatio);
@@ -111,6 +112,10 @@ var Utils = function (){
     return [iX,iY];
   }
 
+  this.clamp = function(val, min, max){
+    return Math.min(Math.max(val, min), max);
+  };
+
   this.blendColors = function(c1,c2){
     var totalA = c1.a + c2.a;
     var w1 = c1.a / totalA;
@@ -123,9 +128,14 @@ var Utils = function (){
   }
 }
 
+//Immature Util Classes
+
 Vector = function(x,y){
   this.x = x;
   this.y = y;
+  this.clone = function(){
+    return new Vector(this.x,this.y);
+  }
 }
 
 Directional = function(u,d,l,r){
@@ -142,39 +152,6 @@ Name = function(firstName,lastName){
   this.set = function(f,l){
     this.first = f;
     this.last = l;
-  }
-}
-
-
-Color = function(r,g,b,a){
-  this.r = Math.floor(r) || 0;
-  this.g = Math.floor(g) || 0;
-  this.b = Math.floor(b) || 0;
-  this.a = a || 0;
-
-  this.randomize = function(){
-    this.r = Math.floor(Math.random() * 255);
-    this.g = Math.floor(Math.random() * 255);
-    this.b = Math.floor(Math.random() * 255);
-  }
-
-  this.colorStr = function(){
-    return "rgba("+this.r+","+this.g+","+this.b+","+this.a+")";
-  }
-
-  this.clone = function(){
-    return new Color(this.r,this.g,this.b,this.a);
-  }
-
-  this.whiten = function(amt){
-    var total = this.r + this.g + this.b;
-   // this.r = Math.round(200 + (55 * this.r/total));
-   // this.g = Math.round(200 + (55 * this.g/total));
-   // this.b = Math.round(200 + (55 * this.b/total));
-    var w = 255 * amt;
-    this.r = Math.floor(Math.min(this.r+w,255));
-    this.g = Math.floor(Math.min(this.r+w,255));
-    this.b = Math.floor(Math.min(this.r+w,255));
   }
 }
 

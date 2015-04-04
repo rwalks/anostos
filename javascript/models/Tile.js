@@ -26,7 +26,7 @@ Tile = function(x,y) {
   this.cost = {};
 
   this.center = function(){
-    return {'x':this.position.x+(this.size.x*0.5),'y':this.position.y+(this.size.y*0.5)};
+    return new Vector(this.position.x+(this.size.x*0.5),this.position.y+(this.size.y*0.5));
   }
 
   this.collision = function(){return true;}

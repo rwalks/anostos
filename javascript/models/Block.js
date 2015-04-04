@@ -115,7 +115,7 @@ TerrainTile = function(x,y){
       var alpha = this.baseAlpha + (healthPercent*this.healthAlpha);
       var art = artHolder.getArt(this.artStr);
       var drawPos = utils.realCoords(this.position,camera);
-      art.draw(drawPos,canvasBufferContext,alpha);
+      art.draw(drawPos,canvasBufferContext,1);
       return true;
     }
     return false;
@@ -130,13 +130,15 @@ TerrainTile = function(x,y){
     canvasBufferContext.fill();
     canvasBufferContext.stroke();
   }
+
 }
 
 SoilTile = function(x,y,topLayer){
   TerrainTile.call(this,x,y);
   this.name.set("Soil","");
   this.cost = {'soil': 8}
-  this.artStr = topLayer ? "topSoilTile" : "soilTile";
+  this.topLayer = topLayer;
+  this.artStr = this.topLayer ? "topSoilTile" : "soilTile";
   this.fillStyle = new Color(20,200,150,0.9);
   this.strokeStyle = new Color(40,250,200,1.0);
 }

@@ -45,8 +45,9 @@ GuiElement = function(){
 }
 
 
-PlayerGui = function(){
+PlayerGui = function(player){
   GuiElement.call(this);
+  this.player = player;
   this.size = new Vector(config.cX * 0.24,config.cY * 0.13);
   var posX = (config.cX/2) - (this.size.x/2);
   this.position = new Vector(posX,0);

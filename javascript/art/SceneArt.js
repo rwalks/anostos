@@ -46,21 +46,22 @@ SceneArt = function() {
     }
   }
 
-  this.drawBG = function(camera,bgs,clockCycle,canvasBufferContext){
+  this.drawBG = function(camera,bgs,light,canvasBufferContext){
     var bgInt = 4 * config.gridInterval;
     var xRatio = config.canvasWidth / config.cX;
     var yRatio = config.canvasHeight / config.cY;
     var parallax = 4;
     var camX;
     var camY = camera.yOff;
+    var alpha = Math.max(light,0.3);
     for(var b = 0; b < bgs.length; b++){
       camX = camera.xOff / parallax;
       var bg = bgs[b];
       var bgC = this.bgColors[b];
-      canvasBufferContext.fillStyle = "rgba("+bgC[0]+","+bgC[1]+","+bgC[2]+",0.5)";
+      canvasBufferContext.fillStyle = "rgba("+bgC[0]+","+bgC[1]+","+bgC[2]+","+alpha+")";
       canvasBufferContext.beginPath();
       canvasBufferContext.lineWidth="2";
-      canvasBufferContext.strokeStyle="rgba(0,250,0,1.0)";
+      canvasBufferContext.strokeStyle="rgba(0,250,0,"+(1-alpha)+")";
       canvasBufferContext.moveTo(0,config.canvasHeight+1);
       for(x = camX-(camX % bgInt); x <= camX+config.cX+bgInt; x += bgInt){
         canvasBufferContext.lineTo((x-camX)*xRatio,(bg[x]-camY)*yRatio);
@@ -155,11 +156,11 @@ SceneArt = function() {
 
   this.drawLight = function(light,camera,canvasBufferContext,dark){
     var orig = utils.realCoords(light.position,camera);
-    var layers = 2 + Math.ceil(3 * dark);
+    var layers = 3 + Math.ceil(2 * dark);
     var color = light.color.clone();
-    color.a = 0.05 ;
+    color.a = 0.02 + (.03 * dark);
     canvasBufferContext.fillStyle = color.colorStr();
-    var rad = light.radius;
+    var rad = light.radius * config.minRatio;
     var rMult = 0.7;
     for(var l = 0; l < layers; l++){
       var r = rad + (Math.random() * 2);

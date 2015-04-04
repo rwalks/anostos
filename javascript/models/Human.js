@@ -14,12 +14,10 @@ Human = function(x,y,name) {
   this.maxVelocity = config.gridInterval;
   this.walkAccel = config.gridInterval/2;
   this.jumpAccel = config.gridInterval * 0.75;
-  this.jetAccel = config.gridInterval * 0.1;
   this.count = 0;
   this.path = [];
   this.onGround = false;
   this.jetPack = false;
-  this.jetEnergyCost = 1;
   this.direction = true;
   this.distress = false;
   this.maxHealth = 100; this.currentHealth = 100;
@@ -59,7 +57,7 @@ Human = function(x,y,name) {
   this.lineColor = new Color(r,g,b,1.0);
 
   this.light = false;
-  this.lightRadius = 30;
+  this.lightRadius = 10;
   this.lightColor;
   this.scout = false;
 
@@ -76,15 +74,12 @@ Human = function(x,y,name) {
       this.updateEnergy();
       this.updateOxygen(terrain);
       this.updateMove();
+      this.updateItems(terrain);
       this.applyForces();
       //terrain detection
       this.terrainCollide(terrain);
       this.setDirection();
       this.applyMove();
-      //update weapon
-      if(this.currentTool){
-        this.currentTool.update(terrain);
-      }
       return this.interactTarget(terrain);
     }
   }
@@ -93,6 +88,16 @@ Human = function(x,y,name) {
   this.applyForces = function(){};
   this.interactTarget = function(terrain){};
   this.setDirection = function(){};
+
+  this.updateItems = function(terrain){
+    if(this.jetPack){
+      this.jetPack.update();
+    }
+    //update weapon
+    if(this.currentTool){
+      this.currentTool.update(terrain);
+    }
+  }
 
   this.applyMove = function(){
     //apply move
@@ -242,13 +247,9 @@ Human = function(x,y,name) {
       if(this.currentTool){
         this.currentTool.updateLight(terrain);
       }
-    }
-  }
-
-  this.activateJetPack = function(){
-    if(this.currentEnergy >= this.jetEnergyCost){
-      this.currentEnergy -= this.jetEnergyCost;
-      this.velocity.y -= this.jetAccel;
+      if(this.jetPack){
+        this.jetPack.updateLight(terrain);
+      }
     }
   }
 

@@ -15,7 +15,7 @@ Ammo = function(orig,theta,ownTyp){
 
   this.scout = false;
   this.light = true;
-  this.lightRadius = 40;
+  this.lightRadius = 5;
   this.lightColor = new Color(0,25,200,0.5);
 
   this.draw = function(camera,canvasContext){
@@ -28,7 +28,7 @@ Ammo = function(orig,theta,ownTyp){
   }
 
   this.updateLight = function(terrain,camera){
-    terrain.updateLightMap(this.center(),this.lightRadius,this.lightColor);
+    terrain.updateLightMap(this.position,this.lightRadius,this.lightColor);
   }
 
   this.drawAmmo = function(x,y,buffer){};
@@ -53,12 +53,12 @@ Ammo = function(orig,theta,ownTyp){
     this.hasDrawn = false;
     this.age += 1;
     if(this.age > this.maxAge){
-      return {'action':'die'};
+      return this.die(terrain);
     }
     this.applyMove();
     //bounds
     if(utils.outOfBounds(this.position)){
-      return {'action':'die'};
+      return this.die(terrain);
     }
     //check collisions
     var tX = utils.roundToGrid(this.position.x);
@@ -66,9 +66,10 @@ Ammo = function(orig,theta,ownTyp){
     var tile = terrain.getTile(tX,tY);
     if(tile){
       if(tile.wound(this.tileDamage)){
+        this.die(terrain);
         return {'action':'delete','obj':tile};
       }else{
-        return {'action':'die'};
+        return this.die(terrain);
       }
     }
     var entities = terrain.getEntities(tX,tY);
@@ -78,11 +79,19 @@ Ammo = function(orig,theta,ownTyp){
         var friendly = (entity.type == this.ownerType || entity.type == 'ammo' || entity.type == 'corpse');
         if(!friendly && entity.pointWithin(this.position.x,this.position.y)){
           entity.wound(this.entityDamage);
-          return {'action':'die'};
+          return this.die(terrain);
         }
       }
     }
   }
+
+  this.die = function(terrain){
+    this.deathExplosion(terrain);
+    return {'action':'die'};
+  }
+
+  this.deathExplosion = function(terrain){};
+
 }
 
 BlastAmmo = function(orig,theta,ownTyp){
@@ -94,9 +103,37 @@ BlastAmmo = function(orig,theta,ownTyp){
 
   this.entityDamage = 20;
   this.tileDamage = 5;
-  this.maxVelocity = 6;
-  this.maxAge = 40;
-  this.lightRadius = 20;
+  this.maxVelocity = 7;
+  this.maxAge = 60;
+  this.lightRadius = 3;
   this.lightColor = new Color(0,25,255,0.2);
+
+  this.deathExplosion = function(terrain){
+    var color = this.lightColor.clone();
+    color.a = 0.5;
+    //jet spray
+    var sprays = 15;
+    var sprayMid = Math.floor(sprays/2);
+
+    var theta = 0;
+    var dTheta = Math.PI * 2 / sprays;
+    for(var b = 0; b < sprays; b++){
+      var rand = Math.random();
+      var maxV = 1 + (5*rand);
+      //find velo
+      var t = (rand * dTheta) + theta;
+      var point = utils.rotate(0,-1,t);
+      theta += dTheta;
+      var vX = point[0] * maxV;
+      var vY = point[1] * maxV;
+      var v = new Vector(vX,vY);
+      //radius
+      var rad = 0.3;
+      var duration = 5 + Math.random() * 10;
+      //
+      terrain.addParticle(new PlasmaParticle(this.position.clone(),v,duration,rad,'plasma'));
+    }
+    terrain.updateLightMap(this.position,4,this.lightColor);
+  };
 
 }

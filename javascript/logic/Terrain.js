@@ -3,8 +3,10 @@ Terrain = function(trMap,sSpawns) {
   this.terrain = trMap ? trMap : {};
   this.entityMap = {};
   this.lights = [];
+  this.particles = [];
   this.ambientLight = 1;
   this.ambientProgress = -0.01;
+  this.builder = new TerrainBuilder();
 //construct holders
   this.rooms = [];
 //tile reference holders
@@ -199,6 +201,7 @@ Terrain = function(trMap,sSpawns) {
     for (var r = 0; r < this.rooms.length; r++){
       this.rooms[r].draw(camera,canvasBufferContext);
     }
+    this.drawParticles(camera,canvasBufferContext);
   }
 
   this.updateBuildings = function(){
@@ -249,8 +252,24 @@ Terrain = function(trMap,sSpawns) {
   }
 
   this.updateLightMap = function(origin,radius,col){
-    var color = col.clone();
-    this.lights.push(new LightPoint(origin,radius,color,this.count));
+    origin = origin.clone();
+    col = col.clone();
+    this.lights.push(new LightPoint(origin,radius,col,this.count));
+  }
+
+  this.addParticle = function(particle){
+    this.particles.push(particle);
+  }
+
+  this.drawParticles = function(camera,buffCon){
+    var newParts = [];
+    for(var p = 0; p < this.particles.length; p++){
+      var part = this.particles[p];
+      if(part.draw(camera,buffCon,this)){
+        newParts.push(part);
+      }
+    }
+    this.particles = newParts;
   }
 
   this.drawLights = function(camera,buffCon){

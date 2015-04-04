@@ -1,9 +1,19 @@
 HumanArt = function(){
+  Art.call(this);
 
+  var jetPackGeo = [[0,0.25],[0.1,0.3],[0,0.4],[0,0.6],[0.1,0.65],[0,0.7],[-0.25,0.65],[-0.2,0.3]];
+  var jetFlameGeo = [[-0.02,1.1],[0.15,0.8],[0.1,0.7],[-0.15,0.7],[-0.25,0.8]];
 
   this.drawHuman = function(x,y,canvasBufferContext,human,camera,alpha){
+    //params
+    var origin = new Vector(x,y);
+    origin.x = origin.x + (human.direction ? 0 : human.size.x*config.xRatio);
+    var size = new Vector(human.size.x*config.xRatio,human.size.y*config.yRatio);
+    var geoMod = new Vector(1,1);
+    geoMod.x = human.direction ? 1 : -1;
+    //
     var active = human.targetObj && human.targetRange;
-    var animate = Math.abs(human.velocity.x) > 0.1;
+    var animate = !(human.jetPack && human.jetPack.active) && Math.abs(human.velocity.x) > 0.1;
     var crouchMod = human.crouching ? human.crouchOffset : 0;
     y += (crouchMod * config.yRatio);
     var skinRGB = "rgba(208,146,110,"+alpha+")";
@@ -60,7 +70,6 @@ HumanArt = function(){
        }
       }
     }
-
     var handRGB = human.spaceSuit ? "rgba(0,0,200,"+alpha+")" : skinRGB;
     //lHand
     canvasBufferContext.beginPath();
@@ -72,9 +81,11 @@ HumanArt = function(){
     canvasBufferContext.fill();
     //body -> lLeg -> rLeg
     canvasBufferContext.beginPath();
-    canvasBufferContext.lineWidth=Math.floor(config.xRatio)+"";
-    var strokeColor = new Color(human.lineColor.r,human.lineColor.g,human.lineColor.b,alpha);
+    canvasBufferContext.lineWidth = config.minRatio * 1;
+    //var strokeColor = new Color(human.lineColor.r,human.lineColor.g,human.lineColor.b,alpha);
     var fillColor = new Color(human.fillColor.r,human.fillColor.g,human.fillColor.b,alpha);
+    var strokeColor = fillColor.clone();
+    strokeColor.darken(0.5);
     canvasBufferContext.strokeStyle = strokeColor.colorStr();
     canvasBufferContext.fillStyle = fillColor.colorStr();
     canvasBufferContext.rect(x,y,config.gridInterval*config.xRatio,torsoLength);
@@ -82,20 +93,68 @@ HumanArt = function(){
     canvasBufferContext.rect(rLeg.x,rLeg.y,rLegSize.x,rLegSize.y);
     canvasBufferContext.stroke();
     canvasBufferContext.fill();
+    canvasBufferContext.lineWidth=Math.floor(config.xRatio)+"";
+    if(human.jetPack){
+      //jetpack
+      canvasBufferContext.strokeStyle = "rgba(0,0,200,1)";
+      canvasBufferContext.fillStyle = "rgba(200,200,200,1)";
+      this.drawGeo(jetPackGeo,origin,size,canvasBufferContext,true,true,geoMod);
+      if(human.jetPack.active){
+        var fireColor = new Color(0,0,0,0.8);
+        fireColor.randomize('fire');
+        canvasBufferContext.fillStyle = fireColor.colorStr();
+        //random fireSize
+        jetFlameGeo[0][0] = -0.02 - (Math.min(1,Math.abs((human.velocity.x/(human.maxVelocity/2))))*0.5);
+        jetFlameGeo[0][1] = 1 + (Math.random()*0.5);
+        this.drawGeo(jetFlameGeo,origin,size,canvasBufferContext,true,false,geoMod);
+      }
+    }
+
     //visor / face
     var faceRGB = human.spaceSuit ? "rgba(0,200,0,"+alpha+")" : skinRGB;
+    var helmY = y+(config.gridInterval*config.yRatio/6);
+    var hSX = (config.gridInterval*config.xRatio)*(2/3);
+    var hSY = 0.6*config.gridInterval*config.yRatio;
     canvasBufferContext.beginPath();
-    canvasBufferContext.strokeStyle= human.spaceSuit ? "rgba(0,250,0,"+alpha+")" : skinRGB;
+    canvasBufferContext.strokeStyle= human.spaceSuit ? "rgba(0,150,0,"+alpha+")" : skinRGB;
     canvasBufferContext.fillStyle = faceRGB;
-    canvasBufferContext.rect(helmX,y+(config.gridInterval*config.yRatio/6),(config.gridInterval*config.xRatio)*(2/3),0.6*config.gridInterval*config.yRatio);
+    canvasBufferContext.rect(helmX,helmY,hSX,hSY);
     canvasBufferContext.stroke();
     canvasBufferContext.fill();
     if(!human.spaceSuit){
+      //face
       canvasBufferContext.beginPath();
       canvasBufferContext.fillStyle = "rgba(0,0,0,"+alpha+")";
       canvasBufferContext.rect(eyeX,y+(config.gridInterval*config.yRatio/4),(config.gridInterval*config.xRatio)/6,0.2*config.gridInterval*config.yRatio);
       canvasBufferContext.rect(eyeX+(config.gridInterval*config.xRatio/3),y+(config.gridInterval*config.yRatio/4),(config.gridInterval*config.xRatio)/6,0.2*config.gridInterval*config.yRatio);
       canvasBufferContext.fill();
+    }else{
+      //helm
+      canvasBufferContext.strokeStyle = "rgba(0,250,0,1)";
+      canvasBufferContext.beginPath();
+      var hX = helmX;
+      var hY = human.direction ? helmY : helmY+hSY;
+      canvasBufferContext.moveTo(hX,hY);
+      hX = human.direction ? helmX+hSX : helmX;
+      hY = human.direction ? helmY : helmY;
+      canvasBufferContext.lineTo(hX,hY);
+      hX = helmX+hSX;
+      hY = human.direction ? helmY+hSY : helmY;
+      canvasBufferContext.lineTo(hX,hY);
+      canvasBufferContext.stroke();
+      //darkhem
+      canvasBufferContext.strokeStyle = "rgba(0,100,0,1)";
+      canvasBufferContext.beginPath();
+      hX = helmX;
+      hY = human.direction ? helmY : helmY+hSY;
+      canvasBufferContext.moveTo(hX,hY);
+      hX = human.direction ? helmX : helmX+hSX;
+      hY = helmY+hSY;
+      canvasBufferContext.lineTo(hX,hY);
+      hX = helmX+hSX;
+      hY = human.direction ? helmY+hSY : helmY;
+      canvasBufferContext.lineTo(hX,hY);
+      canvasBufferContext.stroke();
     }
     //weapon under right hand
     this.drawWeapon(rHandX,handY,canvasBufferContext,human,camera,alpha);

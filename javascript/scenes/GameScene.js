@@ -4,6 +4,9 @@ var GameScene = function (strs,trn,shp,nam,bg,als){
   this.stars = strs ? strs : sceneUtils.generateStars();
   this.bgs = bg ? bg : [];
   this.terrain = trn ? trn : new Terrain();
+  //TODO tmp
+  this.terrain.builder.load(this.terrain);
+  // ^^^^^^^
   var ship = shp;
   var camera = new Camera(5000,6500);
   var mousePos;
@@ -29,7 +32,7 @@ var GameScene = function (strs,trn,shp,nam,bg,als){
   var lastPaused = false;
   var messageIndex = 0;
 
-  var gui = new Gui();
+  var gui = new Gui(this.player);
   this.uiMode = "select";
 
   this.inventory = new Inventory();
@@ -380,14 +383,17 @@ var GameScene = function (strs,trn,shp,nam,bg,als){
     var guiCon = canvasHolder.contexts[4];
 
     sceneArt.drawStars(this.stars, camera, clockCycle, bgCon);
-//    sceneArt.drawBG(camera,this.bgs,clockCycle,bgCon);
+//    sceneArt.drawBG(camera,this.bgs,this.terrain.ambientLight,bgCon);
 //    if(sceneUtils.onScreen(ship,camera)){
 //      ship.draw(camera,entityCon);
 //    }
-//    this.terrain.draw(canvasBufferContext,camera);
 //
+
+    //draw particles
+    this.terrain.draw(entityCon,camera);
     //draw tiles and entities
     for(var x=camera.xOff-(camera.xOff%config.gridInterval);x<camera.xOff+config.cX;x+=config.gridInterval){
+      var minY = camera.yOff + config.cY;
       for(var y=(camera.yOff-(camera.yOff%config.gridInterval));y<camera.yOff+config.cY;y+=config.gridInterval){
         var til = this.terrain.getTile(x,y);
         if(til){
@@ -402,6 +408,7 @@ var GameScene = function (strs,trn,shp,nam,bg,als){
         }
       }
     }
+    this.terrain.builder.drawBg(camera,this.terrain.ambientLight,bgCon);
     //draw Light
     this.terrain.drawLights(camera,lightCon);
 
