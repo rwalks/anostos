@@ -171,10 +171,14 @@ HumanArt = function(){
     //weapon under right hand
     this.drawWeapon(rHandX,handY,canvasBufferContext,human,camera,alpha);
     //rHand
+    var thetaMod = human.toolTheta * (human.direction ? 1 : -1);
+    var handTheta1 = (1.5*Math.PI) + thetaMod;
+    var handTheta2 = (0.5*Math.PI) + thetaMod;
+    console.log(human.toolTheta);
     canvasBufferContext.beginPath();
     canvasBufferContext.strokeStyle= handRGB;
     canvasBufferContext.fillStyle = handRGB;
-    canvasBufferContext.arc(rHandX,handY,(config.gridInterval*config.xRatio/6),1.5*Math.PI,0.5*Math.PI,!human.direction);
+    canvasBufferContext.arc(rHandX,handY,(config.gridInterval*config.xRatio/6),handTheta1,handTheta2,!human.direction);
     canvasBufferContext.closePath();
     canvasBufferContext.stroke();
     canvasBufferContext.fill();

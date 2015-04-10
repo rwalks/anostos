@@ -378,14 +378,8 @@ var GameScene = function (strs,trn,shp,nam,bg,als){
   this.draw = function(canvasHolder){
     var gameCon = canvasHolder.contexts[0];
     var lightCon = canvasHolder.contexts[1];
-
-//    if(sceneUtils.onScreen(ship,camera)){
-//      ship.draw(camera,entityCon);
-//    }
-//
-
     //draw particles
-    this.terrain.draw(gameCon,camera);
+    this.terrain.drawRooms(gameCon,camera);
     //draw tiles and entities
     var entDrawList = [];
     for(var x=camera.xOff-(camera.xOff%config.gridInterval);x<camera.xOff+config.cX;x+=config.gridInterval){
@@ -402,11 +396,11 @@ var GameScene = function (strs,trn,shp,nam,bg,als){
         }
       }
     }
+    this.terrain.drawParticles(camera,gameCon);
     //draw ents
     for(var e = 0; e < entDrawList.length; e++){
       entDrawList[e].draw(camera,gameCon,this.terrain);
     }
-    //
     //draw Light
     this.terrain.drawLights(camera,lightCon);
     //compose game scene

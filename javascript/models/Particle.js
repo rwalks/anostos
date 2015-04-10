@@ -107,26 +107,17 @@ PlasmaParticle = function(orig,velo,duration,rad,colorType){
   }
 }
 
-SparkParticle = function(orig,velo,duration,rad,colorType){
-  var color = new Color();
-  color.randomize(colorType);
+StreamParticle = function(orig,velo,duration,rad,color){
   Particle.call(this,orig,velo,duration,rad,color);
-
-  this.lightRadius = this.lightRadius * 10;
-  var colorType = colorType;
-  var alpha = 0.6;
 
   this.update = function(terrain){
     this.drawRadius = this.drawRadius * 0.9;
-    this.lightRadius = Math.max(this.lightRadius * 0.8, this.drawRadius);
-    this.color.randomize(colorType);
-    this.color.a = alpha;
-    alpha = alpha * 0.9;
+    this.lightRadius = this.drawRadius;
   }
 
   this.applyForces = function(){
-    this.velocity.y += config.gravity/2;
     this.position.x += this.velocity.x;
     this.position.y += this.velocity.y;
   }
 }
+

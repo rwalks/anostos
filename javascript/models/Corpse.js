@@ -3,7 +3,7 @@ Corpse = function(pos,inventory,cost){
   this.inventory = inventory ? inventory : new Inventory();
   this.name.set("Dessicated","Remains");
   this.cost = cost ? cost : {};
-  this.maxVelocity = config.gridInterval / 3;
+  this.maxVelocity = config.gridInterval / 2;
   this.lightRadius = 2;
   this.hasDrawn = false;
 

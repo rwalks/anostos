@@ -196,12 +196,11 @@ Terrain = function(trMap,sSpawns) {
     return true;
   }
 
-  this.draw = function(canvasBufferContext,camera){
+  this.drawRooms = function(canvasBufferContext,camera){
     //drawRooms
     for (var r = 0; r < this.rooms.length; r++){
       this.rooms[r].draw(camera,canvasBufferContext);
     }
-    this.drawParticles(camera,canvasBufferContext);
   }
 
   this.updateBuildings = function(){
