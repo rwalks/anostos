@@ -54,8 +54,11 @@ PlayerGui = function(player){
   this.artStr = "playerGui";
 
   this.drawUnder = function(buffCon){
-
-
+    var healthP = this.player.currentHealth / this.player.maxHealth;
+    var oxP = this.player.currentOxygen / this.player.maxOxygen;
+    var energyP = this.player.currentEnergy / this.player.maxEnergy;
+    var art = artHolder.getArt('gaugeGui');
+    art.drawGauges(healthP,oxP,energyP,buffCon);
   }
 
   this.init = function(){

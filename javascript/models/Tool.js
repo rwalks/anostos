@@ -180,6 +180,8 @@ PlasmaTorch = function(owner){
       if(this.contact){
         //spawn particles
         this.contactEffects(orig,terrain);
+      }else{
+        lColor.a = 0.8;
       }
     }else{
       lColor.randomize('fire');
@@ -188,39 +190,8 @@ PlasmaTorch = function(owner){
       var lRad = 0.2 + (rand*0.3);
       lColor.a = 0.8;
     }
-    this.cuttingEffects(orig,terrain);
     terrain.updateLightMap(orig,lRad,lColor);
     this.contact = false;
-  }
-
-  this.cuttingEffects = function(orig,terrain){
-    orig = orig.clone();
-    var sprays = 1;
-    if(this.owner.toolActive){
-      sprays = 5;
-      orig.x += config.gridInterval * 0.55 * (this.owner.direction ? -1 : 1);
-    }else{
-      orig.x += config.gridInterval * 0.2 * (this.owner.direction ? -1 : 1);
-    }
-    orig.y += config.gridInterval * 0.1;
-    var theta = 0;
-    var maxV = 0;
-    var rad = 0.15;
-    for(var b = 0; b < sprays; b++){
-      var t = this.owner.toolTheta;
-      var point = utils.rotate(maxV,0,t);
-      point[0] = point[0] * (this.owner.direction ? 1 : -1);
-      var v = new Vector(0,0);
-      //radius
-      var duration = 1;
-      //
-      var color = new Color();
-      color.randomize('spark');
-      color.a = 0.8;
-      terrain.addParticle(new StreamParticle(orig.clone(),v,duration,rad,color));
-      orig.x += config.gridInterval*rad*(this.owner.direction ? 1 : -1);
-      rad = rad * 0.8;
-    }
   }
 
   this.contactEffects = function(orig,terrain){

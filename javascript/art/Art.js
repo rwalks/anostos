@@ -10,6 +10,7 @@ ArtHolder = function(){
   this.procArt['deleteButton'] = new DeleteButtonArt();
   this.procArt['lightButton'] = new LightButtonArt();
   this.procArt['guiButton'] = new ButtonArt();
+  this.procArt['gaugeGui'] = new GaugeGuiArt();
   //static art
   this.staticArt['soilTile'] = new SoilTileArt();
   this.staticArt['topSoilTile'] = new TopSoilTileArt();

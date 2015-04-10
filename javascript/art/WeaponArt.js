@@ -153,10 +153,9 @@ WeaponArt = function() {
     var fX =  1 + (active ? 0.2 + (Math.random() *  0.3) : -0.1);
     var fY = -0.2 + (active ? -0.1 + (Math.random() * -0.1) : -0.1);
     var emGeo = [
-      [],[],[]
-  //     [0.6,-0.15],
-  //     [fX ,fY],
-  //     [0.8,-0.45]
+       [0.6,-0.15],
+       [fX ,fY],
+       [0.8,-0.45]
       ];
     var geometries = [emGeo,plasmaTorchGeo];
     var r = Math.floor(200 + (Math.random() * 50));

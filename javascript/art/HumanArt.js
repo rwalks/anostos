@@ -174,7 +174,6 @@ HumanArt = function(){
     var thetaMod = human.toolTheta * (human.direction ? 1 : -1);
     var handTheta1 = (1.5*Math.PI) + thetaMod;
     var handTheta2 = (0.5*Math.PI) + thetaMod;
-    console.log(human.toolTheta);
     canvasBufferContext.beginPath();
     canvasBufferContext.strokeStyle= handRGB;
     canvasBufferContext.fillStyle = handRGB;
