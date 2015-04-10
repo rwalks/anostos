@@ -25,35 +25,39 @@ TerrainBuilder = function(){
     this.meanY = (sum / xKeys.length) * 0.96;
     this.rangeY = this.meanY - (highY * 0.5);
     //gen bgs
-    var scale = 0.1;
+    var scale = 0.5;
     for(var b = 0; b < this.bgLayers; b++){
       this.bgs.push(new BackGround(scale));
-      scale += 0.1;
+      scale -= 0.1;
     }
   }
 
   this.drawBg = function(camera,light,buffCon){
     this.updateY(camera.yOff);
-    var color = new Color(3,30,23,1);
+    var color = new Color(20,200,150,1);
     var sA = 0.4 + (0.6 * (1-light));
-    var sColor = new Color(50,0,50,sA);
+    var sColor = new Color(250,0,250,sA);
     var a = 0.15 + (0.85*light);
     color.r = Math.floor(color.r * a);
     color.b = Math.floor(color.b * a);
     color.g = Math.floor(color.g * a);
     var yInit = this.yPos;
+    var yEnd = config.canvasHeight;
+    var lineWidth = config.minRatio * 1.5;
     for(var b = 0; b < this.bgs.length; b++){
+      buffCon.lineWidth = lineWidth;
       buffCon.fillStyle = color.colorStr();
       buffCon.strokeStyle = sColor.colorStr();
-      this.bgs[b].draw(camera,yInit,this.scale,buffCon);
-      if(b != this.bgs.length-1){
-        yInit += this.layerOffset * (((b*(b/2))+1)/this.bgs.length);
-      }
-      color.r = Math.floor(color.r * 1.5);
-      color.g = Math.floor(color.g * 1.5);
-      color.b = Math.floor(color.b * 1.5);
-      sColor.r = Math.floor(sColor.r*1.5);
-      sColor.b = Math.floor(sColor.b*1.5);
+      this.bgs[b].draw(camera,yInit,yEnd,this.scale,buffCon);
+      //update vals
+      yEnd = (yInit+1) * config.yRatio;
+      yInit -= this.layerOffset * ((this.bgs.length - b - 1)/this.bgs.length);
+      color.r = Math.floor(color.r * 0.75);
+      color.g = Math.floor(color.g * 0.75);
+      color.b = Math.floor(color.b * 0.75);
+      sColor.r = Math.floor(sColor.r*0.75);
+      sColor.b = Math.floor(sColor.b*0.75);
+      lineWidth = lineWidth * 0.9;
     }
   }
 
@@ -71,7 +75,7 @@ TerrainBuilder = function(){
     //scale
     this.scale = 1 - (altitude > 0 ? altPerc : 0);
     //yPos
-    var baseY = config.cY * 0.5;
+    var baseY = config.cY * 0.6;
     this.yPos = baseY + (baseY * altPerc);
     //layer offset
     var baseOffset = config.cY / 8;
@@ -88,14 +92,12 @@ BackGround = function(scale){
 
   //init
   for(var i=0;i<this.length;i++){
-    var d = Math.random() > 0.8 ? 5 : 2;
-    var u = Math.random() > 0.9 ? 3 : 1;
-    d = 2; u = 0;
-    var pY = (Math.random()*d)-u;
+    var d = Math.random() > 0.8 ? 2 : 1;
+    var pY = -Math.random()*d;
     this.points.push(pY);
   }
 
-  this.draw = function(camera,yPos,scale,buffCon){
+  this.draw = function(camera,y1,y2,scale,buffCon){
     var camCentP = (camera.xOff+(config.cX/2))/config.mapWidth;
     var xBuff = this.length * this.baseScale;
     var xLength = this.length - xBuff;
@@ -122,15 +124,15 @@ BackGround = function(scale){
       }
     }
     buffCon.beginPath();
-    buffCon.moveTo(-1,config.canvasHeight);
+    buffCon.moveTo(-1,y2);
     for(var p = 0; p < geo.length; p++){
       var point = geo[p];
       var x = point[0];
-      var y = (yPos + (point[1] * this.size * scale)) * config.yRatio;
+      var y = (y1 + (point[1] * this.size * scale)) * config.yRatio;
       buffCon.lineTo(x,y);
     }
-    buffCon.lineTo(config.canvasWidth+1,config.canvasHeight+1);
-    buffCon.lineTo(-1,config.canvasHeight+1);
+    buffCon.lineTo(config.canvasWidth+1,y2);
+    buffCon.lineTo(-1,y2);
     buffCon.fill();
     buffCon.stroke();
   }

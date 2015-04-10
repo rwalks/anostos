@@ -57,7 +57,7 @@ JetPack = function(owner){
         terrain.addParticle(new ExhaustParticle(farPos.clone(),v,d,rad,color.clone()));
         terrain.addParticle(new ExhaustParticle(nearPos.clone(),v,d,rad,color.clone()));
       }
-      var r = 3 + Math.random() * 3;
+      var r = 4 + Math.random() * 1;
       color.randomize('fire');
       terrain.updateLightMap(farPos,r,color);
     }

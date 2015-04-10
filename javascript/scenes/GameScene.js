@@ -376,56 +376,66 @@ var GameScene = function (strs,trn,shp,nam,bg,als){
 
 //  this.camera = camera;
   this.draw = function(canvasHolder){
-    var bgCon = canvasHolder.contexts[0];
-    var terrainCon = canvasHolder.contexts[1];
-    var entityCon = canvasHolder.contexts[2];
-    var lightCon = canvasHolder.contexts[3];
-    var guiCon = canvasHolder.contexts[4];
+    var gameCon = canvasHolder.contexts[0];
+    var lightCon = canvasHolder.contexts[1];
 
-    sceneArt.drawStars(this.stars, camera, clockCycle, bgCon);
-//    sceneArt.drawBG(camera,this.bgs,this.terrain.ambientLight,bgCon);
 //    if(sceneUtils.onScreen(ship,camera)){
 //      ship.draw(camera,entityCon);
 //    }
 //
 
     //draw particles
-    this.terrain.draw(entityCon,camera);
+    this.terrain.draw(gameCon,camera);
     //draw tiles and entities
+    var entDrawList = [];
     for(var x=camera.xOff-(camera.xOff%config.gridInterval);x<camera.xOff+config.cX;x+=config.gridInterval){
       var minY = camera.yOff + config.cY;
       for(var y=(camera.yOff-(camera.yOff%config.gridInterval));y<camera.yOff+config.cY;y+=config.gridInterval){
         var til = this.terrain.getTile(x,y);
         if(til){
-          til.draw(camera,terrainCon,this.terrain);
+          til.draw(camera,gameCon,this.terrain);
         }
         //draw entities
         var entities = this.terrain.getEntities(x,y);
         if(entities){
-          for(var e = 0; e < entities.length; e++){
-            entities[e].draw(camera,entityCon,this.terrain);
-          }
+          entDrawList = entDrawList.concat(entities);
         }
       }
     }
-    this.terrain.builder.drawBg(camera,this.terrain.ambientLight,bgCon);
+    //draw ents
+    for(var e = 0; e < entDrawList.length; e++){
+      entDrawList[e].draw(camera,gameCon,this.terrain);
+    }
+    //
     //draw Light
     this.terrain.drawLights(camera,lightCon);
+    //compose game scene
+    //draw lights
+    gameCon.save();
+    gameCon.globalCompositeOperation = 'source-atop';
+    gameCon.drawImage(canvasHolder.canvases[1],0,0);
+    gameCon.restore();
+    //draw bg
+    gameCon.save();
+    gameCon.globalCompositeOperation = 'destination-over';
+    this.terrain.builder.drawBg(camera,this.terrain.ambientLight,gameCon);
+    sceneArt.drawStars(this.stars, camera, clockCycle, gameCon);
+    gameCon.restore();
 
     if(gamePaused){
-      sceneArt.drawPause(guiCon);
+      sceneArt.drawPause(gameCon);
     }else{
       if(this.uiMode == "build" && buildTarget){
         var bPos = clickToCoord(mousePos,true);
         var clear = this.terrain.validBuild(buildTarget,bPos);
-        sceneArt.drawBuildCursor(buildTarget,bPos,clear,camera,guiCon);
+        sceneArt.drawBuildCursor(buildTarget,bPos,clear,camera,gameCon);
       }
       if(gameOver){
         var msg = gameOverMsg(gameOver);
         messageIndex += ((this.count % 3 == 0) && (messageIndex < (msg[0].length+msg[1].length))) ? 1 : 0;
-        sceneArt.drawText(msg,messageIndex,guiCon);
+        sceneArt.drawText(msg,messageIndex,gameCon);
       }else{
-        gui.draw(camera,guiCon);
+        gui.draw(camera,gameCon);
       }
     }
   }

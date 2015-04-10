@@ -315,7 +315,7 @@ Human = function(x,y,name) {
 
   this.setLightColor = function(){
     var lc = this.fillColor.clone();
-    lc.a = 0.1;
+    lc.a = 0.6;
     this.lightColor = lc;
   }
   this.setLightColor();

@@ -53,6 +53,11 @@ PlayerGui = function(player){
   this.position = new Vector(posX,0);
   this.artStr = "playerGui";
 
+  this.drawUnder = function(buffCon){
+
+
+  }
+
   this.init = function(){
     //create button bank
     var sX = (this.size.x/6)*0.8;

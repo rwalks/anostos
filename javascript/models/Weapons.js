@@ -19,8 +19,8 @@ BasicBlaster = function(owner){
 
   this.name.set("Basic","Blaster");
   this.range = config.gridInterval * 20;
-  this.actionOffset.x = config.gridInterval * 0.9;
-  this.actionOffset.y = config.gridInterval * -0.2;
+  this.actionOffset.x = config.gridInterval * 1;
+  this.actionOffset.y = config.gridInterval * -0.1;
   this.energyCost = 2;
   this.cooldownCost = 8;
 
@@ -41,6 +41,15 @@ BasicBlaster = function(owner){
     }
     */
     return ammos;
+  }
+
+  this.updateLight = function(terrain){
+    var orig = this.pointOfAction();
+    var rand = Math.random();
+    var lRad = 0.3 + (rand*0.3);
+    var lColor = new Color()
+    lColor.randomize('plasma');
+    terrain.updateLightMap(orig,lRad,lColor);
   }
 
   this.clone = function(owner){

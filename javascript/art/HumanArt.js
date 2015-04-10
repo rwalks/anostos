@@ -5,6 +5,7 @@ HumanArt = function(){
   var jetFlameGeo = [[-0.02,1.1],[0.15,0.8],[0.1,0.7],[-0.15,0.7],[-0.25,0.8]];
 
   this.drawHuman = function(x,y,canvasBufferContext,human,camera,alpha){
+    alpha = 1;
     //params
     var origin = new Vector(x,y);
     origin.x = origin.x + (human.direction ? 0 : human.size.x*config.xRatio);
@@ -19,6 +20,8 @@ HumanArt = function(){
     var skinRGB = "rgba(208,146,110,"+alpha+")";
 
   //animation variables
+    //jetpack
+    var packOrigin = new Vector(origin.x,y);
     //legs
     var lLeg = new Vector(x,y+(1.5*config.gridInterval*config.yRatio));
     var lLegSize = new Vector(config.gridInterval*config.xRatio/4,0.5*config.gridInterval*config.yRatio);
@@ -31,7 +34,7 @@ HumanArt = function(){
     //body
     var helmX = x+(config.gridInterval*config.xRatio/3);
     var eyeX = x+(config.gridInterval*config.xRatio/2);
-    var torsoLength = 1.5*config.gridInterval*config.yRatio;
+    var torsoLength = size.y * 0.75;
     if(!human.direction){
       helmX = x-(config.gridInterval*config.xRatio/80);
       eyeX =  x+(config.gridInterval*config.xRatio/30);
@@ -88,6 +91,16 @@ HumanArt = function(){
     strokeColor.darken(0.5);
     canvasBufferContext.strokeStyle = strokeColor.colorStr();
     canvasBufferContext.fillStyle = fillColor.colorStr();
+    /*
+    //head
+    var hR = size.x * 0.55;
+    var hOX = x + (size.x * (human.direction ? 0.52 : 0.48 ));
+    var hOY = y + (size.y * 0.15);
+    var hT1 = Math.PI * 0.5;
+    var hT1 = Math.PI * (human.direction ? 0.5 : 1);
+    var hT2 = Math.PI * (human.direction ? 2 : 0.5);
+    canvasBufferContext.arc(hOX,hOY,hR,hT1,hT2,false);
+    */
     canvasBufferContext.rect(x,y,config.gridInterval*config.xRatio,torsoLength);
     canvasBufferContext.rect(lLeg.x,lLeg.y,lLegSize.x,lLegSize.y);
     canvasBufferContext.rect(rLeg.x,rLeg.y,rLegSize.x,rLegSize.y);
@@ -98,7 +111,7 @@ HumanArt = function(){
       //jetpack
       canvasBufferContext.strokeStyle = "rgba(0,0,200,1)";
       canvasBufferContext.fillStyle = "rgba(200,200,200,1)";
-      this.drawGeo(jetPackGeo,origin,size,canvasBufferContext,true,true,geoMod);
+      this.drawGeo(jetPackGeo,packOrigin,size,canvasBufferContext,true,true,geoMod);
       if(human.jetPack.active){
         var fireColor = new Color(0,0,0,0.8);
         fireColor.randomize('fire');
@@ -109,7 +122,6 @@ HumanArt = function(){
         this.drawGeo(jetFlameGeo,origin,size,canvasBufferContext,true,false,geoMod);
       }
     }
-
     //visor / face
     var faceRGB = human.spaceSuit ? "rgba(0,200,0,"+alpha+")" : skinRGB;
     var helmY = y+(config.gridInterval*config.yRatio/6);

@@ -289,9 +289,9 @@ Terrain = function(trMap,sSpawns) {
   }
 
   this.drawDark = function(buffCon){
-    var overA = (1-this.ambientLight)/6;
+    var overA = (1-this.ambientLight);
     var overDark = new Color(0,0,0,overA);
-    var outA = this.ambientLight / 6;
+    var outA = this.ambientLight ;
     var outDark = new Color(0,0,0,outA);
     buffCon.save();
     var drawTypes = ['destination-out','source-over'];

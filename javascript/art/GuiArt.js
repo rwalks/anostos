@@ -65,6 +65,25 @@ PlayerGuiArt = function(){
       mod.y = 1;
       this.drawGeo(energyCapGeo,origin,energySize,this.context,true,true,mod);
     }
+    var orig = new Vector(sX/2,sY/1.3);
+    var layers = 10;
+    var rad = sX / 3;
+    this.context.save();
+    this.context.globalCompositeOperation = 'source-atop';
+    //purps
+    this.context.fillStyle = "rgba(250,250,0,0.15)";
+    sceneArt.drawGradCircle(orig,layers,rad,this.context);
+    //health
+    this.context.fillStyle = "rgba(250,0,250,0.15)";
+    orig.x = sX * 0.1;
+    orig.y = sY * 0.33;
+    rad = sX / 6;
+    sceneArt.drawGradCircle(orig,layers,rad,this.context);
+    //o2
+    orig.x = sX * 0.9;
+    sceneArt.drawGradCircle(orig,layers,rad,this.context);
+    this.context.restore();
+
     //energy
     var lX = (sX / 2);
     var lY = (sY / 6);

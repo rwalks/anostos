@@ -158,16 +158,21 @@ SceneArt = function() {
     var orig = utils.realCoords(light.position,camera);
     var layers = 3 + Math.ceil(2 * dark);
     var color = light.color.clone();
-    color.a = 0.02 + (.03 * dark);
-    canvasBufferContext.fillStyle = color.colorStr();
     var rad = light.radius * config.minRatio;
+    //color.a = 0.02 + (0.03 * dark);
+    color.a = (color.a/layers) * (0.1 + (0.9 * dark));
+    canvasBufferContext.fillStyle = color.colorStr();
+    this.drawGradCircle(orig,layers,rad,canvasBufferContext);
+  }
+
+  this.drawGradCircle = function(origin,layers,radius,canvasBufferContext){
     var rMult = 0.7;
     for(var l = 0; l < layers; l++){
-      var r = rad + (Math.random() * 2);
+      var r = radius + (Math.random() * 2);
       canvasBufferContext.beginPath();
-      canvasBufferContext.arc(orig.x,orig.y,r,0,2*Math.PI,false);
+      canvasBufferContext.arc(origin.x,origin.y,r,0,2*Math.PI,false);
       canvasBufferContext.fill();
-      rad = rad * rMult;
+      radius = radius * rMult;
     }
   }
 

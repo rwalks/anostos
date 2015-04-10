@@ -106,7 +106,7 @@ BlastAmmo = function(orig,theta,ownTyp){
   this.maxVelocity = 7;
   this.maxAge = 60;
   this.lightRadius = 3;
-  this.lightColor = new Color(0,25,255,0.2);
+  this.lightColor = new Color(0,25,255,0.6);
 
   this.deathExplosion = function(terrain){
     var color = this.lightColor.clone();

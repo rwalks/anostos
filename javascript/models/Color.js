@@ -12,6 +12,13 @@ Color = function(r,g,b,a){
     return new Color(this.r,this.g,this.b,this.a);
   }
 
+  this.copy = function(col){
+    this.r = col.r;
+    this.g = col.g;
+    this.b = col.b;
+    this.a = col.a;
+  }
+
   this.whiten = function(amt){
     var total = this.r + this.g + this.b;
    // this.r = Math.round(200 + (55 * this.r/total));
@@ -37,15 +44,15 @@ Color = function(r,g,b,a){
         var rand = Math.random();
         r = 200 + (55 * rand);
         g = Math.random() > 0.8 ? r : 0;
-        a = 0.3 + (Math.random() * 0.5);
+        a = 0.3 + (Math.random() * 0.4);
         break;
       case 'smoke':
         var rand = Math.random();
-        var c = rand * 200;
+        var c = 50 + (rand * 100);
         r = c;
         g = c;
         b = c;
-        a = 0.3 + (Math.random() * 0.6);
+        a = 0.2 + (rand * 0.3);
         break;
       case 'plasma':
         var rand = Math.random();
@@ -64,10 +71,10 @@ Color = function(r,g,b,a){
           a = 0.2;
         }else if(rand > 0.333){
           r = 255; g = 50; b = 0;
-          a = 0.6;
+          a = 0.3;
         }else{
           r = 255; g = 255; b = 0;
-          a = 0.9;
+          a = 0.3;
         }
         break;
       default:

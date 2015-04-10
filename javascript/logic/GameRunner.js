@@ -5,8 +5,9 @@ function GameRunner() {
     var _scene;
     var mousePos;
     this.loaded = true;
+    this.sceneLock = false;
 
-    var canvasHolder = new CanvasHolder(5);
+    var canvasHolder = new CanvasHolder(2);
 
     this.scene = function(){return _scene;}
     this.Run = function () {
@@ -99,8 +100,12 @@ function GameRunner() {
 
     this.tick = function(){
       if (_scene){
-        _scene.update(mousePos);
-        this.draw();
+        if(!this.sceneLock){
+          this.sceneLock = true;
+          _scene.update(mousePos);
+          this.draw();
+          this.sceneLock = false;
+        }
       }
     }
 
@@ -135,9 +140,7 @@ function GameRunner() {
       _canvasContext.clearRect(0, 0, config.canvasWidth, config.canvasHeight);
       //clear layers
       for(var c = 0; c < canvasHolder.length; c++){
-        if(c != 3){
         canvasHolder.clearContext(c);
-        }
       }
     }
 
@@ -202,18 +205,7 @@ function CanvasHolder(num){
   }
 
   this.drawAll = function(target){
-    //compose scene
-    this.contexts[1].drawImage(this.canvases[2],0,0);
-    //draw lights
-    this.contexts[1].save();
-    this.contexts[1].globalCompositeOperation = 'source-atop';
-    this.contexts[1].drawImage(this.canvases[3],0,0);
-    this.contexts[1].restore();
-    //draw bg
-    target.drawImage(this.canvases[0],0,0);
     //draw terrain + entities
-    target.drawImage(this.canvases[1],0,0);
-    //draw gui
-    target.drawImage(this.canvases[4],0,0);
+    target.drawImage(this.canvases[0],0,0);
   }
 }
