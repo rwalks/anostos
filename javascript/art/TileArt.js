@@ -48,8 +48,8 @@ OreTileArt = function(){
 
 SoilTileArt = function(){
   TerrainTileArt.call(this);
-  this.fillStyle = new Color(20,200,150,1.0);
-  this.strokeStyle = new Color(40,250,200,1.0);
+  this.fillStyle = new Color(100,200,200,1.0);
+  this.strokeStyle = new Color(140,250,250,1.0);
 }
 
 TopSoilTileArt = function(){
@@ -63,8 +63,8 @@ TopSoilTileArt = function(){
   this.drawGrass = function(){
     var lineW = Math.floor(config.minRatio * 2);
     this.context.lineWidth = lineW;
-    this.context.strokeStyle = "rgba(100,0,100,1)";
-    this.context.fillStyle = "rgba(250,0,250,1)";
+    this.context.strokeStyle = "rgba(0,0,100,1)";
+    this.context.fillStyle = "rgba(0,0,250,1)";
     var lX = this.canvas.width;
     var lY = this.canvas.height;
     this.context.beginPath();

@@ -36,6 +36,8 @@ var SceneUtils = function (bg){
              surfaceSpawns.push(tile.position);
            }else if(Math.random() < 0.1){
              plants.push(new Tree(x,y));
+           }else{
+             plants.push(new Scrub(x,y));
            }
          }
          var tile = new SoilTile(x,y,topLayer);

@@ -2,7 +2,7 @@ JetPack = function(owner){
   this.owner = owner;
   this.toggle = false;
   this.active = 0;
-  this.accel = config.gridInterval * 0.1;
+  this.accel = config.gridInterval * 0.08;
   this.energyCost = 0.3;
 
   this.update = function(){
@@ -14,7 +14,7 @@ JetPack = function(owner){
     }
     if(this.active){
       this.owner.velocity.y -= (this.accel * this.active);
-      this.active -= 0.1;
+      this.active -= 0.5;
       this.active = this.active > 0.001 ? this.active : 0;
     }
   }

@@ -18,6 +18,7 @@ ArtHolder = function(){
   this.staticArt['oreTile'] = new OreTileArt();
   this.staticArt['playerGui'] = new PlayerGuiArt();
   this.staticArt['treePlant'] = new TreeArt();
+  this.staticArt['scrubPlant'] = new ScrubArt();
 
   this.getArt = function(name){
     return this.procArt[name] || this.staticArt[name];
@@ -103,7 +104,8 @@ AnimatedCachedArt = function(){
 
   this.drawCanvas = function(){
     for(var i = 0; i < this.frameCount; i++){
-      this.drawFrame((i/this.frameCount));
+      var frameP = (i/this.frameCount);
+      this.drawFrame(frameP);
     }
   };
 
@@ -119,7 +121,7 @@ AnimatedCachedArt = function(){
     var frame = Math.floor((count*this.speed) % ((this.frameCount*2)-2));
     frame = (frame >= this.frameCount) ? this.frameCount-(frame-this.frameCount)-2 : frame;
     var lY = this.canvas.height / this.frameCount;
-    var sY = Math.ceil(frame * lY);
+    var sY = frame * lY;
     canvasContext.save();
     if(alpha){
       canvasContext.globalAlpha = alpha;

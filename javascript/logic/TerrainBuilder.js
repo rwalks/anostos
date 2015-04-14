@@ -34,7 +34,7 @@ TerrainBuilder = function(){
 
   this.drawBg = function(camera,light,buffCon){
     this.updateY(camera.yOff);
-    var color = new Color(15,150,113,1);
+    var color = new Color(50,150,150,1);
     var sA = 0.4 + (0.6 * (1-light));
     var sColor = new Color(250,0,250,sA);
     var a = 0.15 + (0.85*light);
