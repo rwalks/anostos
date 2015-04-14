@@ -27,154 +27,11 @@ StaticGuiArt = function(){
   };
 }
 
-GaugeGuiArt = function(){
-  Art.call(this);
-
-  var healthGeo = [];
-  var oxGeo = [];
-  var waterReverse = false;
-  this.bubbles = [];
-
-  var wGauges = [healthGeo,oxGeo];
-  var points = 10;
-  for(var g = 0; g < wGauges.length; g++){
-    for(var i = 0; i < points; i++){
-      var s = i ? 0 : 0.5;
-      s = (i == points-1) ? -0.5 : s;
-      wGauges[g].push(new WaterPoint(s));
-    }
-  }
-
-  this.drawGauges = function(healthP,oxP,energyP,buffCon){
-    var gauges = [[healthGeo,healthP],[oxGeo,oxP]];
-    var oY = config.cY * 0.08;
-    var oX = config.cX * 0.4;
-    var lX = config.cX * 0.03;
-    var lY = config.cY * -0.06;
-    var size = new Vector(lX*config.xRatio,lY*config.yRatio);
-    var color = new Color(250,0,0,0.5);
-    for(var g = 0; g < gauges.length; g++){
-      var orig = new Vector((oX-(lX/2))*config.xRatio,oY*config.yRatio);
-      var waterPoints = gauges[g][0];
-      var pY = gauges[g][1];
-      var geo = [[1,0]];
-      if(waterReverse){
-        geo.unshift([0,0]);
-      }else{
-        geo.push([0,0]);
-      }
-      var dX = 1 / (waterPoints.length-1);
-      var dY = 0.1;
-      //fluid sim lol
-      var last = 0;
-      for(var w = 0; w < waterPoints.length;w++){
-        var wI = waterReverse ? (waterPoints.length-1)-w : w ;
-        var current = waterPoints[wI];
-        last = current.update(last);
-        var x = wI*dX;
-        var y = pY + (current.state*dY);
-        geo.push([x,y]);
-      }
-      var strokeColor = color.clone();
-      strokeColor.a = 0.9;
-      buffCon.fillStyle = color.colorStr();
-      buffCon.strokeStyle = strokeColor.colorStr();
-      this.drawGeo(geo,orig,size,buffCon,true,true);
-      //add bubbles
-      if(Math.random() > 0.8){
-        this.bubbles.push(new Bubble(oX,oY,lX/2,!g));
-      }
-      //next vars
-      oX = config.cX - oX;
-      color = new Color(250,250,250,0.5);
-    }
-    waterReverse = !waterReverse;
-    //draw electric
-    var eX = config.cX / 2;
-    var elX = config.cX * 0.048;
-    var barlY = config.cY * 0.02 * config.yRatio;
-    var y = config.cY * 0.103 * config.yRatio;
-    buffCon.fillStyle = "rgba(250,250,0,0.2)";
-    for(var xFlip = -1; xFlip <= 1; xFlip += 2){
-      var x = (eX + (xFlip * elX * energyP)) * config.xRatio;
-      var barlX = elX * 0.05 * xFlip * config.xRatio;
-      buffCon.beginPath();
-      buffCon.rect(x,y,barlX,barlY);
-     // this.context.stroke();
-      buffCon.fill();
-    }
-    //draw bubbles
-    var goodBubs = [];
-    buffCon.save();
-    buffCon.lineWidth = config.minRatio * 3;
-    for(var b = 0; b < this.bubbles.length; b++){
-      var minY = oY + (lY * (this.bubbles[b].health ? healthP : oxP));
-      if(this.bubbles[b].draw(minY,buffCon)){
-        goodBubs.push(this.bubbles[b]);
-      }
-    }
-    buffCon.restore();
-    this.bubbles = goodBubs;
-  }
-}
-
-Bubble = function(x,y,lat,health){
-  var origX = x;
-  this.position = new Vector(x,y);
-  this.radius = 0.2* Math.random();
-  this.health = health;
-  if(this.health){
-    this.color = new Color(250,0,0,0.2);
-  }else{
-    this.color = new Color(250,250,250,0.2);
-  }
-  var maxV = 0.2;
-  var moveRight = Math.random() > 0.5;
-  var lateral = (lat*0.2) + (Math.random() * lat*0.8);
-
-  this.draw = function(minY,buffCon){
-    var x = this.position.x*config.xRatio;
-    var y = this.position.y*config.yRatio;
-    var r = this.radius * config.gridInterval * config.minRatio;
-    buffCon.fillStyle = this.color.colorStr();
-    buffCon.beginPath();
-    buffCon.arc(x,y,r,0,2*Math.PI,false);
-    buffCon.fill();
-    this.position.x += maxV * 0.5 * (moveRight ? 1 : -1);
-    if(Math.abs(this.position.x-origX) > lateral || Math.random() > 0.9){
-      moveRight = !moveRight;
-    }
-    this.position.y -= maxV;
-    return this.position.y > minY;
-  }
-}
-
-WaterPoint = function(state){
-  this.state = state || 0;
-  this.velocity = 0;
-  var gravity = 0.005;
-  var elasticity = -0.005;
-
-  this.update = function(force){
-    this.velocity += force;
-    if(this.state < 0){
-      this.velocity += gravity;
-    }else if(this.state > 0){
-      this.velocity += elasticity;
-    }
-    this.velocity = this.velocity * 0.99;
-    this.velocity = utils.clamp(this.velocity,-2,2);
-    this.state += this.velocity;
-    this.state = utils.clamp(this.state,-1,1);
-    return Math.abs(this.state)*2*(this.state > 0 ? gravity : elasticity);
-  }
-}
-
 PlayerGuiArt = function(){
   StaticGuiArt.call(this);
   this.size = new Vector(config.cX * 0.24,config.cY * 0.13);
   var gaugeCapGeo = [[0,0],[0.3,0.22],[0.74,0.22],[1,0.67],[1,1],[0.74,0.72],[0.3,0.72],[0.03,1],[0.04,0.78],[0.17,0.44],[0,0.22]];
-  var energyCapGeo = [[1,0.2],[0.71,0.13],[0.62,0.4],[0.24,0.2],[0.14,0],[0,0],[0.12,0.27],[0.62,0.67],[0.71,1],[1,0.93],[0.76,0.87],[0.76,0.27]];
+  var energyCapGeo = [[1,0.2],[0.71,0.13],[0.62,0.4],[0.24,0.2],[0.14,0],[0,0],[0.12,0.27],[0.62,0.67],[0.71,1],[0.95,0.93],[0.85,0.8],[0.85,0.35]];
 
   this.drawElement = function(){
     var sX = this.canvas.width;
@@ -252,10 +109,10 @@ PlayerGuiArt = function(){
     this.context.fillStyle = "rgba(250,250,0,0.15)";
     sceneArt.drawGradCircle(orig,layers,rad,this.context);
     //health
-    this.context.fillStyle = "rgba(250,0,0,0.2)";
+    this.context.fillStyle = "rgba(250,100,100,0.2)";
     orig.x = sX * 0.08;
-    orig.y = sY * 0.37;
-    rad = config.minRatio * 16;
+    orig.y = sY * 0.375;
+    rad = config.minRatio * 16.25;
     sceneArt.drawGradCircle(orig,layers,rad,this.context);
     //o2
     this.context.fillStyle = "rgba(250,250,250,0.2)";

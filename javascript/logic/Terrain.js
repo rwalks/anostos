@@ -1,6 +1,7 @@
-Terrain = function(trMap,sSpawns) {
+Terrain = function(trMap,sSpawns,plants) {
 
   this.terrain = trMap ? trMap : {};
+  this.plants = plants || [];
   this.entityMap = {};
   this.lights = [];
   this.particles = [];
@@ -29,6 +30,12 @@ Terrain = function(trMap,sSpawns) {
   var resourceUpdateInterval = 5;
   var roomFinder = new Roomfinder();
   this.surfaceSpawns = sSpawns ? sSpawns : [];
+
+  this.init = function(){
+    for(var p=0;p<this.plants.length;p++){
+      this.addTile(this.plants[p]);
+    }
+  }
 
   this.addTile = function(tile){
     var regen = false;
@@ -528,6 +535,8 @@ Terrain = function(trMap,sSpawns) {
     }
     return false;
   }
+
+  this.init();
 
 
 }

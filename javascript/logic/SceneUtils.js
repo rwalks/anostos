@@ -8,6 +8,7 @@ var SceneUtils = function (bg){
     var surfaceSpawns = [];
     var mid = config.mapHeight*0.7;
     var last = mid;
+    var plants = [];
     for(var x=0;x<=config.mapWidth;x+=terrainInterval){
       tMap[x] = {};
       var dY = Math.random();
@@ -34,7 +35,7 @@ var SceneUtils = function (bg){
            if(Math.random() < 0.01){
              surfaceSpawns.push(tile.position);
            }else if(Math.random() < 0.1){
-             //tile.plant = new Plant(tile.position);
+             plants.push(new Tree(x,y));
            }
          }
          var tile = new SoilTile(x,y,topLayer);
@@ -52,7 +53,7 @@ var SceneUtils = function (bg){
 
     generateRock(tMap);
     generateOre(tMap);
-    return new Terrain(tMap,surfaceSpawns);
+    return new Terrain(tMap,surfaceSpawns,plants);
   }
 
   var generateOre = function(tMap){

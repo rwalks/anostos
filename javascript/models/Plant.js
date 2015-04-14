@@ -1,34 +1,59 @@
-Plant = function(pos) {
-  this.position = pos;
+Plant = function(x,y){
+  Tile.call(this,x,y);
 
-  var height = config.gridInterval*0.4 + (Math.random() * (config.gridInterval*0.6));
-  var angleChange = 10 + (Math.random() * 10);
-  var swayMod = 0;
-  var swayInc = (Math.random() > 0.5);
+  this.pathable = true;
+  this.collision = function(){return false;}
 
-  var r = 150+Math.floor(Math.random()*100);
-  var g = 150+Math.floor(Math.random()*100);
-  var b = 150+Math.floor(Math.random()*100);
+  this.animOffset = Math.floor(Math.random() * 20);
 
-  var fillString = "rgba("+r+","+g+","+b+",0.8)";
-
-  this.draw = function(camera,canvasBufferContext){
-    canvasBufferContext.strokeStyle = fillString;
-    canvasBufferContext.lineWidth=Math.floor(config.xRatio)+"";
-    swayMod = swayInc ? swayMod + 0.05 : swayMod - 0.05;
-    if(swayMod >= 10){
-     swayInc = false;
-    }else if(swayMod <= 0){
-     swayInc = true;
+  this.draw = function(camera,buffCon,terrain){
+    if(terrain.count > this.lastDrawn){
+      this.lastDrawn = terrain.count;
+      var drawPos = utils.realCoords(this.position,camera);
+      var art = artHolder.getArt(this.artStr);
+      var count = terrain.count + this.animOffset;
+      art.draw(drawPos,buffCon,1,count);
+      return true;
     }
-    var x = this.position.x + config.terrainInterval/2;
-    var y = this.position.y;
-    canvasBufferContext.beginPath();
-    this.drawTree(x,y,-90,5,camera,canvasBufferContext);
-    canvasBufferContext.stroke();
+    return false;
   }
 
-  this.drawTree = function(x,y,angle,level,camera,canvasBufferContext){
+  this.drawTargetPortrait = function(oX,oY,xSize,ySize,buffCon){
+  }
+}
+
+Tree = function(x,y){
+  Plant.call(this,x,y);
+  this.size.x = 1*config.gridInterval;
+  this.size.y = 4*config.gridInterval;
+  this.position.y -= this.size.y;
+  this.name.set("Lumo","Tree");
+  this.artStr = "treePlant";
+}
+
+TreeArt = function() {
+  AnimatedCachedArt.call(this);
+
+  this.frameCount = 10;
+  this.size = new Vector(1*config.gridInterval,4*config.gridInterval);
+  this.speed = 0.2;
+
+  this.drawFrame = function(frameP){
+    var lX = this.canvas.width;
+    var lY = this.canvas.height / this.frameCount;
+    var oX = 0;
+    var oY = this.canvas.height * frameP;
+
+    var aOff = (lY / 2) * frameP;
+    var y = oY + aOff;
+    lY = lY - aOff;
+    this.context.fillStyle = "rgba(250,250,0,1)";
+    this.context.beginPath();
+    this.context.rect(oX,y,lX,lY);
+    this.context.fill();
+  }
+
+  this.drawTree = function(x,y,angle,level,camera,buffCon){
   	if (level != 0){
       var x2 = x + (Math.cos(angle * (Math.PI / 180)) * level * height);
       var y2 = y + (Math.sin(angle * (Math.PI / 180)) * level * height);
@@ -38,13 +63,13 @@ Plant = function(pos) {
       var ox2 = (x2-camera.xOff)*config.xRatio;
       var oy2 = (y2-camera.yOff)*config.yRatio;
 
-      canvasBufferContext.moveTo(ox,oy);
-      canvasBufferContext.lineTo(ox2,oy2);
+      buffCon.moveTo(ox,oy);
+      buffCon.lineTo(ox2,oy2);
 
       var dAngle = angleChange + swayMod;
-      this.drawTree(x2, y2, angle - dAngle, level - 1, camera, canvasBufferContext);
+      this.drawTree(x2, y2, angle - dAngle, level - 1, camera, buffCon);
       dAngle = angleChange - swayMod;
-      this.drawTree(x2, y2, angle + dAngle, level - 1, camera, canvasBufferContext);
+      this.drawTree(x2, y2, angle + dAngle, level - 1, camera, buffCon);
 	  }
   }
 

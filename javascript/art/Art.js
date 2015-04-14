@@ -17,6 +17,7 @@ ArtHolder = function(){
   this.staticArt['rockTile'] = new RockTileArt();
   this.staticArt['oreTile'] = new OreTileArt();
   this.staticArt['playerGui'] = new PlayerGuiArt();
+  this.staticArt['treePlant'] = new TreeArt();
 
   this.getArt = function(name){
     return this.procArt[name] || this.staticArt[name];
@@ -68,12 +69,17 @@ CachedArt = function(){
   this.context = this.canvas.getContext('2d');
 
   this.updateSize = function(){
-    var sX = this.size.x * config.xRatio;
-    var sY = this.size.y * config.yRatio;
-    this.canvas.width = sX;
-    this.canvas.height = sY;
+    var cS = this.getCanvasSize();
+    this.canvas.width = cS.x;
+    this.canvas.height = cS.y;
     this.context.clearRect(0,0,this.canvas.width,this.canvas.height);
     this.drawCanvas();
+  }
+
+  this.getCanvasSize = function(){
+    var sX = this.size.x * config.xRatio;
+    var sY = this.size.y * config.yRatio;
+    return new Vector(sX,sY);
   }
 
   this.drawCanvas = function(){};
@@ -87,6 +93,41 @@ CachedArt = function(){
     canvasContext.drawImage(this.canvas,0,0);
     canvasContext.restore();
   }
+}
+
+AnimatedCachedArt = function(){
+  CachedArt.call(this);
+
+  this.frameCount = 1;
+  this.speed = 1;
+
+  this.drawCanvas = function(){
+    for(var i = 0; i < this.frameCount; i++){
+      this.drawFrame((i/this.frameCount));
+    }
+  };
+
+  this.drawFrame = function(frameP){};
+
+  this.getCanvasSize = function(){
+    var sX = this.size.x * config.xRatio;
+    var sY = this.size.y * this.frameCount * config.yRatio;
+    return new Vector(sX,sY);
+  }
+
+  this.draw = function(pos,canvasContext,alpha,count){
+    var frame = Math.floor((count*this.speed) % ((this.frameCount*2)-2));
+    frame = (frame >= this.frameCount) ? this.frameCount-(frame-this.frameCount)-2 : frame;
+    var lY = this.canvas.height / this.frameCount;
+    var sY = Math.ceil(frame * lY);
+    canvasContext.save();
+    if(alpha){
+      canvasContext.globalAlpha = alpha;
+    }
+    canvasContext.drawImage(this.canvas,0,sY,this.canvas.width,lY,pos.x,pos.y,this.canvas.width,lY);
+    canvasContext.restore();
+  }
+
 }
 
 

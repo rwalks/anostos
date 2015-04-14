@@ -53,7 +53,7 @@ Ammo = function(orig,theta,ownTyp){
     this.hasDrawn = false;
     this.age += 1;
     if(this.age > this.maxAge){
-      return this.die(terrain);
+      return this.die(terrain,true);
     }
     this.applyMove();
     //bounds
@@ -85,8 +85,10 @@ Ammo = function(orig,theta,ownTyp){
     }
   }
 
-  this.die = function(terrain){
-    this.deathExplosion(terrain);
+  this.die = function(terrain,noExplo){
+    if(!noExplo){
+      this.deathExplosion(terrain);
+    }
     return {'action':'die'};
   }
 

@@ -3,7 +3,7 @@ JetPack = function(owner){
   this.toggle = false;
   this.active = 0;
   this.accel = config.gridInterval * 0.1;
-  this.energyCost = 0.2;
+  this.energyCost = 0.3;
 
   this.update = function(){
     if(this.toggle){
