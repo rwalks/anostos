@@ -2,12 +2,13 @@ Terrain = function(trMap,sSpawns,plants) {
 
   this.terrain = trMap ? trMap : {};
   this.plants = plants || [];
+  this.plantMap = {};
   this.entityMap = {};
   this.lights = [];
   this.particles = [];
   this.ambientLight = 1;
   this.ambientProgress = -0.01;
-  this.builder = new TerrainBuilder();
+  this.bgRunner = new BgRunner();
 //construct holders
   this.rooms = [];
 //tile reference holders
@@ -33,7 +34,7 @@ Terrain = function(trMap,sSpawns,plants) {
 
   this.init = function(){
     for(var p=0;p<this.plants.length;p++){
-      this.addTile(this.plants[p]);
+      this.updateEntityMap(this.plants[p],this.plantMap);
     }
   }
 
@@ -210,6 +211,10 @@ Terrain = function(trMap,sSpawns,plants) {
     }
   }
 
+  this.drawBg = function(camera,buffCon){
+    this.bgRunner.drawBg(camera,this.ambientLight,buffCon);
+  }
+
   this.updateBuildings = function(){
     var genXKeys = Object.keys(generators);
     for(var xi = 0; xi < genXKeys.length; xi++){
@@ -248,6 +253,14 @@ Terrain = function(trMap,sSpawns,plants) {
   this.getEntities = function(tX,tY){
     if(this.entityMap[tX] && this.entityMap[tX][tY]){
       return this.entityMap[tX][tY];
+    }else{
+      return false;
+    }
+  }
+
+  this.getPlants = function(tX,tY){
+    if(this.plantMap[tX] && this.plantMap[tX][tY]){
+      return this.plantMap[tX][tY];
     }else{
       return false;
     }

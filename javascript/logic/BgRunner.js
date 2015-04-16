@@ -1,4 +1,4 @@
-TerrainBuilder = function(){
+BgRunner = function(){
   this.meanY = config.mapHeight;
   this.rangeY = 0;
   this.yPos = 0;
@@ -81,4 +81,60 @@ TerrainBuilder = function(){
     var baseOffset = config.cY / 8;
     this.layerOffset = baseOffset * (1-Math.abs(altPerc));
   }
+}
+
+BackGround = function(scale){
+  this.baseScale = scale;
+  this.size = (config.cY / 10) * this.baseScale;
+  this.points = [];
+
+  this.length = 2000*this.baseScale;
+
+  //init
+  for(var i=0;i<this.length;i++){
+    var d = Math.random() > 0.8 ? 7 : 2;
+    var pY = -Math.random()*d;
+    this.points.push(pY);
+  }
+
+  this.draw = function(camera,y1,y2,scale,buffCon){
+    var camCentP = (camera.xOff+(config.cX/2))/config.mapWidth;
+    var xBuff = this.length * this.baseScale;
+    var xLength = this.length - xBuff;
+    var bgCent = (xBuff / 2) + (camCentP * this.baseScale * xLength);
+    var sizP = (config.cX / 2) / config.mapWidth;
+    var lX = sizP * xLength;
+    var dX = config.canvasWidth / (lX*2);
+    lX = Math.ceil(lX);
+    var geo = [];
+    for(var dir = -1; dir <= 1; dir += 2){
+      var oX = (dir == -1) ? Math.floor(bgCent) : Math.ceil(bgCent);
+      var xOff = (oX - bgCent) * dX;
+      var x = (config.canvasWidth/2) + xOff;
+      for(var i = 0; i <= lX; i++){
+        var xI = oX + (i*dir);
+        var y = this.points[xI];
+        var point = [x,y];
+        if(dir == -1){
+          geo.unshift(point);
+        }else{
+          geo.push(point);
+        }
+        x += (dX * dir);
+      }
+    }
+    buffCon.beginPath();
+    buffCon.moveTo(-1,y2);
+    for(var p = 0; p < geo.length; p++){
+      var point = geo[p];
+      var x = point[0];
+      var y = (y1 + (point[1] * this.size * scale)) * config.yRatio;
+      buffCon.lineTo(x,y);
+    }
+    buffCon.lineTo(config.canvasWidth+1,y2);
+    buffCon.lineTo(-1,y2);
+    buffCon.fill();
+    buffCon.stroke();
+  }
+
 }

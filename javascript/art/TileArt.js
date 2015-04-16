@@ -63,8 +63,8 @@ TopSoilTileArt = function(){
   this.drawGrass = function(){
     var lineW = Math.floor(config.minRatio * 2);
     this.context.lineWidth = lineW;
-    this.context.strokeStyle = "rgba(0,0,100,1)";
-    this.context.fillStyle = "rgba(0,0,250,1)";
+    this.context.strokeStyle = "rgba(100,0,100,1)";
+    this.context.fillStyle = "rgba(250,0,250,1)";
     var lX = this.canvas.width;
     var lY = this.canvas.height;
     this.context.beginPath();

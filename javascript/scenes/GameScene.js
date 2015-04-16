@@ -5,7 +5,7 @@ var GameScene = function (strs,trn,shp,nam,bg,als){
   this.bgs = bg ? bg : [];
   this.terrain = trn ? trn : new Terrain();
   //TODO tmp
-  this.terrain.builder.load(this.terrain);
+  this.terrain.bgRunner.load(this.terrain);
   // ^^^^^^^
   var ship = shp;
   var camera = new Camera(5000,6500);
@@ -394,6 +394,10 @@ var GameScene = function (strs,trn,shp,nam,bg,als){
         if(entities){
           entDrawList = entDrawList.concat(entities);
         }
+        var plants = this.terrain.getPlants(x,y);
+        if(plants){
+          entDrawList = entDrawList.concat(plants);
+        }
       }
     }
     this.terrain.drawParticles(camera,gameCon);
@@ -412,7 +416,7 @@ var GameScene = function (strs,trn,shp,nam,bg,als){
     //draw bg
     gameCon.save();
     gameCon.globalCompositeOperation = 'destination-over';
-    this.terrain.builder.drawBg(camera,this.terrain.ambientLight,gameCon);
+    this.terrain.drawBg(camera,gameCon);
     sceneArt.drawStars(this.stars, camera, clockCycle, gameCon);
     gameCon.restore();
 

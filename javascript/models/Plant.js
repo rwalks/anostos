@@ -3,6 +3,7 @@ Plant = function(x,y){
 
   this.pathable = true;
   this.collision = function(){return false;}
+  this.type = 'plant';
 
   this.animOffset = Math.floor(Math.random() * 60);
 
