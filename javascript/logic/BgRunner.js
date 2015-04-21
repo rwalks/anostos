@@ -12,10 +12,10 @@ BgRunner = function(){
     //find metrics
     var sum = 0;
     var highY = config.mapHeight;
-    var xKeys = Object.keys(terrain.terrain);
+    var xKeys = Object.keys(terrain.tileMap);
     for(var xI = 0; xI < xKeys.length; xI++){
       var x = xKeys[xI];
-      var yKeys = Object.keys(terrain.terrain[x]);
+      var yKeys = Object.keys(terrain.tileMap[x]);
       var minY = parseInt(yKeys[0]);
       //avg
       sum += minY;
@@ -75,8 +75,8 @@ BgRunner = function(){
     //scale
     this.scale = 1 - (altitude > 0 ? altPerc : 0);
     //yPos
-    var baseY = config.cY * 0.6;
-    this.yPos = baseY + (baseY * altPerc);
+    var baseY = config.groundLevel*0.5;
+    this.yPos = baseY;
     //layer offset
     var baseOffset = config.cY / 8;
     this.layerOffset = baseOffset * (1-Math.abs(altPerc));

@@ -1,30 +1,27 @@
-var GameScene = function (strs,trn,shp,nam,bg,als){
-  var heroName = nam;
+var GameScene = function (loader){
   var sceneUtils = new SceneUtils();
-  this.stars = strs ? strs : sceneUtils.generateStars();
-  this.bgs = bg ? bg : [];
-  this.terrain = trn ? trn : new Terrain();
+  this.stars = loader.stars || sceneUtils.generateStars();
+  this.world = loader.world || new World();
   //TODO tmp
-  this.terrain.bgRunner.load(this.terrain);
+  this.world.bgRunner.load(this.world);
   // ^^^^^^^
-  var ship = shp;
   var camera = new Camera(5000,6500);
   var mousePos;
-  var clockCycle = 0;
-  var clockMax = 800;
   var camDX = 0;
   var camDY = 0;
   this.humans = [];
-  this.aliens = als ? als : [];
+  this.aliens = [];
   this.corpses = [];
   this.ammos = [];
   this.count = 0;
 
-  this.player = new Player(ship.position.x,ship.position.y,heroName);
+  var iX = config.mapWidth / 2;
+  var iY = config.mapHeight * 0.55;
+  this.player = new Player(iX,iY);
 
   var buildTarget;
   var focusTarget = this.player;
-  var cameraTarget = this.player;
+  camera.focusTarget(this.player);
 
   var timeElapsed = 0;
   var gameOver = false;
@@ -37,14 +34,9 @@ var GameScene = function (strs,trn,shp,nam,bg,als){
 
   this.inventory = new Inventory();
 
-  this.initialSpawn = function(){
+  this.init = function(){
     //spawn player and starting npcs
     this.humans.push(this.player);
-    for(var i=0;i<4;i++){
-      var x = (Math.random()*(config.gridInterval*6))-(config.gridInterval*3) + ship.position.x;
-      var y = ship.position.y;
- //     this.humans.push( new Npc(x,y) );
-    }
     //starting resources
     this.inventory.addItem('metal',250);
   }
@@ -94,13 +86,13 @@ var GameScene = function (strs,trn,shp,nam,bg,als){
       case 81:
         //Q
         if(keyDown){
-         this.terrain.ambientLight = Math.max((this.terrain.ambientLight-0.1),0.01);
+         this.world.ambientLight = Math.max((this.world.ambientLight-0.1),0.01);
         }
         break;
       case 87:
         //W
         if(keyDown){
-         this.terrain.ambientLight = Math.min((this.terrain.ambientLight+0.1),1);
+         this.world.ambientLight = Math.min((this.world.ambientLight+0.1),1);
         }
         break;
       case 32:
@@ -125,7 +117,7 @@ var GameScene = function (strs,trn,shp,nam,bg,als){
         break;
     }
     if(playerInput){
-      cameraTarget = this.player;
+      camera.target = this.player;
       this.player.setInput(playerInput,keyDown);
     }
   }
@@ -137,10 +129,6 @@ var GameScene = function (strs,trn,shp,nam,bg,als){
       this.count += 1;
       timeElapsed += 1;
       mousePos = mPos;
-      //delayed camera for motion feel
-      if(cameraTarget){
-        camera.focusOn(cameraTarget.position);
-      }
       var ret = false;
       var regenBuildings = false;
       var update = false;
@@ -153,22 +141,23 @@ var GameScene = function (strs,trn,shp,nam,bg,als){
         var entityList = this[entityType];
         for (var e = entityList.length-1; e >= 0; e--){
           var entity = entityList[e];
-          var updateMsg = entityType == 'corpses' ? entity.update(this.terrain,this.humans) : entity.update(this.terrain);
+          var updateMsg = entityType == 'corpses' ? entity.update(this.world,this.humans) : entity.update(this.world);
           if(!entity.dead){
-            this.terrain.updateEntityMap(entity,newEntityMap);
-            entity.updateLight(this.terrain,camera);
+            this.world.updateEntityMap(entity,newEntityMap);
+            entity.updateLight(this.world,camera);
           }
           update = this.handleEntityUpdate(entityType,updateMsg,e);
           regenBuildings = update || regenBuildings;
         }
       }
-      this.terrain.entityMap = newEntityMap;
-      this.terrain.update(this.humans,this.inventory,this.count);
+      this.world.entityMap = newEntityMap;
+      this.world.update(this.humans,this.inventory,this.count);
       var npcs = this.humans.slice(1);
-      gui.update(focusTarget,npcs,buildTarget,this.uiMode,timeElapsed,this.terrain.resources,this.player);
+      gui.update(focusTarget,npcs,buildTarget,this.uiMode,timeElapsed,this.world.resources,this.player);
       if(regenBuildings){
-        this.terrain.regenBuildings();
+        this.world.regenBuildings();
       }
+      camera.update();
     }
   }
 
@@ -200,14 +189,14 @@ var GameScene = function (strs,trn,shp,nam,bg,als){
       switch(ret.action){
         case 'delete':
           var obj = ret.obj;
-          if(this.terrain.canDestroy(obj)){
+          if(this.world.canDestroy(obj)){
             this.addCorpse(obj);
-            reg = this.terrain.removeTile(obj);
+            reg = this.world.removeTile(obj);
           }
           break;
         case 'build':
           var obj = ret.obj;
-          reg = this.terrain.purchaseBuilding(buildTarget,coords);
+          reg = this.world.purchaseBuilding(buildTarget,coords);
           break;
         case 'repair':
           reg = ret.built;
@@ -237,9 +226,9 @@ var GameScene = function (strs,trn,shp,nam,bg,als){
       switch(ret.action){
         case 'delete':
           var obj = ret.obj;
-          if(this.terrain.canDestroy(obj)){
+          if(this.world.canDestroy(obj)){
             this.addCorpse(obj);
-            reg = this.terrain.removeTile(obj);
+            reg = this.world.removeTile(obj);
           }
           break;
         case 'die':
@@ -259,7 +248,7 @@ var GameScene = function (strs,trn,shp,nam,bg,als){
           break;
         case 'delete':
           var obj = ret.obj;
-          reg = this.terrain.removeTile(obj);
+          reg = this.world.removeTile(obj);
           break;
         case 'die':
           this.addCorpse(this.aliens[aIndex]);
@@ -292,7 +281,7 @@ var GameScene = function (strs,trn,shp,nam,bg,als){
       if(this.uiMode != 'select'){
         this.uiMode = 'select';
       }else{
-        cameraTarget = this.player;
+        camera.target = this.player;
         focusTarget = this.player;
       }
     }else{
@@ -323,7 +312,7 @@ var GameScene = function (strs,trn,shp,nam,bg,als){
             var tX = tCoords.x;
             var tY = tCoords.y;
             var obj = false;
-            var objs = this.terrain.getEntities(tX,tY);
+            var objs = this.world.getEntities(tX,tY);
             if(objs){
               for(var oi = 0; oi < objs.length; oi++){
                 var entity = objs[oi];
@@ -334,7 +323,7 @@ var GameScene = function (strs,trn,shp,nam,bg,als){
               }
             }
             if(!obj){
-              obj = this.terrain.getTile(tX,tY);
+              obj = this.world.getTile(tX,tY);
             }
             focusTarget = obj ? obj : focusTarget;
             this.uiMode = "select";
@@ -342,8 +331,8 @@ var GameScene = function (strs,trn,shp,nam,bg,als){
           case "build":
             if(buildTarget){
               var coords = clickToCoord(clickPos,true);
-              if(this.terrain.purchaseBuilding(buildTarget,coords)){
-                this.terrain.regenBuildings();
+              if(this.world.purchaseBuilding(buildTarget,coords)){
+                this.world.regenBuildings();
               }
             }
             break;
@@ -373,51 +362,71 @@ var GameScene = function (strs,trn,shp,nam,bg,als){
 
 //DRAWING FUNCTIONS
 
-
-//  this.camera = camera;
   this.draw = function(canvasHolder){
-    var gameCon = canvasHolder.contexts[0];
-    var lightCon = canvasHolder.contexts[1];
+    var gameCon = canvasHolder.gameContext;
+    var lightCon = canvasHolder.lightContext;
     //draw particles
-    this.terrain.drawRooms(gameCon,camera);
+    this.world.drawRooms(gameCon,camera);
     //draw tiles and entities
     var entDrawList = [];
-    for(var x=camera.xOff-(camera.xOff%config.gridInterval);x<camera.xOff+config.cX;x+=config.gridInterval){
+    var starDrawList = [];
+    var oX = utils.roundToGrid(camera.xOff);
+    var oY = utils.roundToGrid(camera.yOff);
+    for(var x=oX;x<camera.xOff+config.cX;x+=config.gridInterval){
       var minY = camera.yOff + config.cY;
-      for(var y=(camera.yOff-(camera.yOff%config.gridInterval));y<camera.yOff+config.cY;y+=config.gridInterval){
-        var til = this.terrain.getTile(x,y);
+      for(var y=oY;y<camera.yOff+config.cY;y+=config.gridInterval){
+        var til = this.world.getTile(x,y);
         if(til){
-          til.draw(camera,gameCon,this.terrain);
+          til.draw(camera,gameCon,this.world);
         }
         //draw entities
-        var entities = this.terrain.getEntities(x,y);
+        var entities = this.world.getEntities(x,y);
         if(entities){
           entDrawList = entDrawList.concat(entities);
         }
-        var plants = this.terrain.getPlants(x,y);
+        var plants = this.world.getPlants(x,y);
         if(plants){
           entDrawList = entDrawList.concat(plants);
         }
+        var stars = this.world.getStars(x,y,camera);
+        if(stars){
+          starDrawList = starDrawList.concat(stars);
+        }
       }
     }
-    this.terrain.drawParticles(camera,gameCon);
+    //test
+    var hArt = artHolder.getArt('hill');
+    var hPos = new Vector(config.canvasWidth*0.5,config.canvasHeight*0.5);
+    hArt.draw(hPos,gameCon,1);
+    hArt = artHolder.getArt('hill2');
+    hPos = new Vector(config.canvasWidth*0.3,config.canvasHeight*0.42);
+    hArt.draw(hPos,gameCon,1);
+    hArt = artHolder.getArt('cloud');
+    hPos = new Vector(config.canvasWidth*0.2,config.canvasHeight*0.42);
+    hArt.draw(hPos,gameCon,1,this.world.count);
+    hArt = artHolder.getArt('hill3');
+    hPos = new Vector(config.canvasWidth*0.1,config.canvasHeight*0.42);
+    hArt.draw(hPos,gameCon,1);
+    //particles
+    this.world.drawParticles(camera,gameCon);
     //draw ents
     for(var e = 0; e < entDrawList.length; e++){
-      entDrawList[e].draw(camera,gameCon,this.terrain);
+      entDrawList[e].draw(camera,gameCon,this.world);
     }
     //draw Light
-    this.terrain.drawLights(camera,lightCon);
+    this.world.drawLights(camera,lightCon);
     //compose game scene
     //draw lights
     gameCon.save();
     gameCon.globalCompositeOperation = 'source-atop';
-    gameCon.drawImage(canvasHolder.canvases[1],0,0);
+    gameCon.drawImage(canvasHolder.lightCanvas,0,0);
     gameCon.restore();
     //draw bg
     gameCon.save();
     gameCon.globalCompositeOperation = 'destination-over';
-    this.terrain.drawBg(camera,gameCon);
-    sceneArt.drawStars(this.stars, camera, clockCycle, gameCon);
+    this.world.drawBg(camera,gameCon);
+    this.world.drawStars(starDrawList,camera,gameCon);
+    //sceneArt.drawStars(this.stars, camera, this.world.count, gameCon);
     gameCon.restore();
 
     if(gamePaused){
@@ -425,7 +434,7 @@ var GameScene = function (strs,trn,shp,nam,bg,als){
     }else{
       if(this.uiMode == "build" && buildTarget){
         var bPos = clickToCoord(mousePos,true);
-        var clear = this.terrain.validBuild(buildTarget,bPos);
+        var clear = this.world.validBuild(buildTarget,bPos);
         sceneArt.drawBuildCursor(buildTarget,bPos,clear,camera,gameCon);
       }
       if(gameOver){
@@ -473,6 +482,6 @@ var GameScene = function (strs,trn,shp,nam,bg,als){
     return ["You have been eliminated. Justice: Served","You survived for " +timeString+"."];
   }
 
-  this.initialSpawn();
+  this.init();
 
 }

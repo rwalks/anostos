@@ -1,6 +1,8 @@
 var LoadingScene = function (){
   var sceneUtils = new SceneUtils();
-  var stars = sceneUtils.generateStars();
+  this.stars = sceneUtils.generateStars();
+  var worldBuilder = new WorldBuilder();
+  this.world = worldBuilder.generate();
   var camera = new Camera();
   var camWander = 5;
   var clockCycle = 0;
@@ -60,13 +62,10 @@ var LoadingScene = function (){
       }
     }else if(titleMode){
       if(clockCycle <= 0){
-        camDX = (Math.random() * camWander * 2) - camWander;
-        camDY = (Math.random() * camWander * 2) - camWander;
         clockCycle = clockMax;
       }else{
         clockCycle--;
       }
-      camera.move(camDX,camDY);
     }else if(shipMode){
       if(sceneTimer == 0){
         this.audio.play("introShip");
@@ -74,7 +73,6 @@ var LoadingScene = function (){
       shipPos.x += 6.5;
       shipPos.y = config.cY/4 + Math.sin(shipPos.x % 800)/2;
       sceneTimer += 1;
-      camera.move(5,0);
       if(sceneTimer > shipDuration * 0.5){
         if(drawPlanet == false){
           this.audio.play("spookyPlanet");
@@ -129,17 +127,17 @@ var LoadingScene = function (){
     canvasHolder.clearContext(0);
     var canvasBufferContext = canvasHolder.contexts[0];
     if(loadingMode){
-      sceneArt.drawStars(stars, camera, clockCycle, canvasBufferContext);
+      sceneArt.drawStars(this.stars, camera, clockCycle, canvasBufferContext);
       loadingArt.drawLoading(canvasBufferContext);
     }else if(creditMode){
-      sceneArt.drawStars(stars, camera, clockCycle, canvasBufferContext);
+      sceneArt.drawStars(this.stars, camera, clockCycle, canvasBufferContext);
       loadingArt.drawCredit(canvasBufferContext);
     }else if(titleMode){
-      sceneArt.drawStars(stars, camera, clockCycle, canvasBufferContext);
+      sceneArt.drawStars(this.stars, camera, clockCycle, canvasBufferContext);
       sceneArt.drawPlanet(config.canvasWidth/1.845,config.canvasHeight/2.18,150,canvasBufferContext);
       title.draw(canvasBufferContext);
     }else if(shipMode){
-      sceneArt.drawStars(stars, camera, clockCycle, canvasBufferContext);
+      sceneArt.drawStars(this.stars, camera, clockCycle, canvasBufferContext);
       if(smallShip){
         smallShip.draw(camera,canvasBufferContext);
         loadingArt.drawShip(shipPos,camera,canvasBufferContext);

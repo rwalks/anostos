@@ -8,12 +8,15 @@ var Config = function (){
   this.canvasMatchWindow = true;
   this.cX = 600;
   this.cY = 450;
+  this.groundLevel = this.mapHeight * 0.6;
   this.gridInterval = 10;
   this.gravity = 0.5;
   this.terrainInterval = 2*this.gridInterval;
   this.adX = -10000;
   this.lootRange = this.gridInterval * 10;
-  this.pickUpRange = this.gridInterval * 0.25;
+  this.pickUpRange = this.gridInterval * 0.4;
+  this.starCount = 2000;
+  this.starP = 0.1;
 
   this.xRatio = 1;
   this.yRatio = 1;

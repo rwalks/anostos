@@ -168,7 +168,7 @@ SceneArt = function() {
   this.drawGradCircle = function(origin,layers,radius,canvasBufferContext){
     var rMult = 0.7;
     for(var l = 0; l < layers; l++){
-      var r = radius + (Math.random() * 2);
+      var r = radius - (radius*(Math.random() * 0.01));
       canvasBufferContext.beginPath();
       canvasBufferContext.arc(origin.x,origin.y,r,0,2*Math.PI,false);
       canvasBufferContext.fill();

@@ -105,6 +105,7 @@ TerrainTile = function(x,y){
   this.size.x = 2*config.gridInterval;
   this.size.y = 2*config.gridInterval;
   this.artStr;
+  this.grass = false;
 
   this.currentHealth -= (Math.random() * 10);
 
@@ -112,10 +113,13 @@ TerrainTile = function(x,y){
     if(terrain.count > this.lastDrawn){
       this.lastDrawn = terrain.count;
       var healthPercent = (this.currentHealth/this.maxHealth);
-      var alpha = this.baseAlpha + (healthPercent*this.healthAlpha);
       var art = artHolder.getArt(this.artStr);
       var drawPos = utils.realCoords(this.position,camera);
       art.draw(drawPos,canvasBufferContext,1);
+      if(this.grass){
+        art = artHolder.getArt("grassTile");
+        art.draw(drawPos,canvasBufferContext,1);
+      }
       return true;
     }
     return false;
@@ -133,12 +137,11 @@ TerrainTile = function(x,y){
 
 }
 
-SoilTile = function(x,y,topLayer){
+SoilTile = function(x,y){
   TerrainTile.call(this,x,y);
   this.name.set("Soil","");
   this.cost = {'soil': 8}
-  this.topLayer = topLayer;
-  this.artStr = this.topLayer ? "topSoilTile" : "soilTile";
+  this.artStr = "soilTile";
   this.fillStyle = new Color(20,200,150,0.9);
   this.strokeStyle = new Color(40,250,200,1.0);
 }

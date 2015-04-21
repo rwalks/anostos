@@ -52,11 +52,13 @@ SoilTileArt = function(){
   this.strokeStyle = new Color(140,250,250,1.0);
 }
 
-TopSoilTileArt = function(){
-  SoilTileArt.call(this);
+GrassTileArt = function(){
+  CachedArt.call(this);
+  var x = 2*config.gridInterval;
+  var y = 1*config.gridInterval;
+  this.size = new Vector(x,y);
 
   this.drawCanvas = function(){
-    this.drawTile();
     this.drawGrass();
   }
 
@@ -69,7 +71,7 @@ TopSoilTileArt = function(){
     var lY = this.canvas.height;
     this.context.beginPath();
     this.context.moveTo(0,0);
-    var points = [[lX,0],[lX,lY*0.4],[lX*0.9,lY*0.2],[lX*0.8,lY*0.4],[lX*0.7,lY*0.2],[lX*0.6,lY*0.4],[lX*0.5,lY*0.2],[lX*0.4,lY*0.4],[lX*0.3,lY*0.2],[lX*0.2,lY*0.4],[lX*0.1,lY*0.2],[0,lY*0.4],[0,0]];
+    var points = [[lX,0],[lX,lY*0.8],[lX*0.9,lY*0.4],[lX*0.8,lY*0.8],[lX*0.7,lY*0.4],[lX*0.6,lY*0.8],[lX*0.5,lY*0.4],[lX*0.4,lY*0.8],[lX*0.3,lY*0.4],[lX*0.2,lY*0.8],[lX*0.1,lY*0.4],[0,lY*0.8],[0,0]];
     for(var p = 0; p < points.length; p++){
       this.context.lineTo(points[p][0],points[p][1]);
     }

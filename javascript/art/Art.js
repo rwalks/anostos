@@ -4,21 +4,28 @@ ArtHolder = function(){
   this.staticArt = {};
   this.procArt = {};
 
-  //procedural art
-  this.procArt['weaponButton'] = new WeaponButtonArt();
-  this.procArt['repairButton'] = new RepairButtonArt();
-  this.procArt['deleteButton'] = new DeleteButtonArt();
-  this.procArt['lightButton'] = new LightButtonArt();
-  this.procArt['guiButton'] = new ButtonArt();
-  this.procArt['gaugeGui'] = new GaugeGuiArt();
-  //static art
-  this.staticArt['soilTile'] = new SoilTileArt();
-  this.staticArt['topSoilTile'] = new TopSoilTileArt();
-  this.staticArt['rockTile'] = new RockTileArt();
-  this.staticArt['oreTile'] = new OreTileArt();
-  this.staticArt['playerGui'] = new PlayerGuiArt();
-  this.staticArt['treePlant'] = new TreeArt();
-  this.staticArt['scrubPlant'] = new ScrubArt();
+  this.init = function(){
+    //procedural art
+    this.procArt['weaponButton'] = new WeaponButtonArt();
+    this.procArt['repairButton'] = new RepairButtonArt();
+    this.procArt['deleteButton'] = new DeleteButtonArt();
+    this.procArt['lightButton'] = new LightButtonArt();
+    this.procArt['guiButton'] = new ButtonArt();
+    this.procArt['gaugeGui'] = new GaugeGuiArt();
+    //static art
+    this.staticArt['soilTile'] = new SoilTileArt();
+    this.staticArt['rockTile'] = new RockTileArt();
+    this.staticArt['oreTile'] = new OreTileArt();
+    this.staticArt['grassTile'] = new GrassTileArt();
+    this.staticArt['playerGui'] = new PlayerGuiArt();
+    this.staticArt['treePlant'] = new TreeArt();
+    this.staticArt['scrubPlant'] = new ScrubArt();
+    this.staticArt['star'] = new StarArt();
+    this.staticArt['hill'] = new HillArt();
+    this.staticArt['hill2'] = new HillArt2();
+    this.staticArt['hill3'] = new HillArt3();
+    this.staticArt['cloud'] = new CloudArt();
+  }
 
   this.getArt = function(name){
     return this.procArt[name] || this.staticArt[name];

@@ -1,7 +1,8 @@
-Terrain = function(trMap,sSpawns,plants) {
+World = function(trMap,sSpawns,plants,stars) {
 
-  this.terrain = trMap ? trMap : {};
+  this.tileMap = trMap || {};
   this.plants = plants || [];
+  this.starMap = stars || {};
   this.plantMap = {};
   this.entityMap = {};
   this.lights = [];
@@ -16,7 +17,6 @@ Terrain = function(trMap,sSpawns,plants) {
   var airtightWalls = {};
   var containers = {};
   var generators = {};
-
   this.resources = {
     'power':{'max':0,'current':0},
     'soil':{'max':300,'current':0},
@@ -86,10 +86,10 @@ Terrain = function(trMap,sSpawns,plants) {
     for(x = tile.position.x; x < tile.position.x+(tile.size.x); x += config.gridInterval){
       for(y = tile.position.y; y < tile.position.y+(tile.size.y); y += config.gridInterval){
         if(remove){
-          delete this.terrain[x][y];
+          delete this.tileMap[x][y];
         }else{
-          if(!this.terrain[x]){this.terrain[x] = {};}
-          this.terrain[x][y] = tile;
+          if(!this.tileMap[x]){this.tileMap[x] = {};}
+          this.tileMap[x][y] = tile;
         }
       }
     }
@@ -126,7 +126,7 @@ Terrain = function(trMap,sSpawns,plants) {
  //   this.updateAmbientLight();
     for(x in doors){
       for(y in doors[x]){
-        this.terrain[x][y].update(this);
+        this.tileMap[x][y].update(this);
       }
     }
     this.transferResources(resourceInv);
@@ -169,8 +169,8 @@ Terrain = function(trMap,sSpawns,plants) {
   }
 
   this.getTile = function(x,y){
-    if(this.terrain[x] && this.terrain[x][y]){
-      return this.terrain[x][y];
+    if(this.tileMap[x] && this.tileMap[x][y]){
+      return this.tileMap[x][y];
     }else{
       return false;
     }
@@ -211,6 +211,12 @@ Terrain = function(trMap,sSpawns,plants) {
     }
   }
 
+  this.drawStars = function(stars,camera,buffCon){
+    for(var s = 0; s < stars.length; s++){
+      stars[s].draw(this.count,camera,buffCon);
+    }
+  }
+
   this.drawBg = function(camera,buffCon){
     this.bgRunner.drawBg(camera,this.ambientLight,buffCon);
   }
@@ -222,7 +228,7 @@ Terrain = function(trMap,sSpawns,plants) {
       var genYKeys = Object.keys(generators[x]);
       for(var yi = 0; yi < genYKeys.length; yi++){
         var y = genYKeys[yi];
-        var gen = this.terrain[x][y];
+        var gen = this.tileMap[x][y];
         gen.updateGenerator(this.resources);
       }
     }
@@ -253,6 +259,18 @@ Terrain = function(trMap,sSpawns,plants) {
   this.getEntities = function(tX,tY){
     if(this.entityMap[tX] && this.entityMap[tX][tY]){
       return this.entityMap[tX][tY];
+    }else{
+      return false;
+    }
+  }
+
+  this.getStars = function(tX,tY,camera){
+    var oX = tX - utils.roundToGrid(camera.xOff);
+    var oY = tY - utils.roundToGrid(camera.yOff);
+    oX = oX + utils.roundToGrid(camera.xOff*config.starP);
+    oY = oY + utils.roundToGrid(camera.yOff*config.starP);
+    if(this.starMap[oX] && this.starMap[oX][oY]){
+      return this.starMap[oX][oY];
     }else{
       return false;
     }
@@ -394,7 +412,7 @@ Terrain = function(trMap,sSpawns,plants) {
         var l = loopPoints[lp];
         for(var vx = x+l[0]; vx < x + config.gridInterval+l[1]; vx += config.gridInterval+l[2]){
           for(var vy = y+l[3]; vy < y + current.size.y+l[4]; vy += config.gridInterval + l[5]){
-            var node = this.terrain[vx][vy];
+            var node = this.tileMap[vx][vy];
             if(node && node.built){
               if(oxType){
                 var r = tileInRoom(node,this.rooms);
@@ -473,7 +491,7 @@ Terrain = function(trMap,sSpawns,plants) {
       for(y in generators[x]){
         var built = generators[x][y].built;
         if(built && !(markedNodes[x] && markedNodes[x][y])){
-          this.buildGeneratorNetwork(this.terrain[x][y],markedNodes);
+          this.buildGeneratorNetwork(this.tileMap[x][y],markedNodes);
         }
       }
     }
@@ -484,9 +502,9 @@ Terrain = function(trMap,sSpawns,plants) {
     var rId = 0;
     for(var x in airtightWalls){
       for(var y in airtightWalls[x]){
-        var til = this.terrain[x][y];
+        var til = this.tileMap[x][y];
         if(til.built && !tileInRoom(til,newRooms)){
-          var rm = roomFinder.findRoom(~~x,~~y,this.terrain);
+          var rm = roomFinder.findRoom(~~x,~~y,this.tileMap);
           if(rm.length > 0){
             if(uniqueRoom(rm,newRooms)){
               var newRoom = new Room(rm);

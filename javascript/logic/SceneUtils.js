@@ -40,7 +40,7 @@ var SceneUtils = function (bg){
              plants.push(new Scrub(x,y));
            }
          }
-         var tile = new SoilTile(x,y,topLayer);
+         var tile = new SoilTile(x,y);
          addTile(tile,tMap,false);
       }
       if(x % (config.gridInterval * 4) == 0){
@@ -55,7 +55,7 @@ var SceneUtils = function (bg){
 
     generateRock(tMap);
     generateOre(tMap);
-    return new Terrain(tMap,surfaceSpawns,plants);
+    return new World(tMap,surfaceSpawns,plants);
   }
 
   var generateOre = function(tMap){

@@ -2,7 +2,7 @@ var LandingScene = function (strs,nam,aud){
   this.heroName = nam;
   this.sceneUtils = new SceneUtils();
   this.stars = strs ? strs : this.sceneUtils.generateStars();
-  this.terrain = this.sceneUtils.generateTerrain();
+  this.world = this.sceneUtils.generateTerrain();
   var camera = new Camera(config.mapWidth/2,0);
   this.aliens = [];
   var mousePos;
@@ -20,10 +20,10 @@ var LandingScene = function (strs,nam,aud){
 
 
   //add surface spawns
-  for(var sp in this.terrain.surfaceSpawns){
-    var spPos = this.terrain.surfaceSpawns[sp]
+  for(var sp in this.world.surfaceSpawns){
+    var spPos = this.world.surfaceSpawns[sp]
     var nest = new HiveNest(spPos.x,spPos.y-(config.gridInterval*6));
-    nest.clearTerrain(this.terrain);
+    nest.clearTerrain(this.world);
     nest.inventory.addItem('metal',1);
     this.aliens.push(nest);
   }
@@ -31,7 +31,7 @@ var LandingScene = function (strs,nam,aud){
   this.update = function(mPos){
     if(!gamePaused){
       camera.focusOn(this.ship.position);
-      this.ship.update(this.terrain);
+      this.ship.update(this.world);
       if(this.ship.altitude < 3000){
         this.audio.play("landing2");
       }
@@ -171,7 +171,7 @@ var LandingScene = function (strs,nam,aud){
     sceneArt.drawStars(this.stars, camera, clockCycle, canvasBufferContext);
     sceneArt.drawBG(camera,this.sceneUtils.bgs,clockCycle,canvasBufferContext);
     this.ship.draw(camera,canvasBufferContext);
-    this.terrain.draw(canvasBufferContext,camera,this.count);
+    this.world.draw(canvasBufferContext,camera,this.count);
 
     var objTypes = [this.aliens];
     for(var typ in objTypes){

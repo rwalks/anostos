@@ -89,7 +89,8 @@ GaugeGuiArt = function(){
     var rInterval = ((eRad * 2) / (iLength-1)) * reverse * config.xRatio;
     var rX = (eX - (eRad * reverse)) * config.xRatio;
     var last = 0;
-    buffCon.strokeStyle = "rgba(250,250,250,1)";
+    var alpha = 0.5 + (Math.random()*0.6);
+    buffCon.strokeStyle = "rgba(250,250,250,"+alpha+")";
     buffCon.beginPath();
     for(var li = 0; li < iLength; li++){
       var wI = this.waterReverse ? (iLength-1)-li : li;

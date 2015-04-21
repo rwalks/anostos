@@ -188,7 +188,7 @@ Human = function(x,y,name) {
   }
 
   this.terrainCollide = function(terrainObj){
-    var terrain = terrainObj.terrain;
+    var terrain = terrainObj.tileMap;
     var fX = this.position.x + this.velocity.x;
     var fY = this.position.y + this.velocity.y;
     this.onGround = false;
@@ -240,7 +240,7 @@ Human = function(x,y,name) {
 
   this.updateLight = function(terrain,camera){
     var orig = this.center();
-    if(!camera.offCamera(orig,this.lightRadius)){
+    if(camera.onCamera(orig,this.lightRadius)){
       if(this.light){
         terrain.updateLightMap(orig,this.lightRadius,this.lightColor);
       }
