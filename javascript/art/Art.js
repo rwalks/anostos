@@ -1,47 +1,5 @@
-ArtHolder = function(){
-  this.loadCount = 0;
-
-  this.staticArt = {};
-  this.procArt = {};
-
-  this.init = function(){
-    //procedural art
-    this.procArt['weaponButton'] = new WeaponButtonArt();
-    this.procArt['repairButton'] = new RepairButtonArt();
-    this.procArt['deleteButton'] = new DeleteButtonArt();
-    this.procArt['lightButton'] = new LightButtonArt();
-    this.procArt['guiButton'] = new ButtonArt();
-    this.procArt['gaugeGui'] = new GaugeGuiArt();
-    //static art
-    this.staticArt['soilTile'] = new SoilTileArt();
-    this.staticArt['rockTile'] = new RockTileArt();
-    this.staticArt['oreTile'] = new OreTileArt();
-    this.staticArt['grassTile'] = new GrassTileArt();
-    this.staticArt['playerGui'] = new PlayerGuiArt();
-    this.staticArt['treePlant'] = new TreeArt();
-    this.staticArt['scrubPlant'] = new ScrubArt();
-    this.staticArt['star'] = new StarArt();
-    this.staticArt['hill'] = new HillArt();
-    this.staticArt['hill2'] = new HillArt2();
-    this.staticArt['hill3'] = new HillArt3();
-    this.staticArt['cloud'] = new CloudArt();
-  }
-
-  this.getArt = function(name){
-    return this.procArt[name] || this.staticArt[name];
-  }
-
-  this.updateSizes = function(){
-    var artKeys = Object.keys(this.staticArt);
-    for(var a = 0; a < artKeys.length; a++){
-      this.staticArt[artKeys[a]].updateSize();
-    }
-    return true;
-  }
-}
-
 Art = function() {
-  this.size;
+  this.size = new Vector(1,1);
 
   this.draw = function(obj,canvasContext){};
 
@@ -60,7 +18,9 @@ Art = function() {
         canvasContext.lineTo(pX,pY);
       }
     }
-    canvasContext.lineTo(firstPoint[0],firstPoint[1]);
+    if(firstPoint){
+      canvasContext.lineTo(firstPoint[0],firstPoint[1]);
+    }
     if(fill){
       canvasContext.fill();
     }

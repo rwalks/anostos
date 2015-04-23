@@ -13,9 +13,9 @@ WorldBuilder = function(){
   var generateSoil = function(tMap){
     for(var x=0;x<=config.mapWidth;x+=config.terrainInterval){
       tMap[x] = {};
-      for(var y=config.mapHeight;y>soilY;y-=config.terrainInterval){
+      for(var y=config.mapHeight;y>=soilY;y-=config.terrainInterval){
         var tile = new SoilTile(x,y);
-        if(y <= (soilY+config.terrainInterval)){
+        if(y == soilY){
           tile.grass = true;
         }
         addTile(tile,tMap,false);

@@ -2,9 +2,6 @@ var GameScene = function (loader){
   var sceneUtils = new SceneUtils();
   this.stars = loader.stars || sceneUtils.generateStars();
   this.world = loader.world || new World();
-  //TODO tmp
-  this.world.bgRunner.load(this.world);
-  // ^^^^^^^
   var camera = new Camera(5000,6500);
   var mousePos;
   var camDX = 0;
@@ -394,29 +391,15 @@ var GameScene = function (loader){
         }
       }
     }
-    //test
-    var hArt = artHolder.getArt('hill');
-    var hPos = new Vector(config.canvasWidth*0.5,config.canvasHeight*0.5);
-    hArt.draw(hPos,gameCon,1);
-    hArt = artHolder.getArt('hill2');
-    hPos = new Vector(config.canvasWidth*0.3,config.canvasHeight*0.42);
-    hArt.draw(hPos,gameCon,1);
-    hArt = artHolder.getArt('cloud');
-    hPos = new Vector(config.canvasWidth*0.2,config.canvasHeight*0.42);
-    hArt.draw(hPos,gameCon,1,this.world.count);
-    hArt = artHolder.getArt('hill3');
-    hPos = new Vector(config.canvasWidth*0.1,config.canvasHeight*0.42);
-    hArt.draw(hPos,gameCon,1);
     //particles
     this.world.drawParticles(camera,gameCon);
     //draw ents
     for(var e = 0; e < entDrawList.length; e++){
       entDrawList[e].draw(camera,gameCon,this.world);
     }
-    //draw Light
+    //draw Light canvas
     this.world.drawLights(camera,lightCon);
-    //compose game scene
-    //draw lights
+    //project light canvas onto game canvas
     gameCon.save();
     gameCon.globalCompositeOperation = 'source-atop';
     gameCon.drawImage(canvasHolder.lightCanvas,0,0);
@@ -425,10 +408,17 @@ var GameScene = function (loader){
     gameCon.save();
     gameCon.globalCompositeOperation = 'destination-over';
     this.world.drawBg(camera,gameCon);
+  /*
+    hArt = artHolder.getArt('hill2');
+    hPos = new Vector(config.canvasWidth*0.6,config.canvasHeight*0.4);
+    hArt.draw(hPos,gameCon,1);
+    hArt = artHolder.getArt('hill3');
+    hPos = new Vector(config.canvasWidth*0.1,config.canvasHeight*0.4);
+    hArt.draw(hPos,gameCon,1);
+ */
     this.world.drawStars(starDrawList,camera,gameCon);
-    //sceneArt.drawStars(this.stars, camera, this.world.count, gameCon);
     gameCon.restore();
-
+    //
     if(gamePaused){
       sceneArt.drawPause(gameCon);
     }else{

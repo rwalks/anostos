@@ -218,7 +218,7 @@ World = function(trMap,sSpawns,plants,stars) {
   }
 
   this.drawBg = function(camera,buffCon){
-    this.bgRunner.drawBg(camera,this.ambientLight,buffCon);
+    this.bgRunner.drawBg(camera,this.ambientLight,buffCon,this.count);
   }
 
   this.updateBuildings = function(){
