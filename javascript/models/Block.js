@@ -120,6 +120,76 @@ TerrainTile = function(x,y){
         art = artHolder.getArt("grassTile");
         art.draw(drawPos,canvasBufferContext,1);
       }
+
+      canvasBufferContext.fillStyle = this.fillStyle.colorStr();
+      canvasBufferContext.save();
+      canvasBufferContext.globalCompositeOperation = 'destination-over';
+      //3d
+      var xOff = this.position.x - camera.xOff - config.cX/2;
+      var dX = ((config.cX/2)+(xOff/(config.cX/2)) * (config.cX*0.5*config.zFactor)) * config.xRatio;
+      var dY = (this.position.y - camera.dFocus-camera.yOff)*config.yRatio;
+      var sX = this.size.x * config.zFactor * config.xRatio;
+      var sY = this.size.y * config.zFactor * config.yRatio;
+      //top
+      if(this.grass){
+        canvasBufferContext.fillStyle = "rgba(250,0,250,1)";
+      }
+      var oX = (this.position.x-camera.xOff) * config.xRatio;
+      var lX = (this.position.x-camera.xOff+this.size.x) * config.xRatio;
+      var oY = (this.position.y-camera.yOff) * config.yRatio;
+      var lY = (this.position.y-camera.yOff+this.size.y) * config.yRatio;
+      var drawTop = false;
+      var drawBot = false;
+      for(var x = 0; x<=this.size.x; x+=config.gridInterval){
+        drawTop = drawTop || !terrain.getTile(this.position.x+x,this.position.y-config.gridInterval);
+        drawBot = drawBot || !terrain.getTile(this.position.x+x,this.position.y+this.size.y);
+      }
+      var drawLeft = false;
+      var drawRight = false;
+      for(var y = 0; y<=this.size.y; y+=config.gridInterval){
+        drawLeft = drawLeft || !terrain.getTile(this.position.x-config.gridInterval,this.position.y+y);
+        drawRight = drawRight || !terrain.getTile(this.position.x+this.size.x,this.position.y+y);
+      }
+      if(drawTop){
+        canvasBufferContext.beginPath();
+        canvasBufferContext.moveTo(oX,oY);
+        canvasBufferContext.lineTo(dX,dY);
+        canvasBufferContext.lineTo(dX+sX,dY);
+        canvasBufferContext.lineTo(lX,oY);
+        canvasBufferContext.lineTo(oX,oY);
+        canvasBufferContext.fill();
+      }
+      if(drawBot){
+        canvasBufferContext.fillStyle = this.fillStyle.colorStr();
+        canvasBufferContext.beginPath();
+        canvasBufferContext.moveTo(oX,lY);
+        canvasBufferContext.lineTo(dX,dY+sY);
+        canvasBufferContext.lineTo(dX+sX,dY+sY);
+        canvasBufferContext.lineTo(lX,lY);
+        canvasBufferContext.lineTo(oX,lY);
+        canvasBufferContext.fill();
+      }
+      if(drawLeft){
+        canvasBufferContext.fillStyle = this.fillStyle.colorStr();
+        canvasBufferContext.beginPath();
+        canvasBufferContext.moveTo(oX,oY);
+        canvasBufferContext.lineTo(dX,dY);
+        canvasBufferContext.lineTo(dX,dY+sY);
+        canvasBufferContext.lineTo(oX,lY);
+        canvasBufferContext.lineTo(oX,oY);
+        canvasBufferContext.fill();
+      }
+      if(drawRight){
+        canvasBufferContext.fillStyle = this.fillStyle.colorStr();
+        canvasBufferContext.beginPath();
+        canvasBufferContext.moveTo(lX,oY);
+        canvasBufferContext.lineTo(dX+sX,dY);
+        canvasBufferContext.lineTo(dX+sX,dY+sY);
+        canvasBufferContext.lineTo(lX,lY);
+        canvasBufferContext.lineTo(lX,oY);
+        canvasBufferContext.fill();
+      }
+      canvasBufferContext.restore();
       return true;
     }
     return false;

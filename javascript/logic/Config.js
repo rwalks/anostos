@@ -17,6 +17,7 @@ var Config = function (){
   this.pickUpRange = this.gridInterval * 0.4;
   this.starCount = 2000;
   this.starP = 0.1;
+  this.zFactor = 0.95;
 
   this.xRatio = 1;
   this.yRatio = 1;

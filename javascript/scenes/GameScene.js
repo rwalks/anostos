@@ -367,9 +367,9 @@ var GameScene = function (loader){
     //draw tiles and entities
     var entDrawList = [];
     var starDrawList = [];
-    var oX = utils.roundToGrid(camera.xOff);
+    var oX = utils.roundToGrid(camera.xOff)-config.terrainInterval;
     var oY = utils.roundToGrid(camera.yOff);
-    for(var x=oX;x<camera.xOff+config.cX;x+=config.gridInterval){
+    for(var x=oX;x<=camera.xOff+config.cX+config.terrainInterval;x+=config.gridInterval){
       var minY = camera.yOff + config.cY;
       for(var y=oY;y<camera.yOff+config.cY;y+=config.gridInterval){
         var til = this.world.getTile(x,y);

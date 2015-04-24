@@ -55,7 +55,7 @@ BgRunner = function(){
     var actY = config.cY * 0.2;
     var dY = ((config.groundLevel)-(config.cY*0.5))-camera.yOff;
     var bgMod = (0.15 * (dY/actY));
-    this.bgHeight = config.cY * utils.clamp(bgMod,-0.15,0.15);
+    this.bgHeight = (config.cY * utils.clamp(bgMod,-0.15,0.15));
     //underground
     this.drawUnderGround(camera,light,buffCon);
     //trees
@@ -79,7 +79,7 @@ BgRunner = function(){
     //dirt
     var dirtArt = artHolder.getArt('underground');
     var oX = 0;
-    var oY = Math.max(config.groundLevel - camera.yOff,0);
+    var oY = Math.max(config.groundLevel - camera.dFocus - camera.yOff,0);
     var pos = new Vector(oX*config.xRatio,oY*config.yRatio);
     dirtArt.draw(pos,buffCon,false);
   }
@@ -88,9 +88,10 @@ BgRunner = function(){
     //field
     var fieldArt = artHolder.getArt('field');
     var oX = 0;
-    var oY = (config.groundLevel - Math.floor(this.bgHeight)) - camera.yOff;
+    var oY = (config.groundLevel - Math.floor(this.bgHeight) - camera.dFocus) - camera.yOff;
     var pos = new Vector(oX*config.xRatio,oY*config.yRatio);
-    var frame = Math.floor(fieldArt.frameCount * ((camera.xOff % config.terrainInterval)/config.terrainInterval));
+    var interval = config.terrainInterval;
+    var frame = Math.floor(fieldArt.frameCount * ((camera.xOff % interval)/interval));
     var yOff = 1-(this.bgHeight / (config.cY *0.15));
     fieldArt.drawIndex(pos,buffCon,false,frame,yOff);
   }

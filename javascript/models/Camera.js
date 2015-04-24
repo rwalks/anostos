@@ -6,6 +6,8 @@ var Camera = function (x,y){
   this.xOff = x ? x : config.mapWidth / 2;
   this.yOff = y ? y : config.mapHeight / 2;
 
+  this.dFocus = 0;
+
   //speed
   var fastV = 70;
   var bufferV = 0.09;
@@ -42,7 +44,8 @@ var Camera = function (x,y){
       for(var i=0;i<coords.length;i++){
         var dir = coords[i];
         var origin = this.target.position[dir] + (this.target.size[dir]/2);
-        origin += i ? -(bufferOffset * this.buffer[dir]) : 0;
+        var buffOff = -(bufferOffset * this.buffer[dir]);
+        origin += i ? buffOff : 0;
         var d = origin - this.focus[dir];
         var absD = Math.abs(d) || 1;
         var delta = 0;
@@ -55,6 +58,10 @@ var Camera = function (x,y){
         this.focus[dir] += delta;
       }
       this.focusOn(this.focus);
+      var actY = config.cY * 0.2;
+      var dY = ((config.groundLevel)-(config.cY*0.5))-this.yOff;
+      var bgMod = (0.01 * (dY/actY));
+      this.dFocus = config.cY * utils.clamp(bgMod,-0.01,0.01);
     }
   }
 

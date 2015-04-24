@@ -182,7 +182,7 @@ FieldArt = function(){
     var oY = lY * frame;
     if(!frame){
       //always same bg color, back all in first frame
-      this.context.fillStyle = "rgba(250,50,250,1)";
+      this.context.fillStyle = "rgba(250,0,250,1)";
       this.context.strokeStyle = "rgba(150,75,150,0.3)";
       this.context.beginPath();
       this.context.rect(0,0,this.canvas.width,this.canvas.height);
@@ -196,7 +196,7 @@ FieldArt = function(){
     var tX = lX * 0.5;
     var dX = lX + buffer;
     var xTopOff = -lX * 0.5;
-    for(var x = oX; x < dX; x += lineInterval){
+    for(var x = oX; x < dX; x += lineInterval*config.zFactor){
       var xOff = (((dX-x)/(lX + (2.1*buffer))) - 0.5) * xTopOff;
       var topX = tX + xOff;
       this.context.beginPath();
