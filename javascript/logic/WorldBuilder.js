@@ -13,6 +13,7 @@ WorldBuilder = function(){
   var generateSoil = function(tMap){
     for(var x=0;x<=config.mapWidth;x+=config.terrainInterval){
       tMap[x] = {};
+   //   var dY = soilY + (config.terrainInterval*(-3 + Math.floor(Math.random()*6)));
       for(var y=config.mapHeight;y>=soilY;y-=config.terrainInterval){
         var tile = new SoilTile(x,y);
         if(y == soilY){

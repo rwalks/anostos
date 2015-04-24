@@ -132,7 +132,7 @@ TerrainTile = function(x,y){
       var sY = this.size.y * config.zFactor * config.yRatio;
       //top
       if(this.grass){
-        canvasBufferContext.fillStyle = "rgba(250,0,250,1)";
+        canvasBufferContext.fillStyle = "rgba(200,25,200,1)";
       }
       var oX = (this.position.x-camera.xOff) * config.xRatio;
       var lX = (this.position.x-camera.xOff+this.size.x) * config.xRatio;
@@ -140,13 +140,13 @@ TerrainTile = function(x,y){
       var lY = (this.position.y-camera.yOff+this.size.y) * config.yRatio;
       var drawTop = false;
       var drawBot = false;
-      for(var x = 0; x<=this.size.x; x+=config.gridInterval){
+      for(var x = 0; x<this.size.x; x+=config.gridInterval){
         drawTop = drawTop || !terrain.getTile(this.position.x+x,this.position.y-config.gridInterval);
         drawBot = drawBot || !terrain.getTile(this.position.x+x,this.position.y+this.size.y);
       }
       var drawLeft = false;
       var drawRight = false;
-      for(var y = 0; y<=this.size.y; y+=config.gridInterval){
+      for(var y = 0; y<this.size.y; y+=config.gridInterval){
         drawLeft = drawLeft || !terrain.getTile(this.position.x-config.gridInterval,this.position.y+y);
         drawRight = drawRight || !terrain.getTile(this.position.x+this.size.x,this.position.y+y);
       }
@@ -168,6 +168,7 @@ TerrainTile = function(x,y){
         canvasBufferContext.lineTo(lX,lY);
         canvasBufferContext.lineTo(oX,lY);
         canvasBufferContext.fill();
+        console.log('bot');
       }
       if(drawLeft){
         canvasBufferContext.fillStyle = this.fillStyle.colorStr();
