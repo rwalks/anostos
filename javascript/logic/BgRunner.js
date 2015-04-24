@@ -22,10 +22,10 @@ BgRunner = function(){
     this.bgs.push(new CloudBackGround(0.45,cloudArtL,yOff));
     //med plants
     scale = 0.525;
-    this.bgs.push(new BackGround(scale,medPlantArt,1-scale,0.3,20));
+    this.bgs.push(new BackGround(scale,medPlantArt,1-scale,0.5,20));
     //small plants
     scale = 0.35;
-    this.bgs.push(new BackGround(scale,smallPlantArt,1-scale,0.3,20));
+    this.bgs.push(new BackGround(scale,smallPlantArt,1-scale,0.8,20));
     //mid clouds
     var yOff = 0.9;
     this.bgs.push(new CloudBackGround(0.25,cloudArt,yOff));
