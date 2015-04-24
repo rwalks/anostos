@@ -68,35 +68,45 @@ AnimatedCachedArt = function(){
 
   this.frameCount = 1;
   this.speed = 1;
+  this.frameHeight = 1;
 
   this.drawCanvas = function(){
-    for(var i = 0; i < this.frameCount; i++){
-      var frameP = (i/this.frameCount);
-      this.drawFrame(frameP);
+    for(var f = 0; f < this.frameCount; f++){
+      this.drawFrame(f);
     }
   };
 
-  this.drawFrame = function(frameP){};
+  this.drawFrame = function(frame){};
 
   this.getCanvasSize = function(){
-    var sX = this.size.x * config.xRatio;
-    var sY = this.size.y * this.frameCount * config.yRatio;
+    var sX = Math.ceil(this.size.x * config.xRatio);
+    var sY = Math.ceil(this.size.y * this.frameCount * config.yRatio);
+    this.frameHeight = Math.floor(sY / this.frameCount);
     return new Vector(sX,sY);
   }
 
   this.draw = function(pos,canvasContext,alpha,count){
     var frame = Math.floor((count*this.speed) % ((this.frameCount*2)-2));
     frame = (frame >= this.frameCount) ? this.frameCount-(frame-this.frameCount)-2 : frame;
-    var lY = this.canvas.height / this.frameCount;
-    var sY = frame * lY;
+    var sY = frame * this.frameHeight;
     canvasContext.save();
     if(alpha){
       canvasContext.globalAlpha = alpha;
     }
-    canvasContext.drawImage(this.canvas,0,sY,this.canvas.width,lY,pos.x,pos.y,this.canvas.width,lY);
+    canvasContext.drawImage(this.canvas,0,sY,this.canvas.width,this.frameHeight,pos.x,pos.y,this.canvas.width,this.frameHeight);
+    canvasContext.restore();
+  }
+
+  this.drawIndex = function(pos,canvasContext,alpha,frame,yOff){
+    yOff = yOff || 0;
+    var sY = ((frame * this.frameHeight) + (yOff * this.frameHeight));
+    canvasContext.save();
+    if(alpha){
+      canvasContext.globalAlpha = alpha;
+    }
+    canvasContext.drawImage(this.canvas,0,sY,this.canvas.width,this.frameHeight,pos.x,pos.y,this.canvas.width,this.frameHeight);
     canvasContext.restore();
   }
 
 }
-
 

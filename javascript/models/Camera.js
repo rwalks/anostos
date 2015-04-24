@@ -8,7 +8,7 @@ var Camera = function (x,y){
 
   //speed
   var fastV = 70;
-  var bufferV = 0.1;
+  var bufferV = 0.09;
 
   this.onCamera = function(pos,buffer){
     buffer = buffer || config.gridInterval;
