@@ -24,7 +24,9 @@ var Utils = function (){
     var fN = Math.floor(Math.random()*firstNames.length);
     var lNA = Math.floor(Math.random()*lastNamesA.length);
     var lNB = Math.floor(Math.random()*lastNamesB.length);
-    return [firstNames[fN],lastNamesA[lNA] + "" + lastNamesB[lNB]];
+    var firstName = firstNames[fN];
+    var lastName = lastNamesA[lNA] + "" + lastNamesB[lNB];
+    return new Name(firstName,lastName);
   }
 
   this.distance = function(p1, p2) {
@@ -32,18 +34,46 @@ var Utils = function (){
   }
 
   this.objectDistance = function(obj1, obj2) {
-    return Math.sqrt(Math.pow((obj2.position.x - obj1.position.x),2)+Math.pow((obj2.position.y-obj1.position.y),2));
+    return this.vectorDistance(obj1.position,obj2.position);
+  }
+
+  this.vectorDistance = function(v1, v2) {
+    return Math.sqrt(Math.pow((v2.x - v1.x),2)+Math.pow((v2.y-v1.y),2));
   }
 
   this.roundToGrid = function(x){
     return (x - (x % config.gridInterval));
   }
 
-  this.clonePos = function(pos){
-    var clone = {};
-    clone.x = pos.x;
-    clone.y = pos.y;
-    return clone;
+  this.roundVector = function(v){
+    var x = this.roundToGrid(v.x);
+    var y = this.roundToGrid(v.y);
+    return new Vector(x,y);
+  }
+
+  this.rotate = function(x,y,theta){
+    var rx = (x*Math.cos(theta))-(y*Math.sin(theta));
+    var ry = (x*Math.sin(theta))+(y*Math.cos(theta));
+    return [rx,ry];
+  }
+
+  this.outOfBounds = function(pos,buffer){
+    buffer = buffer || config.gridInterval;
+    return (pos.x < -buffer || pos.x > (config.mapWidth+buffer) ||
+        pos.y < -buffer || pos.y > (config.mapHeight+buffer));
+  }
+
+
+  this.realCoords = function(vec,camera){
+    var x = ((vec.x-camera.xOff)*config.xRatio);
+    var y = ((vec.y-camera.yOff)*config.yRatio);
+    return new Vector(x,y);
+  }
+
+  this.ratioCoords = function(vec){
+    var x = vec.x*config.xRatio;
+    var y = vec.y*config.yRatio;
+    return new Vector(x,y);
   }
 
   this.intersect = function(p0,p1,p2,p3){
@@ -80,5 +110,63 @@ var Utils = function (){
     var iX = p0[0] + (t * s10X);
     var iY = p0[1] + (t * s10Y);
     return [iX,iY];
+  }
+
+  this.clamp = function(val, min, max){
+    return Math.min(Math.max(val, min), max);
+  };
+
+  this.blendColors = function(c1,c2){
+    var totalA = c1.a + c2.a;
+    var w1 = c1.a / totalA;
+    var w2 = c2.a / totalA;
+    var r = (c1.r * w1) + (c2.r * w2) ;
+    var g = (c1.g * w1) + (c2.g * w2) ;
+    var b = (c1.b * w1) + (c2.b * w2) ;
+    var a = Math.max(c1.a,c2.a);
+    return new Color(r,g,b,a);
+  }
+}
+
+//Immature Util Classes
+
+Vector = function(x,y){
+  this.x = x;
+  this.y = y;
+  this.clone = function(){
+    return new Vector(this.x,this.y);
+  }
+}
+
+Directional = function(u,d,l,r){
+  this.up = u || false;
+  this.down = d || false;
+  this.left = l || false;
+  this.right = r || false;
+}
+
+Name = function(firstName,lastName){
+  this.first = firstName || "Unknown";
+  this.last = lastName || "Unkown";
+
+  this.set = function(f,l){
+    this.first = f;
+    this.last = l;
+  }
+}
+
+LightPoint = function(pos,radius,color,created){
+  this.active = true;
+  this.lifeSpan = 1;
+  //
+  this.position = pos;
+  this.radius = radius * config.gridInterval;
+  this.color = color;
+  this.createdAt = created;
+  //
+  this.update = function(){
+    this.lifeSpan -= 1;
+    this.color.a = this.color.a * 0.9;
+    this.active = this.lifeSpan > 0;
   }
 }

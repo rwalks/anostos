@@ -2,7 +2,7 @@ var LandingScene = function (strs,nam,aud){
   this.heroName = nam;
   this.sceneUtils = new SceneUtils();
   this.stars = strs ? strs : this.sceneUtils.generateStars();
-  this.terrain = this.sceneUtils.generateTerrain();
+  this.world = this.sceneUtils.generateTerrain();
   var camera = new Camera(config.mapWidth/2,0);
   this.aliens = [];
   var mousePos;
@@ -17,35 +17,31 @@ var LandingScene = function (strs,nam,aud){
   var landIndex = 0;
   var gamePaused = false;
   var lastPaused = false;
-  var debugMode = false;
-  var debugLock = false;
 
 
   //add surface spawns
-  for(var sp in this.terrain.surfaceSpawns){
-    var spPos = this.terrain.surfaceSpawns[sp]
+  for(var sp in this.world.surfaceSpawns){
+    var spPos = this.world.surfaceSpawns[sp]
     var nest = new HiveNest(spPos.x,spPos.y-(config.gridInterval*6));
-    nest.clearTerrain(this.terrain);
+    nest.clearTerrain(this.world);
     nest.inventory.addItem('metal',1);
     this.aliens.push(nest);
   }
 
   this.update = function(mPos){
-    if(!gamePaused && !debugLock){
+    if(!gamePaused){
       camera.focusOn(this.ship.position);
-      this.ship.update(this.terrain);
+      this.ship.update(this.world);
       if(this.ship.altitude < 3000){
         this.audio.play("landing2");
       }
       this.count += 1;
     }
-    debugLock = debugMode ? true : false;
   }
 
   this.keyPress = function(keyCode,keyDown){
     switch(keyCode){
       case 8:
-        debugMode = !debugMode;
         break;
       case 27:
         if(keyDown){
@@ -152,8 +148,8 @@ var LandingScene = function (strs,nam,aud){
     }else{
       if(this.ship.destroyed){
         this.endScene(false);
-      }else if(true){
-    //  }else if(this.ship.landed){
+    //  }else if(true){
+      }else if(this.ship.landed){
         this.endScene(true);
       }
     }
@@ -169,11 +165,13 @@ var LandingScene = function (strs,nam,aud){
     }
   }
 
-  this.draw = function(canvasBufferContext){
-    this.sceneUtils.drawStars(this.stars, camera, clockCycle, canvasBufferContext);
-    this.sceneUtils.drawBG(camera,clockCycle,canvasBufferContext);
+  this.draw = function(canvasHolder){
+    canvasHolder.clearContext(0);
+    var canvasBufferContext = canvasHolder.contexts[0];
+    sceneArt.drawStars(this.stars, camera, clockCycle, canvasBufferContext);
+    sceneArt.drawBG(camera,this.sceneUtils.bgs,clockCycle,canvasBufferContext);
     this.ship.draw(camera,canvasBufferContext);
-    this.terrain.draw(canvasBufferContext,camera,this.count);
+    this.world.draw(canvasBufferContext,camera,this.count);
 
     var objTypes = [this.aliens];
     for(var typ in objTypes){
@@ -186,7 +184,7 @@ var LandingScene = function (strs,nam,aud){
     }
 
     if(gamePaused){
-      this.sceneUtils.drawPause(canvasBufferContext);
+      sceneArt.drawPause(canvasBufferContext);
     }else{
       this.drawFuel(canvasBufferContext);
       if(this.count < 500){

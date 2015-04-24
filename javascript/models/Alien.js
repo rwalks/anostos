@@ -1,14 +1,15 @@
 Alien = function(x,y) {
 
+  this.hasDrawn = false;
   this.counter = 0;
   this.type = "alien";
-  this.position = {'x':x,'y':y};
-  this.lastPosition = {'x':this.position.x,'y':this.position.y};
-  this.velocity = {'x':0,'y':0};
+  this.position = new Vector(x,y);
+  this.lastPosition = new Vector(this.position.x,this.position.y);
+  this.velocity = new Vector(0,0);
   this.targetObj;
   this.path = [];
   this.onGround = false;
-  this.groundContact = {'left':false,'right':false,'up':false,'down':false};
+  this.groundContact = new Directional();
   this.direction = true;
 
   this.inventory = new Inventory();
@@ -22,32 +23,52 @@ Alien = function(x,y) {
   this.moving = false;
 
   //class specific variables
-  this.name = ["Unknown","Alien"];
+  this.name = new Name("Unknown","Alien");
   this.maxHealth = 100; this.currentHealth = 100;
   this.moveAccel = config.gridInterval/8;
   this.maxVelocity = config.gridInterval / 4;
-  this.size = {'x':1*config.gridInterval,'y':1*config.gridInterval};
-  this.jump = {'x':1,'y':1};
+  this.size = new Vector(1*config.gridInterval,1*config.gridInterval);
+  this.jump = new Vector(1,1);
+
+  this.baseAlpha = 0.2;
+  this.healthAlpha = 0.7;
+
+  this.healthPercent = function(){return this.currentHealth / this.maxHealth;}
 
 
   //class specific functions
-  this.findTarget = function(humans){}
+  this.findTarget = function(terrain){}
   this.interactTarget = function(terrain){}
 
-  this.draw = function(camera,canvasContext){
-    var cent = this.center();
-    var x = (cent.x-camera.xOff)*config.xRatio;
-    var y = (cent.y-camera.yOff)*config.yRatio;
-    this.drawAlien(x,y,canvasContext,1);
-    //this.drawPath(this.path,canvasContext,camera);
+  this.draw = function(camera,canvasContext,terrain){
+    if(!this.hasDrawn){
+      this.hasDrawn = true;
+      var cent = this.center();
+      if(terrain){
+        var lightX = utils.roundToGrid(cent.x);
+        var lightY = utils.roundToGrid(cent.y);
+        var light = terrain.getAlpha(lightX,lightY);
+      }else{
+        var light = 1;
+      }
+      var alpha = this.baseAlpha + (this.healthPercent()*this.healthAlpha*light);
+      var x = (cent.x-camera.xOff)*config.xRatio;
+      var y = (cent.y-camera.yOff)*config.yRatio;
+      this.drawAlien(x,y,canvasContext,alpha,1);
+      //this.drawPath(this.path,canvasContext,camera);
+      //sceneArt.drawHitBoxes(this.hitBoxes(),camera,canvasContext);
+    }
+  }
+
+  this.updateLight = function(terrain,camera){
   }
 
   this.drawTargetPortrait = function(oX,oY,xSize,ySize,canvasBufferContext){
     var scale = (xSize*0.4) / (this.size.x*config.xRatio);
-    this.drawAlien(oX+(xSize*0.3),oY+(ySize*0.2),canvasBufferContext,scale);
+    this.drawAlien(oX+(xSize*0.3),oY+(ySize*0.2),canvasBufferContext,0.9,scale);
   }
 
-  this.drawAlien = function(x,y,buffer,scale){};
+  this.drawAlien = function(x,y,buffer,alpha,scale){};
 
   this.classUpdate = function(){};
 
@@ -55,7 +76,8 @@ Alien = function(x,y) {
     return {'x':this.position.x+(this.size.x*0.5),'y':this.position.y+(this.size.y*0.5)};
   }
 
-  this.update = function(terrain,humans){
+  this.update = function(terrain){
+    this.hasDrawn = false;
     var ret = false;
     this.counter += 1;
     if(this.counter > 100){ this.counter = 0; }
@@ -68,9 +90,9 @@ Alien = function(x,y) {
         this.followPath(terrain);
       }
       if(this.targetObj){
-        ret = this.interactTarget(terrain);
+ //       ret = this.interactTarget(terrain);
       }else{
-        ret = this.findTarget(terrain,humans);
+ //       ret = this.findTarget(terrain);
       }
       this.applyForces();
       this.applyMaxVelocity();
@@ -191,7 +213,7 @@ Alien = function(x,y) {
 
   this.terrainCollide = function(terrain){
     var collide = false;
-    this.groundContact = resetGroundContact();
+    this.groundContact = new Directional();
 
     if(this.velocity.x){
       var posX = this.velocity.x > 0;
@@ -247,10 +269,6 @@ Alien = function(x,y) {
     this.onGround = collide;
   }
 
-  var resetGroundContact = function(){
-    return {'left':false,'right':false,'up':false,'down':false};
-  }
-
   this.wound = function(damage){
     var dam = Math.min(damage,this.currentHealth);
     this.currentHealth -= dam;
@@ -270,8 +288,23 @@ Alien = function(x,y) {
   }
 
   this.pointWithin = function(x,y){
-    return (x > this.position.x && x < (this.position.x + this.size.x) &&
-            y > this.position.y && y < (this.position.y + this.size.y));
+    var hitBoxes = this.hitBoxes();
+    for(var b = 0; b < hitBoxes.length; b++){
+      var box = hitBoxes[b];
+      if(box.pointWithin(x,y)){
+        return true;
+      }
+    }
+    return false;
+  }
+
+  this.hitBoxes = function(){
+    var boxes = [];
+    var pos = new Vector(this.position.x,this.position.y);
+    var size = new Vector(this.size.x,this.size.y);
+    var sizeBox = new HitBox(pos,size);
+    boxes.push(sizeBox)
+    return boxes;
   }
 
   this.drawPath = function(path,canvasBufferContext,camera){

@@ -1,6 +1,15 @@
-Terrain = function(trMap,sSpawns) {
+World = function(trMap,sSpawns,plants,stars) {
 
-  this.terrain = trMap ? trMap : {};
+  this.tileMap = trMap || {};
+  this.plants = plants || [];
+  this.starMap = stars || {};
+  this.plantMap = {};
+  this.entityMap = {};
+  this.lights = [];
+  this.particles = [];
+  this.ambientLight = 1;
+  this.ambientProgress = -0.01;
+  this.bgRunner = new BgRunner();
 //construct holders
   this.rooms = [];
 //tile reference holders
@@ -8,7 +17,6 @@ Terrain = function(trMap,sSpawns) {
   var airtightWalls = {};
   var containers = {};
   var generators = {};
-
   this.resources = {
     'power':{'max':0,'current':0},
     'soil':{'max':300,'current':0},
@@ -19,11 +27,16 @@ Terrain = function(trMap,sSpawns) {
     'rad':{'max':0,'current':0},
     'fissile':{'max':0,'current':0}
   };
-//
-  var updateCount = 0;
+  this.count = 0;
   var resourceUpdateInterval = 5;
   var roomFinder = new Roomfinder();
   this.surfaceSpawns = sSpawns ? sSpawns : [];
+
+  this.init = function(){
+    for(var p=0;p<this.plants.length;p++){
+      this.updateEntityMap(this.plants[p],this.plantMap);
+    }
+  }
 
   this.addTile = function(tile){
     var regen = false;
@@ -73,10 +86,10 @@ Terrain = function(trMap,sSpawns) {
     for(x = tile.position.x; x < tile.position.x+(tile.size.x); x += config.gridInterval){
       for(y = tile.position.y; y < tile.position.y+(tile.size.y); y += config.gridInterval){
         if(remove){
-          delete this.terrain[x][y];
+          delete this.tileMap[x][y];
         }else{
-          if(!this.terrain[x]){this.terrain[x] = {};}
-          this.terrain[x][y] = tile;
+          if(!this.tileMap[x]){this.tileMap[x] = {};}
+          this.tileMap[x][y] = tile;
         }
       }
     }
@@ -108,31 +121,34 @@ Terrain = function(trMap,sSpawns) {
     this.addContainer(obj,true);
   }
 
-  this.update = function(humans,resourceInv){
+  this.update = function(humans,resourceInv,count){
+    this.count = count;
+ //   this.updateAmbientLight();
     for(x in doors){
       for(y in doors[x]){
-        this.terrain[x][y].update(humans);
+        this.tileMap[x][y].update(this);
       }
     }
     this.transferResources(resourceInv);
-    if(updateCount >= resourceUpdateInterval){
+    if((this.count % resourceUpdateInterval) == 0){
       this.updateBuildings();
-      updateCount = 0;
-    }else{
-      updateCount += 1;
     }
 
   }
 
-  this.purchase = function(cost){
-    var canAfford = true;
-    for(var r in cost){
-      var rQuant = this.resources[r] ? this.resources[r].current : 0;
-      if(rQuant < cost[r]){
-        canAfford = false;
+  this.updateAmbientLight = function(){
+    if(this.count % 20 == 0){
+      this.ambientLight += this.ambientProgress;
+      if(this.ambientLight >= 1){
+        this.ambientProgress = -0.01;
+      }else if(this.ambientLight <= 0){
+        this.ambientProgress = 0.01;
       }
     }
-    if(canAfford){
+  }
+
+  this.purchase = function(cost){
+    if(this.canAfford(cost)){
       for(var r in cost){
         this.resources[r].current -= cost[r];
       }
@@ -141,22 +157,39 @@ Terrain = function(trMap,sSpawns) {
     return false;
   }
 
+  this.canAfford = function(cost){
+    var canAfford = true;
+    for(var r in cost){
+      var rQuant = this.resources[r] ? this.resources[r].current : 0;
+      if(rQuant < cost[r]){
+        canAfford = false;
+      }
+    }
+    return canAfford;
+  }
+
   this.getTile = function(x,y){
-    if(this.terrain[x] && this.terrain[x][y]){
-      return this.terrain[x][y];
+    if(this.tileMap[x] && this.tileMap[x][y]){
+      return this.tileMap[x][y];
     }else{
       return false;
     }
   }
 
-  this.isClear = function(obj){
-    for(x = obj.position.x; x < obj.position.x+(obj.size.x); x += config.gridInterval){
-      for(y = obj.position.y; y < obj.position.y+(obj.size.y); y += config.gridInterval){
-        if(this.terrain[x] && this.terrain[x][y]){
+  this.validBuild = function(obj,coords){
+    return (this.canAfford(obj.cost) && this.validBuildPos(obj,coords));
+  }
+
+  this.validBuildPos = function(obj,coords){
+    //check for no buildings
+    for(x = coords.x; x < coords.x+(obj.size.x); x += config.gridInterval){
+      for(y = coords.y; y < coords.y+(obj.size.y); y += config.gridInterval){
+        if(this.getTile(x,y)){
           return false;
         }
       }
     }
+    //check for support
     return true;
   }
 
@@ -171,23 +204,21 @@ Terrain = function(trMap,sSpawns) {
     return true;
   }
 
-  this.draw = function(canvasBufferContext,camera,count){
-    if(this.terrain){
-      //drawRooms
-      for (var r = 0; r < this.rooms.length; r++){
-        this.rooms[r].draw(camera,canvasBufferContext);
-      }
-      //drawTiles
-      for(var x=camera.xOff-(camera.xOff%config.gridInterval);x<camera.xOff+config.cX;x+=config.gridInterval){
-        if(this.terrain[x]){
-          for(var y=(camera.yOff-(camera.yOff%config.gridInterval));y<camera.yOff+config.cY;y+=config.gridInterval){
-            if(this.terrain[x][y]){
-              this.terrain[x][y].draw(camera,canvasBufferContext,count);
-            }
-          }
-        }
-      }
+  this.drawRooms = function(canvasBufferContext,camera){
+    //drawRooms
+    for (var r = 0; r < this.rooms.length; r++){
+      this.rooms[r].draw(camera,canvasBufferContext);
     }
+  }
+
+  this.drawStars = function(stars,camera,buffCon){
+    for(var s = 0; s < stars.length; s++){
+      stars[s].draw(this.count,camera,buffCon);
+    }
+  }
+
+  this.drawBg = function(camera,buffCon){
+    this.bgRunner.drawBg(camera,this.ambientLight,buffCon,this.count);
   }
 
   this.updateBuildings = function(){
@@ -197,7 +228,7 @@ Terrain = function(trMap,sSpawns) {
       var genYKeys = Object.keys(generators[x]);
       for(var yi = 0; yi < genYKeys.length; yi++){
         var y = genYKeys[yi];
-        var gen = this.terrain[x][y];
+        var gen = this.tileMap[x][y];
         gen.updateGenerator(this.resources);
       }
     }
@@ -223,6 +254,122 @@ Terrain = function(trMap,sSpawns) {
       }
     }
     return true;
+  }
+
+  this.getEntities = function(tX,tY){
+    if(this.entityMap[tX] && this.entityMap[tX][tY]){
+      return this.entityMap[tX][tY];
+    }else{
+      return false;
+    }
+  }
+
+  this.getStars = function(tX,tY,camera){
+    var oX = tX - utils.roundToGrid(camera.xOff);
+    var oY = tY - utils.roundToGrid(camera.yOff);
+    oX = oX + utils.roundToGrid(camera.xOff*config.starP);
+    oY = oY + utils.roundToGrid(camera.yOff*config.starP);
+    if(this.starMap[oX] && this.starMap[oX][oY]){
+      return this.starMap[oX][oY];
+    }else{
+      return false;
+    }
+  }
+
+  this.getPlants = function(tX,tY){
+    if(this.plantMap[tX] && this.plantMap[tX][tY]){
+      return this.plantMap[tX][tY];
+    }else{
+      return false;
+    }
+  }
+
+  this.getAlpha = function(tX,tY){
+    return 1;
+  }
+
+  this.updateLightMap = function(origin,radius,col){
+    origin = origin.clone();
+    col = col.clone();
+    this.lights.push(new LightPoint(origin,radius,col,this.count));
+  }
+
+  this.addParticle = function(particle){
+    this.particles.push(particle);
+  }
+
+  this.drawParticles = function(camera,buffCon){
+    var newParts = [];
+    for(var p = 0; p < this.particles.length; p++){
+      var part = this.particles[p];
+      if(part.draw(camera,buffCon,this)){
+        newParts.push(part);
+      }
+    }
+    this.particles = newParts;
+  }
+
+  this.drawLights = function(camera,buffCon){
+    this.drawDark(buffCon);
+    var darkA = 1-this.ambientLight;
+    buffCon.save();
+    var drawTypes = ['destination-out','source-over'];
+    for(var i = 0; i < drawTypes.length; i++){
+      buffCon.globalCompositeOperation = drawTypes[i];
+      for(var l = 0; l < this.lights.length; l++){
+        var light = this.lights[l];
+        sceneArt.drawLight(light,camera,buffCon,darkA);
+      }
+    }
+    buffCon.restore();
+    this.lights = [];
+  }
+
+  this.drawDark = function(buffCon){
+    var overA = (1-this.ambientLight);
+    var overDark = new Color(0,0,0,overA);
+    var outA = this.ambientLight ;
+    var outDark = new Color(0,0,0,outA);
+    buffCon.save();
+    var drawTypes = ['destination-out','source-over'];
+    for(var i = 0; i < drawTypes.length; i++){
+      buffCon.globalCompositeOperation = drawTypes[i];
+      var darkC = i ? overDark : outDark;
+      sceneArt.drawAmbientLight(darkC,buffCon);
+    }
+    buffCon.restore();
+  }
+
+  this.updateEntityMap = function(obj,eMap){
+    var tX = utils.roundToGrid(obj.position.x);
+    var tY = utils.roundToGrid(obj.position.y);
+    for(var sx = 0; sx <= obj.size.x; sx += config.gridInterval){
+      for(var sy = 0; sy <= obj.size.y; sy += config.gridInterval){
+        var x = tX + sx;
+        var y = tY + sy;
+        if(!eMap[x]){
+          eMap[x] = {};
+        }
+        if(!eMap[x][y]){
+          eMap[x][y] = [obj];
+        }else{
+          eMap[x][y].push(obj);
+        }
+      }
+    }
+  }
+
+  this.purchaseBuilding = function(obj,coords){
+    var regen = false;
+    //check if clear
+    var clear = this.validBuildPos(obj,coords);
+    //purchase then place
+    if(clear && this.purchase(obj.cost)){
+      var newObj = obj.clone(coords.x,coords.y);
+      newObj.setNewHealth();
+      regen = this.addTile(newObj);
+    }
+    return regen;
   }
 
   this.buildGeneratorNetwork = function(obj,markedObjs){
@@ -265,8 +412,8 @@ Terrain = function(trMap,sSpawns) {
         var l = loopPoints[lp];
         for(var vx = x+l[0]; vx < x + config.gridInterval+l[1]; vx += config.gridInterval+l[2]){
           for(var vy = y+l[3]; vy < y + current.size.y+l[4]; vy += config.gridInterval + l[5]){
-            var node = this.terrain[vx][vy];
-            if(node){
+            var node = this.tileMap[vx][vy];
+            if(node && node.built){
               if(oxType){
                 var r = tileInRoom(node,this.rooms);
                 if(r){
@@ -342,8 +489,9 @@ Terrain = function(trMap,sSpawns) {
     var markedNodes = {};
     for(x in generators){
       for(y in generators[x]){
-        if(!(markedNodes[x] && markedNodes[x][y])){
-          this.buildGeneratorNetwork(this.terrain[x][y],markedNodes);
+        var built = generators[x][y].built;
+        if(built && !(markedNodes[x] && markedNodes[x][y])){
+          this.buildGeneratorNetwork(this.tileMap[x][y],markedNodes);
         }
       }
     }
@@ -352,14 +500,15 @@ Terrain = function(trMap,sSpawns) {
   this.regenRooms = function(){
     var newRooms = [];
     var rId = 0;
-    for(x in airtightWalls){
-      for(y in airtightWalls[x]){
-        if(!tileInRoom(this.terrain[x][y],newRooms)){
-          var rm = roomFinder.findRoom(~~x,~~y,this.terrain);
+    for(var x in airtightWalls){
+      for(var y in airtightWalls[x]){
+        var til = this.tileMap[x][y];
+        if(til.built && !tileInRoom(til,newRooms)){
+          var rm = roomFinder.findRoom(~~x,~~y,this.tileMap);
           if(rm.length > 0){
             if(uniqueRoom(rm,newRooms)){
               var newRoom = new Room(rm);
-              var tRoom = tileInRoom(this.terrain[x][y],this.rooms);
+              var tRoom = tileInRoom(til,this.rooms);
               if(tRoom){
                 newRoom.oxygen = tRoom.oxygen;
                 newRoom.containers = tRoom.containers;
@@ -417,6 +566,8 @@ Terrain = function(trMap,sSpawns) {
     }
     return false;
   }
+
+  this.init();
 
 
 }
