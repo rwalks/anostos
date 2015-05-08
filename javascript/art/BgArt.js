@@ -67,7 +67,7 @@ StarArt = function(){
     var oX = lX/2;
     var oY = ((this.frameHeight * frame)+(lY*0.5));
     var orig = new Vector(oX,oY);
-    var rad = lX / (2.1+(Math.random()*0.15));
+    var rad = Math.min(lX,lY) * (0.5 - (Math.random()*0.15));
 
     var r = 150 + Math.floor(Math.random() * 100);
     var g = 150 + Math.floor(Math.random() * 100);
